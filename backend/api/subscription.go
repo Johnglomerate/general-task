@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -65,7 +65,6 @@ func (api *API) SubscriptionStatus(c *gin.Context) {
 // @Router       /subscriptions/create-checkout-session/ [post]
 func (api *API) CreateCheckoutSession(c *gin.Context) {
 	logger := logging.GetSentryLogger()
-	stripe.Key = config.GetConfigValue("STRIPE_SECRET_KEY")
 
 	userID := getUserIDFromContext(c)
 	userCollection := database.GetUserCollection(api.DB)
@@ -124,7 +123,6 @@ func (api *API) CreateCheckoutSession(c *gin.Context) {
 // @Router       /subscriptions/create-portal-session/ [post]
 func (api *API) CreatePortalSession(c *gin.Context) {
 	logger := logging.GetSentryLogger()
-	stripe.Key = config.GetConfigValue("STRIPE_SECRET_KEY")
 
 	userID := getUserIDFromContext(c)
 	userCollection := database.GetUserCollection(api.DB)
@@ -167,7 +165,7 @@ func (api *API) CreatePortalSession(c *gin.Context) {
 func (api *API) StripeWebhook(c *gin.Context) {
 	logger := logging.GetSentryLogger()
 
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to read webhook body")
 		c.JSON(http.StatusBadRequest, gin.H{"detail": "failed to read body"})
@@ -253,8 +251,6 @@ func getOrCreateStripeCustomer(api *API, user *database.User) (string, error) {
 	if user.StripeCustomerID != "" {
 		return user.StripeCustomerID, nil
 	}
-
-	stripe.Key = config.GetConfigValue("STRIPE_SECRET_KEY")
 	params := &stripe.CustomerParams{
 		Email: stripe.String(user.Email),
 		Name:  stripe.String(user.Name),
