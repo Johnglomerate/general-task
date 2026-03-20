@@ -4,10 +4,11 @@
   - [Backend setup](#backend-setup)
   - [Backend testing](#backend-testing)
     - [Running Tests in IDE](#running-tests-in-ide)
-  - [Deploying backend](#deploying-backend)
-    - [One-time Kubernetes setup](#one-time-kubernetes-setup)
-    - [Interacting with the Kubernetes clusters](#interacting-with-the-kubernetes-clusters)
-      - [Common Commands](#common-commands)
+  - [Deploying backend to Heroku](#deploying-backend-to-heroku)
+    - [One-time Heroku setup](#one-time-heroku-setup)
+    - [Deploying](#deploying)
+    - [Environment variables](#environment-variables)
+    - [Custom domain](#custom-domain)
   - [Documentation updates](#documentation-updates)
   - [Debugging backend](#debugging-backend)
   - [Working with Slack](#working-with-slack)
@@ -115,90 +116,82 @@ To run tests through VS Code, put the following snippet in your `settings.json`:
 
 To run tests through GoLand, go to `Run | Edit Configurations` and then add a new `Go Test` configuration with `DB_NAME=test`.
 
-## Deploying backend
-Our backend is currently on AWS EKS in us-west-1 region. These are the steps to setup access.
+## Deploying backend to Heroku
 
-We currently perform backend deploys using the Heroku CLI. Assuming you have the heroku credentials, you can deploy with the following steps:
+The backend is deployed to Heroku using Docker via the `heroku.yml` at the repo root. The app uses the `backend/Dockerfile` to build a container image.
 
-### One-time Kubernetes setup
+The database is hosted on [MongoDB Atlas](https://www.mongodb.com/atlas). Connection details are configured via environment variables on Heroku.
 
-Add the appropriate group (`prd-gtsk-uswest1-full-access-group`) to your iamrole: https://github.com/GeneralTask/task-manager/blob/630b25b858baeeb0e4a0f775b7e5e96a490022c9/kubernetes/manifests/prod/prd-auth-config.yaml#L29-L32 and have a General Task admin apply the changes to the prod k8s cluster. Alternatively, adding these changes to the file above, and merging those changes into master will apply these changes as well (the credentials will be automatically added by AWS CodeBuild CI after landing the change).
+### One-time Heroku setup
 
-Update your AWS access credentials. You can find your AWS credentials by logging into the console, and access your profile's security credentials. Generate some Access Credentials for your account, and place them into `~/.aws/credentials`. The format will look like so:
+1. Install the [Heroku CLI](https://devcenter.heroku.com/articles/heroku-cli)
+2. Log in: `heroku login`
+3. Create the app (if not already created):
+   ```
+   heroku create general-task-backend --stack container
+   ```
+4. Set up all required environment variables (see [Environment variables](#environment-variables) below)
+5. Set up a [MongoDB Atlas](https://www.mongodb.com/atlas) cluster and get the connection string
 
-```
-[default]
-aws_access_key_id=<access key>
-aws_secret_access_key=<secret>
-```
+### Deploying
 
-Save the following snippet to your bashrc:
-```
-klogin () {
-    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
-    $(aws sts assume-role \
-    --role-arn arn:aws:iam::257821106339:role/glb-gtsk-eks-full-access \
-    --role-session-name glb-gtsk-eks-full-access \
-    --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
-    --output text))
-}
-```
-
-Run `klogin`, and your credentials should be updated to include the access for Kubernetes.
-
-Now, locally on your laptop, run:
+Push to Heroku from the repo root:
 
 ```
-aws --profile kube-config eks update-kubeconfig --region us-west-1 --name prd-gtsk-uswest1-backend
+git push heroku master
 ```
 
-which will add the the profile to your `~/.kube/config`. You can also change the alias for this context/cluster by modifying the relevant part in `~/.kube/config` after you run this command to:
+Heroku will read `heroku.yml`, build the Docker image from `backend/Dockerfile`, and deploy it.
 
+To verify the deploy:
 ```
-contexts:
-- context:
-    cluster: arn:aws:eks:us-west-1:257821106339:cluster/prd-gtsk-uswest1-backend
-    namespace: prd-gtsk-uswest1
-    user: arn:aws:eks:us-west-1:257821106339:cluster/prd-gtsk-uswest1-backend
-  name: prod
+curl https://<your-app>.herokuapp.com/ping/
 ```
 
-### Interacting with the Kubernetes clusters
+### Environment variables
 
-To test your configuration and verify the cluster connectivty, run the following command and you should see something like:
+Set these on the Heroku app via `heroku config:set KEY=VALUE` or the Heroku dashboard:
 
 ```
-➜ kubectl get svc                                        09:26:00
-Alias tip: k get svc
-NAME           TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
-core-service   NodePort   172.19.64.51   <none>        8080:31254/TCP   21d
+ENVIRONMENT=prod
+DB_NAME=main
+MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/
+MONGO_URI_MIGRATIONS=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/%s?authSource=admin
+SERVER_URL=https://<your-app>.herokuapp.com/
+HOME_URL=https://generaltask.com/
+COOKIE_DOMAIN=.generaltask.com
+ACCESS_CONTROL_ALLOW_ORIGINS=https://generaltask.com,https://app.generaltask.com
+DEFAULT_ACCESS_CONTROL_ALLOW_ORIGIN=https://generaltask.com
+GOOGLE_OAUTH_CLIENT_ID=<value>
+GOOGLE_OAUTH_CLIENT_SECRET=<value>
+GOOGLE_OAUTH_AUTHORIZE_REDIRECT_URL=https://<your-app>.herokuapp.com/link/google/callback/
+GOOGLE_OAUTH_LOGIN_REDIRECT_URL=https://<your-app>.herokuapp.com/login/callback/
+LINEAR_OAUTH_CLIENT_ID=<value>
+LINEAR_OAUTH_CLIENT_SECRET=<value>
+GITHUB_OAUTH_CLIENT_ID=<value>
+GITHUB_OAUTH_CLIENT_SECRET=<value>
+SLACK_OAUTH_CLIENT_ID=<value>
+SLACK_OAUTH_CLIENT_SECRET=<value>
+SLACK_SIGNING_SECRET=<value>
+JIRA_OAUTH_CLIENT_ID=<value>
+JIRA_OAUTH_CLIENT_SECRET=<value>
+ASANA_OAUTH_CLIENT_ID=<value>
+ASANA_OAUTH_CLIENT_SECRET=<value>
+OPEN_AI_CLIENT_SECRET=<value>
+MANDRILL_CLIENT_SECRET=<value>
 ```
 
-#### Common Commands
-Here's a list of nice k8s commands to add to your shell startup file:
+Heroku automatically sets the `PORT` environment variable. Gin reads this and binds to the correct port.
+
+### Custom domain
+
+To use a custom domain (e.g. `api.generaltask.com`):
+
 ```
-alias kp="kubectl config use-context prod --namespace prd-gtsk-uswest1"
-alias kgp="kubectl get pods"
-alias kgd="kubectl get deployments"
-alias kroll="kubectl rollout restart deployment/core-deployment"
-ksh() {
-    kubectl exec -it $1 -- "/bin/sh"
-}
-kdlogs() {
-    kubectl logs -f deployment/core-deployment --all-containers=true --since=10m
-}
-kdl() {
-    stern core-deployment -t --since 10m
-}
+heroku domains:add api.generaltask.com
 ```
 
-Here are a few common interactions:
-* Select context & namespace, run `kp`
-* List pods, run `kgp`; list deployments, run `kgd`
-* SSH to a pod, run `ksh <pod name>` - for example: `ksh core-deployment-756d697659-hqgk4`
-* View logs for a specific pod `k logs core-deployment-756d697659-hqgk4`
-* View collated logs for the whole deployment with `kdlogs` or `kdl` (for the latter, you need to install [`stern`](https://github.com/wercker/stern))
-* To manually apply a k8s yaml, you can run `kubectl apply -f /path/to/file`. You can also specify a directory to idempotently apply the entire set of manifests in that directory
+Then update your DNS CNAME record to point to the Heroku DNS target shown by `heroku domains`.
 
 
 ## Documentation updates
