@@ -179,6 +179,7 @@ ASANA_OAUTH_CLIENT_ID=<value>
 ASANA_OAUTH_CLIENT_SECRET=<value>
 OPEN_AI_CLIENT_SECRET=<value>
 MANDRILL_CLIENT_SECRET=<value>
+SLACK_WEBHOOK_FEEDBACK=<slack incoming webhook URL for feedback>
 ```
 
 Heroku automatically sets the `PORT` environment variable. Gin reads this and binds to the correct port.
