@@ -1,0 +1,7 @@
+**/*_test.go
+**/main_test.go
+**/.golangci.yml
+**/runtests.sh
+**/rungosec.sh
+docker-compose.yml
+docs/
