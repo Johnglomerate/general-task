@@ -150,37 +150,7 @@ curl https://<your-app>.herokuapp.com/ping/
 
 ### Environment variables
 
-Set these on the Heroku app via `heroku config:set KEY=VALUE` or the Heroku dashboard:
-
-```
-ENVIRONMENT=prod
-DB_NAME=main
-MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/
-MONGO_URI_MIGRATIONS=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/%s?authSource=admin
-SERVER_URL=https://<your-app>.herokuapp.com/
-HOME_URL=https://generaltask.com/
-COOKIE_DOMAIN=.generaltask.com
-ACCESS_CONTROL_ALLOW_ORIGINS=https://generaltask.com,https://app.generaltask.com
-DEFAULT_ACCESS_CONTROL_ALLOW_ORIGIN=https://generaltask.com
-GOOGLE_OAUTH_CLIENT_ID=<value>
-GOOGLE_OAUTH_CLIENT_SECRET=<value>
-GOOGLE_OAUTH_AUTHORIZE_REDIRECT_URL=https://<your-app>.herokuapp.com/link/google/callback/
-GOOGLE_OAUTH_LOGIN_REDIRECT_URL=https://<your-app>.herokuapp.com/login/callback/
-LINEAR_OAUTH_CLIENT_ID=<value>
-LINEAR_OAUTH_CLIENT_SECRET=<value>
-GITHUB_OAUTH_CLIENT_ID=<value>
-GITHUB_OAUTH_CLIENT_SECRET=<value>
-SLACK_OAUTH_CLIENT_ID=<value>
-SLACK_OAUTH_CLIENT_SECRET=<value>
-SLACK_SIGNING_SECRET=<value>
-JIRA_OAUTH_CLIENT_ID=<value>
-JIRA_OAUTH_CLIENT_SECRET=<value>
-ASANA_OAUTH_CLIENT_ID=<value>
-ASANA_OAUTH_CLIENT_SECRET=<value>
-OPEN_AI_CLIENT_SECRET=<value>
-MANDRILL_CLIENT_SECRET=<value>
-SLACK_WEBHOOK_FEEDBACK=<slack incoming webhook URL for feedback>
-```
+All required environment variables are defined in [`backend/.env`](backend/.env) with local development defaults. For production on Heroku, set each variable via `heroku config:set KEY=VALUE` or the Heroku dashboard with appropriate production values.
 
 Heroku automatically sets the `PORT` environment variable. Gin reads this and binds to the correct port.
 
