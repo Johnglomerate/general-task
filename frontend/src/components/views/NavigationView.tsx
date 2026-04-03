@@ -123,11 +123,11 @@ const NavigationView = ({ isCollapsed, setIsCollapsed }: NavigationViewProps) =>
                         {userInfo?.is_employee ? (
                             <NoStyleButton onClick={() => togglePreviewMode()}>
                                 <BodySmallUpper color={isPreviewMode ? 'purple' : 'light'}>
-                                    {isPreviewMode ? '© 2023 GENERAL KENOBI' : '© 2023 GENERAL TASK'}
+                                    {isPreviewMode ? '© 2026 GENERAL KENOBI' : '© 2026 GENERAL TASK'}
                                 </BodySmallUpper>
                             </NoStyleButton>
                         ) : (
-                            <BodySmallUpper color="light">© 2023 GENERAL TASK</BodySmallUpper>
+                            <BodySmallUpper color="light">© 2026 GENERAL TASK</BodySmallUpper>
                         )}
                     </CopyrightText>
                 </>
