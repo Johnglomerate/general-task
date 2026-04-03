@@ -83,8 +83,8 @@ const PrivacyPolicyHTML = `
 0in'><span lang=EN style='font-family:"Calibri",sans-serif'>&nbsp;</span></p>
 
 		<p class=MsoNormal align=left style='margin-top:0in;text-align:left;text-indent:
-0in'><span lang=EN style='font-family:"Calibri",sans-serif'>General Task, Inc.
-				(“General Task,” “we,” “our,” and/or “us”) values the privacy of individuals
+0in'><span lang=EN style='font-family:"Calibri",sans-serif'>Johnglomerate Limited
+				("General Task," "we," "our," and/or "us")and/or “us”) values the privacy of individuals
 				who use our application, website, and related services (collectively, our
 				“Services”). This privacy policy (the “Privacy Policy”) explains how we
 				collect, use, and share information from users of our Services (“Users”). By
@@ -555,8 +555,8 @@ background:white'>Changes to this Privacy Policy</span></b></p>
 				comments, or concerns about our processing activities, please email us at </span><span lang=EN><a
 					href="mailto:privacy@generaltask.com"><span style='font-family:"Calibri",sans-serif;
 color:#1155CC'>privacy@generaltask.com</span></a></span><span lang=EN style='font-family:"Calibri",sans-serif'> or
-				write to us at General Task, Inc.,
-				255 Shoreline Drive, Suite 145, Redwood City, CA 94065.</span></p>
+								write to us at Johnglomerate Limited,
+								255 Shoreline Drive, Suite 145, Redwood City, CA 94065.</span></p>
 
 		<p class=MsoNormal align=left style='text-align:left;text-indent:0in'><span lang=EN
 				style='font-family:"Calibri",sans-serif'>&nbsp;</span></p>
