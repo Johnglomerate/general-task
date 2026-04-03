@@ -10,6 +10,9 @@ const createStyledComponentsTransformer = require('typescript-plugin-styled-comp
 const styledComponentsTransformer = createStyledComponentsTransformer()
 
 module.exports = {
+    cache: {
+        type: 'filesystem',
+    },
     entry: './src/index.tsx',
     module: {
         rules: [
