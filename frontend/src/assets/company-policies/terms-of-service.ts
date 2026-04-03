@@ -290,7 +290,7 @@ const TermsOfServiceHTML = `
 					Updated: February 23, 2022</span></i></p>
 
 		<p class=MsoNormal><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'>Welcome,
-				and thank you for your interest in General Task, Inc. (“<b><u>General Task</u></b>,”
+				and thank you for your interest in Johnglomerate Limited ("<b><u>General Task</u></b>,"
 				“<b><u>we</u></b>,” or “<b><u>us</u></b>”) and our website at generaltask.com,
 				along with our related websites, hosted or downloadable applications, and other
 				services provided by us (collectively, the “<b><u>Service</u></b>”). These
@@ -814,8 +814,8 @@ font-family:"Calibri",sans-serif'> NOTICE</span></b><span style='font-size:
 				</span><b>Opt-Out</b>. If you do not wish to resolve disputes by binding
 				arbitration, you may opt out of the provisions of this Section&nbsp;</a>15 within 30 days after the date
 			that you agree to these Terms by (a) sending a
-			letter to General Task, Inc., Attention: Legal Department – Arbitration
-			Opt-Out, 255 Shoreline Drive, Suite 145, Redwood City, CA 94065, that specifies: your
+			letter to Johnglomerate Limited, Attention: Legal Department – Arbitration
+			Opt-Out, 430 Los Altos Ave, Los Altos, CA 94022, that specifies: your
 			full legal name, the email address associated with your account on the Service,
 			and a statement that you wish to opt out of arbitration, or (b) sending an
 			email to <a href="mailto:support@generaltask.com">support@generaltask.com</a>
@@ -839,8 +839,7 @@ font-family:"Calibri",sans-serif'> NOTICE</span></b><span style='font-size:
 				first send a written notice of the dispute to the other party by certified U.S.
 				Mail or by Federal Express (signature required) or, only if that other party
 				has not provided a current physical address, then by electronic mail (“<b><u>Notice
-						of Arbitration</u></b>”). General Task’s address for Notice is: General Task,
-				Inc, 255 Shoreline Drive, Suite 145, Redwood City, CA 94065. The Notice of Arbitration
+						of Arbitration</u></b>"). General Task's address for Notice is: Johnglomerate Limited, 430 Los Altos Ave, Los Altos, CA 94022. The Notice of Arbitration
 				must: (a)&nbsp;identify the name or account number of the party making the
 				claim; (b) describe the nature and basis of the claim or dispute; and (c) set
 				forth the specific relief sought (“<b><u>Demand</u></b>”). The parties will
@@ -982,8 +981,8 @@ background:#F2F4F7'> </span></h2>
 					style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 				</span><strong><span style='font-family:"Calibri",sans-serif'>Contact
 						Information</span></strong></a><strong><span style='font-family:"Calibri",sans-serif;
-font-weight:normal'>. </span></strong>The Service is offered by General Task, Inc.,
-			located at 255 Shoreline Drive, Suite 145, Redwood City, CA 94065. You may contact us by
+font-weight:normal'>. </span></strong>The Service is offered by Johnglomerate Limited,
+			located at 430 Los Altos Ave, Los Altos, CA 94022. You may contact us by
 			sending correspondence to that address or by emailing us at support@generaltask.com.</h2>
 
 		<h2>16.7<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
