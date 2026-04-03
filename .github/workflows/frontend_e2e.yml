@@ -19,6 +19,12 @@ jobs:
         with:
           node-version: 16
 
+      - name: Configure FontAwesome registry
+        working-directory: frontend
+        run: |
+          npm config set "@fortawesome:registry" https://npm.fontawesome.com/
+          npm config set "//npm.fontawesome.com/:_authToken" "${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}"
+
       - name: Cypress install
         uses: cypress-io/github-action@v6
         with:
