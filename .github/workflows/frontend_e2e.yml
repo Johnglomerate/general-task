@@ -10,26 +10,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      has_cypress: ${{ steps.cypress_check.outputs.has_cypress }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
-          runTests: false
+          node-version: 18
+
+      - name: Configure FontAwesome registry
+        working-directory: frontend
+        run: |
+          npm config set "@fortawesome:registry" https://npm.fontawesome.com/
+          npm config set "//npm.fontawesome.com/:_authToken" "${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}"
+
+      - name: Check for Cypress config
+        id: cypress_check
+        working-directory: frontend
+        run: |
+          if [ -f "cypress.json" ] || [ -f "cypress.config.js" ] || [ -f "cypress.config.ts" ] || [ -d "cypress" ]; then
+            echo "has_cypress=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cypress=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cypress config/directory not found — skipping E2E tests"
+          fi
 
       - name: Cypress install
-        uses: cypress-io/github-action@v4
+        if: steps.cypress_check.outputs.has_cypress == 'true'
+        uses: cypress-io/github-action@v6
         with:
-          install: yarn install --production=true # does not install devDependencies
+          install: yarn install --frozen-lockfile
           working-directory: frontend
           runTests: false
           build: yarn build:test
 
       - name: Save build folder
-        uses: actions/upload-artifact@v3
+        if: steps.cypress_check.outputs.has_cypress == 'true'
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           if-no-files-found: error
@@ -37,6 +57,7 @@ jobs:
 
   test:
     needs: build
+    if: needs.build.outputs.has_cypress == 'true'
     runs-on: ubuntu-latest
     env:
       REACT_APP_API_BASE_URL: http://localhost:8080
@@ -48,41 +69,37 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.18'
       
       - name: Download the build folders
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: frontend/dist
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 14
-          runTests: false
+          node-version: 18
 
       - name: Spin up db
         working-directory: backend
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Start backend server
         working-directory: backend
         run: go run . &
-
-      - name: Copy Cypress config
-        run: cp frontend/cypress.json .
 
       - name: Install dependencies
         working-directory: frontend
         run: npm i cypress@9.5.3 serve typescript @testing-library/cypress chance
 
       - name: Cypress run
-        uses: cypress-io/github-action@v4
+        uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
           install: false

@@ -49,8 +49,8 @@ func (api *API) ShareableTaskDetails(c *gin.Context) {
 		return
 	}
 	subtaskResults := []*TaskResultV4{}
-	for _, subtask := range *subtasks {
-		subtaskResult := api.taskToTaskResultV4(&subtask)
+	for i := range *subtasks {
+		subtaskResult := api.taskToTaskResultV4(&(*subtasks)[i])
 		subtaskResults = append(subtaskResults, subtaskResult)
 	}
 
