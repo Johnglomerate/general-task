@@ -43,7 +43,6 @@ export default function CalendarHeader({ showHeader = true, additionalHeaderCont
     const { pathname } = useLocation()
 
     const isFocusMode = pathname.startsWith('/focus-mode')
-    const isSuperDashboardPage = pathname.startsWith('/super-dashboard')
 
     const toggleCalendar = () => {
         if (calendarType === 'week') {
@@ -117,7 +116,7 @@ export default function CalendarHeader({ showHeader = true, additionalHeaderCont
                 <>
                     <PaddedContainer>
                         <Flex gap={Spacing._16} alignItems="center">
-                            {isCalendarExpanded && !showTaskToCalSidebar && !isSuperDashboardPage && (
+                            {isCalendarExpanded && !showTaskToCalSidebar && (
                                 <GTButton
                                     icon={icons.hamburger}
                                     value="Open task list"

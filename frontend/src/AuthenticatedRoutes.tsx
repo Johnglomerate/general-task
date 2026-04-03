@@ -4,16 +4,31 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { Toaster, resolveValue } from 'react-hot-toast'
 import { Outlet, Route, Routes } from 'react-router-dom'
 import { enableMapSet } from 'immer'
+import Spinner from './components/atoms/Spinner'
 import StyledToastContainer from './components/atoms/toast/StyledToastContainer'
 import { CalendarContextProvider } from './components/calendar/CalendarContext'
 import Toast from './components/molecules/toast/Toast'
 import FocusModeScreen from './components/screens/FocusModeScreen'
 import MainScreen from './components/screens/MainScreen'
-import { FOCUS_MODE_ROUTE } from './constants'
+import { FOCUS_MODE_ROUTE, LOGIN_URL } from './constants'
 import AppContextProvider from './context/AppContextProvider'
+import { useGetUserInfo } from './services/api/user-info.hooks'
 
 const TermsOfServiceSummaryScreen = lazy(() => import('./components/screens/TermsOfServiceSummaryScreen'))
 enableMapSet() // this allows immer to produce immutable maps and sets
+
+const SubscriptionGate = () => {
+    const { data: userInfo, isLoading } = useGetUserInfo()
+
+    if (isLoading) {
+        return <Spinner />
+    }
+    if (!userInfo?.is_subscribed) {
+        window.location.href = LOGIN_URL
+        return null
+    }
+    return <Outlet />
+}
 
 const AuthenticatedRoutes = () => {
     return (
@@ -25,61 +40,57 @@ const AuthenticatedRoutes = () => {
                         <Route path="tos-summary" element={<Outlet />}>
                             <Route index element={<TermsOfServiceSummaryScreen />} />
                         </Route>
-                        <Route path="overview" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":overviewViewId" element={<MainScreen />}>
-                                <Route path=":overviewItemId" element={<MainScreen />}>
-                                    <Route path=":subtaskId" element={<MainScreen />} />
+                        <Route element={<SubscriptionGate />}>
+                            <Route path="overview" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":overviewViewId" element={<MainScreen />}>
+                                    <Route path=":overviewItemId" element={<MainScreen />}>
+                                        <Route path=":subtaskId" element={<MainScreen />} />
+                                    </Route>
                                 </Route>
                             </Route>
-                        </Route>
-                        <Route path="recurring-tasks" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":recurringTaskId" element={<MainScreen />} />
-                        </Route>
-                        <Route path="tasks" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":section" element={<MainScreen />}>
-                                <Route path=":task" element={<MainScreen />}>
-                                    <Route path=":subtaskId" element={<MainScreen />} />
+                            <Route path="recurring-tasks" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":recurringTaskId" element={<MainScreen />} />
+                            </Route>
+                            <Route path="tasks" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":section" element={<MainScreen />}>
+                                    <Route path=":task" element={<MainScreen />}>
+                                        <Route path=":subtaskId" element={<MainScreen />} />
+                                    </Route>
                                 </Route>
                             </Route>
-                        </Route>
-                        <Route path="pull-requests" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":pullRequest" element={<MainScreen />} />
-                        </Route>
-                        <Route path="linear" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":linearIssueId" element={<MainScreen />} />
-                        </Route>
-                        <Route path="slack" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":slackTaskId" element={<MainScreen />} />
-                        </Route>
-                        <Route path="jira" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":jiraTaskId" element={<MainScreen />} />
-                        </Route>
-                        <Route path={FOCUS_MODE_ROUTE} element={<Outlet />}>
-                            <Route
-                                index
-                                element={
-                                    <CalendarContextProvider isPopoverDisabled={true}>
-                                        <FocusModeScreen />
-                                    </CalendarContextProvider>
-                                }
-                            />
-                        </Route>
-                        <Route path="notes" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                            <Route path=":noteId" element={<MainScreen />} />
-                        </Route>
-                        <Route path="super-dashboard" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
-                        </Route>
-                        <Route path="leaderboard" element={<Outlet />}>
-                            <Route index element={<MainScreen />} />
+                            <Route path="pull-requests" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":pullRequest" element={<MainScreen />} />
+                            </Route>
+                            <Route path="linear" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":linearIssueId" element={<MainScreen />} />
+                            </Route>
+                            <Route path="slack" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":slackTaskId" element={<MainScreen />} />
+                            </Route>
+                            <Route path="jira" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":jiraTaskId" element={<MainScreen />} />
+                            </Route>
+                            <Route path={FOCUS_MODE_ROUTE} element={<Outlet />}>
+                                <Route
+                                    index
+                                    element={
+                                        <CalendarContextProvider isPopoverDisabled={true}>
+                                            <FocusModeScreen />
+                                        </CalendarContextProvider>
+                                    }
+                                />
+                            </Route>
+                            <Route path="notes" element={<Outlet />}>
+                                <Route index element={<MainScreen />} />
+                                <Route path=":noteId" element={<MainScreen />} />
+                            </Route>
                         </Route>
                     </Routes>
                 </AppContextProvider>
