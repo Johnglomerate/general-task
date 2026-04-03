@@ -3,7 +3,7 @@ name = "frontend"
 compatibility_date = "2026-04-03"
 
 [build]
-command = "cd frontend && yarn install && yarn build"
+command = "cd frontend && npm config set '@fortawesome:registry' https://npm.fontawesome.com/ && npm config set '//npm.fontawesome.com/:_authToken' \"$FONTAWESOME_NPM_AUTH_TOKEN\" && yarn install && yarn build"
 
 [assets]
 directory = "./frontend/dist"
