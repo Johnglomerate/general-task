@@ -12,16 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: 16
-          runTests: false
 
       - name: Cypress install
-        uses: cypress-io/github-action@v4
+        uses: cypress-io/github-action@v6
         with:
           install: yarn install --production=true # does not install devDependencies
           working-directory: frontend
@@ -29,7 +28,7 @@ jobs:
           build: yarn build:test
 
       - name: Save build folder
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           if-no-files-found: error
@@ -48,27 +47,26 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.18'
       
       - name: Download the build folders
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: frontend/dist
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 14
-          runTests: false
+          node-version: 16
 
       - name: Spin up db
         working-directory: backend
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Start backend server
         working-directory: backend
@@ -82,7 +80,7 @@ jobs:
         run: npm i cypress@9.5.3 serve typescript @testing-library/cypress chance
 
       - name: Cypress run
-        uses: cypress-io/github-action@v4
+        uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
           install: false
