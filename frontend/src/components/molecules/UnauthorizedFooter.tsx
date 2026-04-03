@@ -37,7 +37,7 @@ const UnauthorizedFooter = () => {
         <Footer>
             <FooderDiv>
                 <Icon icon={logos.generaltask_single_color} color="white" size="large" />
-                <FooterText>Johnglomerate Limited © 2023</FooterText>
+                <FooterText>Johnglomerate Limited © 2026</FooterText>
             </FooderDiv>
             <FooderDiv>
                 <NoStyleButton onClick={() => navigate('/privacy-policy')}>

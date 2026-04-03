@@ -555,8 +555,8 @@ background:white'>Changes to this Privacy Policy</span></b></p>
 				comments, or concerns about our processing activities, please email us at </span><span lang=EN><a
 					href="mailto:privacy@generaltask.com"><span style='font-family:"Calibri",sans-serif;
 color:#1155CC'>privacy@generaltask.com</span></a></span><span lang=EN style='font-family:"Calibri",sans-serif'> or
-				write to us at Johnglomerate Limited,
-				255 Shoreline Drive, Suite 145, Redwood City, CA 94065.</span></p>
+								write to us at Johnglomerate Limited,
+								430 Los Altos Ave, Los Altos, CA 94022.</span></p>
 
 		<p class=MsoNormal align=left style='text-align:left;text-indent:0in'><span lang=EN
 				style='font-family:"Calibri",sans-serif'>&nbsp;</span></p>
