@@ -142,8 +142,6 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	// Subscription management endpoints
 	router.GET("/subscriptions/status/", handlers.SubscriptionStatus)
-	router.POST("/subscriptions/create-checkout-session/", handlers.CreateCheckoutSession)
-	router.POST("/subscriptions/create-portal-session/", handlers.CreatePortalSession)
 
 	// Add subscription middleware. Endpoints below this require an active subscription
 	router.Use(SubscriptionMiddleware(handlers.DB))

@@ -167,31 +167,6 @@ func TestSubscriptionStatusEndpoint(t *testing.T) {
 	})
 }
 
-func TestCreateCheckoutSessionEndpoint(t *testing.T) {
-	UnauthorizedTest(t, "POST", "/subscriptions/create-checkout-session/", nil)
-}
-
-func TestCreatePortalSessionEndpoint(t *testing.T) {
-	authToken := login("portal_session_test@generaltask.com", "")
-	UnauthorizedTest(t, "POST", "/subscriptions/create-portal-session/", nil)
-
-	t.Run("NoStripeCustomer", func(t *testing.T) {
-		api, dbCleanup := GetAPIWithDBCleanup()
-		defer dbCleanup()
-		router := GetRouter(api)
-
-		request, _ := http.NewRequest("POST", "/subscriptions/create-portal-session/", nil)
-		request.Header.Add("Authorization", "Bearer "+authToken)
-		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, request)
-
-		assert.Equal(t, http.StatusBadRequest, recorder.Code)
-		body, err := io.ReadAll(recorder.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, "{\"detail\":\"no stripe customer found for this user\"}", string(body))
-	})
-}
-
 func TestStripeWebhookEndpoint(t *testing.T) {
 	t.Run("EmptyBody", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
@@ -370,10 +345,10 @@ func TestUpdateUserSubscriptionFull(t *testing.T) {
 			context.Background(),
 			bson.M{"_id": userID},
 			bson.M{"$set": bson.M{
-				"stripe_customer_id":            stripeCustomerID,
-				"subscription_id":               "sub_old",
-				"subscription_status":           "trialing",
-				"subscription_price_id":         "price_old",
+				"stripe_customer_id":              stripeCustomerID,
+				"subscription_id":                 "sub_old",
+				"subscription_status":             "trialing",
+				"subscription_price_id":           "price_old",
 				"subscription_current_period_end": primitive.NewDateTimeFromTime(time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)),
 			}},
 		)

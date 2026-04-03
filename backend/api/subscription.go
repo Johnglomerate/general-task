@@ -12,8 +12,6 @@ import (
 	"github.com/GeneralTask/task-manager/backend/logging"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v76"
-	billingportalsession "github.com/stripe/stripe-go/v76/billingportal/session"
-	checkoutsession "github.com/stripe/stripe-go/v76/checkout/session"
 	"github.com/stripe/stripe-go/v76/customer"
 	"github.com/stripe/stripe-go/v76/webhook"
 	"go.mongodb.org/mongo-driver/bson"
@@ -55,104 +53,6 @@ func (api *API) SubscriptionStatus(c *gin.Context) {
 		"subscription_current_period_end": userObject.SubscriptionCurrentPeriodEnd,
 		"is_subscribed":                   isUserSubscribed(&userObject),
 	})
-}
-
-// CreateCheckoutSession godoc
-// @Summary      Creates a Stripe Checkout session for subscribing
-// @Description  Returns the checkout URL to redirect the user to
-// @Tags         subscription
-// @Success      200 {object} map[string]string
-// @Failure      500 {object} string "internal server error"
-// @Router       /subscriptions/create-checkout-session/ [post]
-func (api *API) CreateCheckoutSession(c *gin.Context) {
-	logger := logging.GetSentryLogger()
-
-	userID := getUserIDFromContext(c)
-	userCollection := database.GetUserCollection(api.DB)
-	var userObject database.User
-	err := userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to find user for checkout session")
-		Handle500(c)
-		return
-	}
-
-	// Create or retrieve Stripe customer
-	stripeCustomerID, err := getOrCreateStripeCustomer(api, &userObject)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to create/retrieve stripe customer")
-		Handle500(c)
-		return
-	}
-
-	priceID := config.GetConfigValue("STRIPE_PRICE_ID")
-	homeURL := config.GetConfigValue("HOME_URL")
-
-	params := &stripe.CheckoutSessionParams{
-		Customer: stripe.String(stripeCustomerID),
-		Mode:     stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		LineItems: []*stripe.CheckoutSessionLineItemParams{
-			{
-				Price:    stripe.String(priceID),
-				Quantity: stripe.Int64(1),
-			},
-		},
-		SuccessURL: stripe.String(homeURL + "?subscription=success"),
-		CancelURL:  stripe.String(homeURL + "?subscription=canceled"),
-		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
-			TrialPeriodDays: stripe.Int64(TrialPeriodDays),
-		},
-	}
-
-	session, err := checkoutsession.New(params)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to create checkout session")
-		Handle500(c)
-		return
-	}
-
-	c.JSON(200, gin.H{"checkout_url": session.URL})
-}
-
-// CreatePortalSession godoc
-// @Summary      Creates a Stripe Customer Portal session
-// @Description  Returns the portal URL to redirect the user to manage their subscription
-// @Tags         subscription
-// @Success      200 {object} map[string]string
-// @Failure      500 {object} string "internal server error"
-// @Router       /subscriptions/create-portal-session/ [post]
-func (api *API) CreatePortalSession(c *gin.Context) {
-	logger := logging.GetSentryLogger()
-
-	userID := getUserIDFromContext(c)
-	userCollection := database.GetUserCollection(api.DB)
-	var userObject database.User
-	err := userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to find user for portal session")
-		Handle500(c)
-		return
-	}
-
-	if userObject.StripeCustomerID == "" {
-		c.JSON(400, gin.H{"detail": "no stripe customer found for this user"})
-		return
-	}
-
-	homeURL := config.GetConfigValue("HOME_URL")
-	params := &stripe.BillingPortalSessionParams{
-		Customer:  stripe.String(userObject.StripeCustomerID),
-		ReturnURL: stripe.String(homeURL),
-	}
-
-	session, err := billingportalsession.New(params)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to create portal session")
-		Handle500(c)
-		return
-	}
-
-	c.JSON(200, gin.H{"portal_url": session.URL})
 }
 
 // StripeWebhook godoc
