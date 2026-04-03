@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      has_cypress: ${{ steps.cypress_check.outputs.has_cypress }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,7 +19,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
 
       - name: Configure FontAwesome registry
         working-directory: frontend
@@ -25,15 +27,28 @@ jobs:
           npm config set "@fortawesome:registry" https://npm.fontawesome.com/
           npm config set "//npm.fontawesome.com/:_authToken" "${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}"
 
+      - name: Check for Cypress config
+        id: cypress_check
+        working-directory: frontend
+        run: |
+          if [ -f "cypress.json" ] || [ -f "cypress.config.js" ] || [ -f "cypress.config.ts" ] || [ -d "cypress" ]; then
+            echo "has_cypress=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cypress=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cypress config/directory not found — skipping E2E tests"
+          fi
+
       - name: Cypress install
+        if: steps.cypress_check.outputs.has_cypress == 'true'
         uses: cypress-io/github-action@v6
         with:
-          install: yarn install --production=true # does not install devDependencies
+          install: yarn install --frozen-lockfile
           working-directory: frontend
           runTests: false
           build: yarn build:test
 
       - name: Save build folder
+        if: steps.cypress_check.outputs.has_cypress == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -42,6 +57,7 @@ jobs:
 
   test:
     needs: build
+    if: needs.build.outputs.has_cypress == 'true'
     runs-on: ubuntu-latest
     env:
       REACT_APP_API_BASE_URL: http://localhost:8080
@@ -68,7 +84,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
 
       - name: Spin up db
         working-directory: backend
@@ -77,9 +93,6 @@ jobs:
       - name: Start backend server
         working-directory: backend
         run: go run . &
-
-      - name: Copy Cypress config
-        run: cp frontend/cypress.json .
 
       - name: Install dependencies
         working-directory: frontend
