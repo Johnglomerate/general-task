@@ -290,7 +290,7 @@ const TermsOfServiceHTML = `
 					Updated: February 23, 2022</span></i></p>
 
 		<p class=MsoNormal><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'>Welcome,
-				and thank you for your interest in Johnglomerate Limited ("<b><u>General Task</u></b>,",”
+				and thank you for your interest in Johnglomerate Limited ("<b><u>General Task</u></b>,"
 				“<b><u>we</u></b>,” or “<b><u>us</u></b>”) and our website at generaltask.com,
 				along with our related websites, hosted or downloadable applications, and other
 				services provided by us (collectively, the “<b><u>Service</u></b>”). These
@@ -839,7 +839,7 @@ font-family:"Calibri",sans-serif'> NOTICE</span></b><span style='font-size:
 				first send a written notice of the dispute to the other party by certified U.S.
 				Mail or by Federal Express (signature required) or, only if that other party
 				has not provided a current physical address, then by electronic mail (“<b><u>Notice
-						of Arbitration</u></b>”). General Task’s 				address for Notice is: Johnglomerate Limited, 255 Shoreline Drive, Suite 145, Redwood City, CA 94065. The Notice of Arbitration
+						of Arbitration</u></b>"). General Task's address for Notice is: Johnglomerate Limited, 255 Shoreline Drive, Suite 145, Redwood City, CA 94065. The Notice of Arbitration
 				must: (a)&nbsp;identify the name or account number of the party making the
 				claim; (b) describe the nature and basis of the claim or dispute; and (c) set
 				forth the specific relief sought (“<b><u>Demand</u></b>”). The parties will
