@@ -23,6 +23,7 @@ import (
 const (
 	SubscriptionStatusActive   = "active"
 	SubscriptionStatusTrialing = "trialing"
+	TrialPeriodDays            = 67
 )
 
 func init() {
@@ -96,11 +97,10 @@ func (api *API) CreateCheckoutSession(c *gin.Context) {
 				Quantity: stripe.Int64(1),
 			},
 		},
-		SuccessURL:            stripe.String(homeURL + "?subscription=success"),
-		CancelURL:             stripe.String(homeURL + "?subscription=canceled"),
-		AllowPromotionCodes:   stripe.Bool(true),
+		SuccessURL: stripe.String(homeURL + "?subscription=success"),
+		CancelURL:  stripe.String(homeURL + "?subscription=canceled"),
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
-			TrialPeriodDays: stripe.Int64(14),
+			TrialPeriodDays: stripe.Int64(TrialPeriodDays),
 		},
 	}
 
@@ -190,7 +190,7 @@ func (api *API) StripeWebhook(c *gin.Context) {
 			return
 		}
 		if session.Subscription != nil {
-			err = updateUserSubscription(api, session.Customer.ID, session.Subscription.ID, "active")
+			err = updateUserSubscription(api, session.Customer.ID, session.Subscription.ID, SubscriptionStatusActive)
 			if err != nil {
 				logger.Error().Err(err).Msg("failed to update subscription after checkout")
 			}
@@ -207,6 +207,8 @@ func (api *API) StripeWebhook(c *gin.Context) {
 		priceID := ""
 		if len(subscription.Items.Data) > 0 {
 			priceID = subscription.Items.Data[0].Price.ID
+		} else {
+			logger.Warn().Str("subscription_id", subscription.ID).Msg("subscription update received with no line items")
 		}
 		periodEnd := primitive.NewDateTimeFromTime(time.Unix(subscription.CurrentPeriodEnd, 0))
 		err = updateUserSubscriptionFull(api, subscription.Customer.ID, subscription.ID, string(subscription.Status), priceID, periodEnd)
@@ -307,5 +309,5 @@ func updateUserSubscriptionFull(api *API, stripeCustomerID string, subscriptionI
 
 // isUserSubscribed checks if a user has an active or trialing subscription
 func isUserSubscribed(user *database.User) bool {
-	return user.SubscriptionStatus == "active" || user.SubscriptionStatus == "trialing"
+	return user.SubscriptionStatus == SubscriptionStatusActive || user.SubscriptionStatus == SubscriptionStatusTrialing
 }

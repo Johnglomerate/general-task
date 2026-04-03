@@ -201,11 +201,10 @@ func getPostLoginRedirectURL(api *API, userID primitive.ObjectID) string {
 				Quantity: stripe.Int64(1),
 			},
 		},
-		SuccessURL:          stripe.String(homeURL + "?subscription=success"),
-		CancelURL:           stripe.String(homeURL + "?subscription=canceled"),
-		AllowPromotionCodes: stripe.Bool(true),
+		SuccessURL: stripe.String(homeURL + "?subscription=success"),
+		CancelURL:  stripe.String(homeURL + "?subscription=canceled"),
 		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
-			TrialPeriodDays: stripe.Int64(14),
+			TrialPeriodDays: stripe.Int64(TrialPeriodDays),
 		},
 	}
 
