@@ -30,8 +30,8 @@ interface CompanyPolicyViewProps {
 const CompanyPolicyView = ({ page }: CompanyPolicyViewProps) => {
     const [pageTitle, pageContent] =
         page === CompanyPolicyPages.TermsOfService
-            ? ['Johnglomerate Limited Terms of Service', <TermsOfService key="tos" />]
-            : ['Johnglomerate Limited Privacy Policy', <PrivacyPolicy key="pp" />]
+            ? ['General Task Terms of Service', <TermsOfService key="tos" />]
+            : ['General Task Privacy Policy', <PrivacyPolicy key="pp" />]
     return (
         <CompanyPolicyContainer>
             <UnauthorizedHeader />

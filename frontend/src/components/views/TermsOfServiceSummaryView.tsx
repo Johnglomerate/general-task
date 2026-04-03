@@ -119,7 +119,7 @@ const TermsOfServiceSummaryView = () => {
                             color="purple"
                         />
                         <AgreementText required>
-                            I acknowledge Johnglomerate Limited&#39;s privacy policy and agree to Johnglomerate Limited&#39;s terms of
+                            I acknowledge General Task&#39;s privacy policy and agree to General Task&#39;s terms of
                             service.
                             <RedAsterisk>*</RedAsterisk>
                         </AgreementText>
@@ -133,7 +133,7 @@ const TermsOfServiceSummaryView = () => {
                             icon={promotionsCheck ? icons.checkbox_checked_solid : icons.checkbox_unchecked}
                             color="purple"
                         />
-                        <AgreementText>I would like to opt in on Johnglomerate Limited&#39;s promotional emails.</AgreementText>
+                        <AgreementText>I would like to opt in on General Task&#39;s promotional emails.</AgreementText>
                     </HorizontalFlex>
                 </NoStyleButton>
             </VerticalFlex>
