@@ -40,7 +40,7 @@ interface IntegrationLinksProps {
     isCollapsed?: boolean
 }
 const IntegrationLinks = ({ isCollapsed }: IntegrationLinksProps) => {
-    const { data: userInfo, isLoading: isUserInfoLoading } = useGetUserInfo()
+    const { isLoading: isUserInfoLoading } = useGetUserInfo()
     const { data: pullRequestRepositories } = useGetPullRequests()
     const { isLoading: isSettingsLoading } = useGetSettings()
 
@@ -104,24 +104,6 @@ const IntegrationLinks = ({ isCollapsed }: IntegrationLinksProps) => {
                                 isCollapsed={isCollapsed}
                             />
                         </Tip>
-                        {userInfo?.is_subscribed && (
-                            <>
-                                <NavigationLink
-                                    link="/super-dashboard"
-                                    title="Super Dashboard"
-                                    icon={icons.chartLineUp}
-                                    isCurrentPage={pathname.split('/')[1] === 'super-dashboard'}
-                                    isCollapsed={isCollapsed}
-                                />
-                                <NavigationLink
-                                    link="/leaderboard"
-                                    title="Leaderboard"
-                                    icon={icons.rankingStar}
-                                    isCurrentPage={pathname.split('/')[1] === 'leaderboard'}
-                                    isCollapsed={isCollapsed}
-                                />
-                            </>
-                        )}
                         <Tip shortcutName="goToRecurringTasksPage" side="right">
                             <NavigationLink
                                 link="/recurring-tasks"

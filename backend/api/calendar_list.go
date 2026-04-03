@@ -50,12 +50,12 @@ func (api *API) CalendarsList(c *gin.Context) {
 		calendars := []CalendarResult{}
 		for _, calendar := range account.Calendars {
 			calendarResult := CalendarResult{
-				CalendarID: calendar.CalendarID,
-				ColorID:    calendar.ColorID,
-				Title:      calendar.Title,
-				CanWrite:   slices.Contains([]string{constants.AccessControlOwner, "writer"}, calendar.AccessRole),
-				AccessRole: calendar.AccessRole,
-        ColorBackground: calendar.ColorBackground,
+				CalendarID:      calendar.CalendarID,
+				ColorID:         calendar.ColorID,
+				Title:           calendar.Title,
+				CanWrite:        slices.Contains([]string{constants.AccessControlOwner, "writer"}, calendar.AccessRole),
+				AccessRole:      calendar.AccessRole,
+				ColorBackground: calendar.ColorBackground,
 				ColorForeground: calendar.ColorForeground,
 			}
 			calendars = append(calendars, calendarResult)

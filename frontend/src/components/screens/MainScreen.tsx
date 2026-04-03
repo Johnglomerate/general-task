@@ -16,13 +16,11 @@ import DragLayer from '../molecules/DragLayer'
 import DefaultTemplate from '../templates/DefaultTemplate'
 import DailyOverviewView from '../views/DailyOverviewView'
 import JiraView from '../views/JiraView'
-import LeaderboardView from '../views/LeaderboardView'
 import LinearView from '../views/LinearView'
 import NoteListView from '../views/NoteListView'
 import PullRequestsView from '../views/PullRequestsView'
 import RecurringTasksView from '../views/RecurringTasksView'
 import SlackTasksView from '../views/SlackTasksView'
-import SuperDashboardView from '../views/SuperDashboardView'
 import TaskSection from '../views/TaskSectionView'
 
 const MainScreen = () => {
@@ -58,10 +56,6 @@ const MainScreen = () => {
                 return <SlackTasksView />
             case 'jira':
                 return <JiraView />
-            case 'super-dashboard':
-                return <SuperDashboardView />
-            case 'leaderboard':
-                return <LeaderboardView />
             default:
                 return (
                     <OverviewContextProvider>

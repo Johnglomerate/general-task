@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-
 func TestShareableTaskPreview(t *testing.T) {
 	authToken := login("test_shareable_task_preview@generaltask.com", "")
 	title1 := "domain shared"
@@ -31,10 +30,10 @@ func TestShareableTaskPreview(t *testing.T) {
 		"123abc",
 		"foobar_source",
 		&database.Task{
-			UserID: 	userID,
-			Title: 		&title1,
+			UserID:       userID,
+			Title:        &title1,
 			SharedAccess: &sharedAccessDomain,
-			SharedUntil: *testutils.CreateDateTime("9999-01-01"),
+			SharedUntil:  *testutils.CreateDateTime("9999-01-01"),
 		},
 	)
 	assert.NoError(t, err)
@@ -44,10 +43,10 @@ func TestShareableTaskPreview(t *testing.T) {
 		"123abcdef",
 		"foobar_source",
 		&database.Task{
-			UserID: 	userID,
-			Title: 		&title2,
+			UserID:       userID,
+			Title:        &title2,
 			SharedAccess: &sharedAccessPublic,
-			SharedUntil: *testutils.CreateDateTime("1999-01-01"),
+			SharedUntil:  *testutils.CreateDateTime("1999-01-01"),
 		},
 	)
 	assert.NoError(t, err)
@@ -57,16 +56,15 @@ func TestShareableTaskPreview(t *testing.T) {
 		"123abcdefg",
 		"foobar_source",
 		&database.Task{
-			UserID: 	userID,
-			Title: 		&title3,
+			UserID:       userID,
+			Title:        &title3,
 			SharedAccess: &sharedAccessPublic,
-			SharedUntil: *testutils.CreateDateTime("9999-01-01"),
+			SharedUntil:  *testutils.CreateDateTime("9999-01-01"),
 		},
 	)
 	assert.NoError(t, err)
 	api, dbCleanup := GetAPIWithDBCleanup()
 	defer dbCleanup()
-	
 
 	t.Run("MalformmatedTaskID", func(t *testing.T) {
 		response := ServeRequest(t, authToken, "GET", "/shareable_tasks/123/", nil, http.StatusNotFound, api)
@@ -74,7 +72,7 @@ func TestShareableTaskPreview(t *testing.T) {
 	})
 	t.Run("InvalidTaskID", func(t *testing.T) {
 		invalidTaskID := primitive.NewObjectID().Hex()
-		response := ServeRequest(t,authToken, "GET", fmt.Sprintf("/shareable_tasks/%s/", invalidTaskID), nil, http.StatusOK, api)
+		response := ServeRequest(t, authToken, "GET", fmt.Sprintf("/shareable_tasks/%s/", invalidTaskID), nil, http.StatusOK, api)
 		assert.Equal(t, `
 <!DOCTYPE html>
 <html>
@@ -98,7 +96,7 @@ func TestShareableTaskPreview(t *testing.T) {
 </html>`, string(response))
 	})
 	t.Run("PublicTaskIsShared", func(t *testing.T) {
-		response := ServeRequest(t,"", "GET", fmt.Sprintf("/shareable_tasks/%s/", task1.ID.Hex()), nil, http.StatusOK, api)
+		response := ServeRequest(t, "", "GET", fmt.Sprintf("/shareable_tasks/%s/", task1.ID.Hex()), nil, http.StatusOK, api)
 		assert.Equal(t, `
 <!DOCTYPE html>
 <html>
@@ -110,7 +108,7 @@ func TestShareableTaskPreview(t *testing.T) {
 </html>`, string(response))
 	})
 	t.Run("TaskIsShared", func(t *testing.T) {
-		response := ServeRequest(t,authToken, "GET", fmt.Sprintf("/shareable_tasks/%s/", task3.ID.Hex()), nil, http.StatusOK, api)
+		response := ServeRequest(t, authToken, "GET", fmt.Sprintf("/shareable_tasks/%s/", task3.ID.Hex()), nil, http.StatusOK, api)
 		assert.Equal(t, `
 <!DOCTYPE html>
 <html>
