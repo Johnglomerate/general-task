@@ -393,4 +393,373 @@ func TestGetOrCreateStripeCustomer(t *testing.T) {
 func TestSubscriptionConstants(t *testing.T) {
 	assert.Equal(t, "active", SubscriptionStatusActive)
 	assert.Equal(t, "trialing", SubscriptionStatusTrialing)
+	assert.Equal(t, 2*time.Hour, SubscriptionRefreshCooldown)
+}
+
+func TestMaybeRefreshSubscriptionFromStripe(t *testing.T) {
+	t.Run("NoStripeCustomerID", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		user := &database.User{
+			ID:               primitive.NewObjectID(),
+			StripeCustomerID: "",
+		}
+
+		refreshed, err := maybeRefreshSubscriptionFromStripe(api, user)
+		assert.NoError(t, err)
+		assert.False(t, refreshed)
+	})
+
+	t.Run("CooldownNotElapsed", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// Set last refreshed to 1 hour ago (within the 2-hour cooldown)
+		lastRefreshed := now.Add(-1 * time.Hour)
+		user := &database.User{
+			ID:                          primitive.NewObjectID(),
+			StripeCustomerID:            "cus_test_cooldown",
+			SubscriptionLastRefreshedAt: primitive.NewDateTimeFromTime(lastRefreshed),
+		}
+
+		refreshed, err := maybeRefreshSubscriptionFromStripe(api, user)
+		assert.NoError(t, err)
+		assert.False(t, refreshed)
+	})
+
+	t.Run("CooldownElapsed_StripeError_StillUpdatesTimestamp", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("refresh_stripe_error@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// Set up user with a fake Stripe customer ID (will cause Stripe API error)
+		// and last refreshed 3 hours ago (beyond cooldown)
+		lastRefreshed := now.Add(-3 * time.Hour)
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id":             "cus_nonexistent_test_12345",
+				"subscription_status":            "active",
+				"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(lastRefreshed),
+			}},
+		)
+		assert.NoError(t, err)
+
+		var userObject database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&userObject)
+		assert.NoError(t, err)
+
+		// Call refresh — should attempt because cooldown has elapsed
+		// With a fake customer ID, Stripe will either error or return no subscriptions
+		_, _ = maybeRefreshSubscriptionFromStripe(api, &userObject)
+
+		// Verify the timestamp was updated regardless of Stripe result
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.True(t, updatedUser.SubscriptionLastRefreshedAt.Time().After(lastRefreshed),
+			"subscription_last_refreshed_at should be updated after refresh attempt")
+	})
+
+	t.Run("UnsetLastRefreshedAt_TriggersRefresh", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("refresh_unset_timestamp@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		// Set up user with a Stripe customer ID but no last_refreshed_at
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id": "cus_nonexistent_unset_test",
+			}},
+		)
+		assert.NoError(t, err)
+
+		var userObject database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&userObject)
+		assert.NoError(t, err)
+		assert.True(t, userObject.SubscriptionLastRefreshedAt.Time().IsZero(),
+			"precondition: last_refreshed_at should be unset/zero")
+
+		// Call refresh — should proceed because lastRefreshed is zero
+		_, _ = maybeRefreshSubscriptionFromStripe(api, &userObject)
+
+		// Verify the timestamp was set
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.False(t, updatedUser.SubscriptionLastRefreshedAt.Time().IsZero(),
+			"subscription_last_refreshed_at should be set after refresh")
+	})
+
+	t.Run("CooldownExactlyAtBoundary", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// Set last refreshed to exactly 2 hours ago (at the boundary)
+		lastRefreshed := now.Add(-SubscriptionRefreshCooldown)
+		user := &database.User{
+			ID:                          primitive.NewObjectID(),
+			StripeCustomerID:            "cus_test_boundary",
+			SubscriptionLastRefreshedAt: primitive.NewDateTimeFromTime(lastRefreshed),
+		}
+
+		// At exactly the boundary, now.Sub(lastRefreshed) == SubscriptionRefreshCooldown,
+		// which is NOT < SubscriptionRefreshCooldown, so refresh should be attempted.
+		// We can't fully test this without Stripe, but we verify the cooldown check passes
+		// by confirming it doesn't short-circuit (it will proceed to call Stripe and may error).
+		// The function doesn't short-circuit, so it returns either (true, nil) or (false, err).
+		refreshed, err := maybeRefreshSubscriptionFromStripe(api, user)
+		// With a fake customer ID and no DB record, the function will fail at the Stripe call
+		// or the DB update. The key assertion is that it didn't return (false, nil) from the
+		// cooldown check.
+		if err == nil {
+			assert.True(t, refreshed, "at exactly 2h boundary, refresh should be attempted")
+		}
+		// If err != nil, that's fine — it means it tried to call Stripe (passed the cooldown)
+	})
+}
+
+func TestSubscriptionStatusEndpoint_WithRefresh(t *testing.T) {
+	t.Run("RefreshTriggeredWhenCooldownElapsed", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("status_refresh_test@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// Set up user with a Stripe customer ID and old refresh time
+		oldRefresh := now.Add(-3 * time.Hour)
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id":             "cus_test_status_refresh",
+				"subscription_status":            "active",
+				"subscription_id":                "sub_test_status",
+				"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(oldRefresh),
+			}},
+		)
+		assert.NoError(t, err)
+
+		router := GetRouter(api)
+		request, _ := http.NewRequest("GET", "/subscriptions/status/", nil)
+		request.Header.Add("Authorization", "Bearer "+authToken)
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		// Should still return 200 even if Stripe call fails
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+		// Verify the timestamp was updated (refresh was attempted)
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.True(t, updatedUser.SubscriptionLastRefreshedAt.Time().After(oldRefresh),
+			"timestamp should be updated after status endpoint triggers refresh")
+	})
+
+	t.Run("NoRefreshWhenCooldownActive", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("status_no_refresh@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// Set last refreshed to 30 minutes ago (within cooldown)
+		recentRefresh := now.Add(-30 * time.Minute)
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id":             "cus_test_no_refresh",
+				"subscription_status":            "active",
+				"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(recentRefresh),
+			}},
+		)
+		assert.NoError(t, err)
+
+		router := GetRouter(api)
+		request, _ := http.NewRequest("GET", "/subscriptions/status/", nil)
+		request.Header.Add("Authorization", "Bearer "+authToken)
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+		// Verify the timestamp was NOT updated (cooldown still active)
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.Equal(t, primitive.NewDateTimeFromTime(recentRefresh), updatedUser.SubscriptionLastRefreshedAt,
+			"timestamp should not change when cooldown is active")
+	})
+}
+
+func TestSubscriptionMiddleware_WithRefresh(t *testing.T) {
+	t.Run("UnsubscribedUserTriggersRefresh", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("middleware_unsub_refresh@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// User with expired subscription and old refresh time
+		oldRefresh := now.Add(-3 * time.Hour)
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id":             "cus_middleware_unsub",
+				"subscription_status":            "canceled",
+				"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(oldRefresh),
+			}},
+		)
+		assert.NoError(t, err)
+
+		router := GetRouter(api)
+		request, _ := http.NewRequest("GET", "/ping_subscribed/", nil)
+		request.Header.Add("Authorization", "Bearer "+authToken)
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		// User will still be rejected (fake Stripe ID returns no real subscription)
+		assert.Equal(t, http.StatusForbidden, recorder.Code)
+
+		// But the refresh timestamp should have been updated
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.True(t, updatedUser.SubscriptionLastRefreshedAt.Time().After(oldRefresh),
+			"middleware should trigger refresh when cooldown elapsed")
+	})
+
+	t.Run("SubscribedUserTriggersRefresh", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("middleware_sub_refresh@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// User with active subscription and old refresh time
+		oldRefresh := now.Add(-3 * time.Hour)
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id":             "cus_middleware_sub",
+				"subscription_status":            "active",
+				"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(oldRefresh),
+			}},
+		)
+		assert.NoError(t, err)
+
+		router := GetRouter(api)
+		request, _ := http.NewRequest("GET", "/ping_subscribed/", nil)
+		request.Header.Add("Authorization", "Bearer "+authToken)
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		// Verify the refresh timestamp was updated even for subscribed user
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.True(t, updatedUser.SubscriptionLastRefreshedAt.Time().After(oldRefresh),
+			"middleware should trigger refresh for subscribed users when cooldown elapsed")
+	})
+
+	t.Run("NoRefreshWhenCooldownActive", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+
+		authToken := login("middleware_no_refresh@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+
+		now := time.Now()
+		api.OverrideTime = &now
+
+		// User with active subscription and recent refresh
+		recentRefresh := now.Add(-30 * time.Minute)
+		_, err := database.GetUserCollection(api.DB).UpdateOne(
+			context.Background(),
+			bson.M{"_id": userID},
+			bson.M{"$set": bson.M{
+				"stripe_customer_id":             "cus_middleware_no_refresh",
+				"subscription_status":            "active",
+				"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(recentRefresh),
+			}},
+		)
+		assert.NoError(t, err)
+
+		router := GetRouter(api)
+		request, _ := http.NewRequest("GET", "/ping_subscribed/", nil)
+		request.Header.Add("Authorization", "Bearer "+authToken)
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+
+		// Should be allowed through (active subscription, no refresh needed)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+
+		// Verify the timestamp was NOT updated
+		var updatedUser database.User
+		err = database.GetUserCollection(api.DB).FindOne(
+			context.Background(),
+			bson.M{"_id": userID},
+		).Decode(&updatedUser)
+		assert.NoError(t, err)
+		assert.Equal(t, primitive.NewDateTimeFromTime(recentRefresh), updatedUser.SubscriptionLastRefreshedAt,
+			"timestamp should not change when cooldown is active in middleware")
+	})
 }
