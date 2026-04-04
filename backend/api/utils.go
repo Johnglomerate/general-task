@@ -68,7 +68,7 @@ func (api *API) Ping(c *gin.Context) {
 	c.JSON(200, "success")
 }
 
-func SubscriptionMiddleware(db *mongo.Database) func(c *gin.Context) {
+func SubscriptionMiddleware(db *mongo.Database, api *API) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		handlerName := c.HandlerName()
 		if handlerName[len(handlerName)-9:] == "Handle404" {
@@ -79,9 +79,28 @@ func SubscriptionMiddleware(db *mongo.Database) func(c *gin.Context) {
 		userCollection := database.GetUserCollection(db)
 		var userObject database.User
 		err := userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
-		if err != nil || !isUserSubscribed(&userObject) {
+		if err != nil {
 			c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
 			return
+		}
+
+		if !isUserSubscribed(&userObject) {
+			// Try refreshing from Stripe before rejecting
+			refreshed, refreshErr := maybeRefreshSubscriptionFromStripe(api, &userObject)
+			if refreshErr != nil {
+				api.Logger.Error().Err(refreshErr).Msg("failed to refresh subscription in middleware")
+			}
+			if refreshed {
+				err = userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
+				if err != nil {
+					c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
+					return
+				}
+			}
+			if !isUserSubscribed(&userObject) {
+				c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
+				return
+			}
 		}
 	}
 }
