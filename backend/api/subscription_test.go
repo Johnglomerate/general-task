@@ -501,20 +501,23 @@ func TestMaybeRefreshSubscriptionFromStripe(t *testing.T) {
 			bson.M{"_id": userID},
 		).Decode(&userObject)
 		assert.NoError(t, err)
-		assert.True(t, userObject.SubscriptionLastRefreshedAt.Time().IsZero(),
+		// primitive.DateTime(0) is the zero value when the field is absent in MongoDB.
+		// Note: primitive.DateTime(0).Time() is Unix epoch (1970), NOT Go's time.Time zero (year 1),
+		// so we check the raw primitive.DateTime value instead of .Time().IsZero().
+		assert.Equal(t, primitive.DateTime(0), userObject.SubscriptionLastRefreshedAt,
 			"precondition: last_refreshed_at should be unset/zero")
 
-		// Call refresh — should proceed because lastRefreshed is zero
+		// Call refresh — should proceed because lastRefreshed is effectively unset
 		_, _ = maybeRefreshSubscriptionFromStripe(api, &userObject)
 
-		// Verify the timestamp was set
+		// Verify the timestamp was set to a real value
 		var updatedUser database.User
 		err = database.GetUserCollection(api.DB).FindOne(
 			context.Background(),
 			bson.M{"_id": userID},
 		).Decode(&updatedUser)
 		assert.NoError(t, err)
-		assert.False(t, updatedUser.SubscriptionLastRefreshedAt.Time().IsZero(),
+		assert.NotEqual(t, primitive.DateTime(0), updatedUser.SubscriptionLastRefreshedAt,
 			"subscription_last_refreshed_at should be set after refresh")
 	})
 
