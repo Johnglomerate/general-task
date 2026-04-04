@@ -488,9 +488,10 @@ func TestMaybeRefreshSubscriptionFromStripe(t *testing.T) {
 		_, err := database.GetUserCollection(api.DB).UpdateOne(
 			context.Background(),
 			bson.M{"_id": userID},
-			bson.M{"$set": bson.M{
-				"stripe_customer_id": "cus_nonexistent_unset_test",
-			}},
+			bson.M{
+				"$set":   bson.M{"stripe_customer_id": "cus_nonexistent_unset_test"},
+				"$unset": bson.M{"subscription_last_refreshed_at": ""},
+			},
 		)
 		assert.NoError(t, err)
 
