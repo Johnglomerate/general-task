@@ -73,7 +73,9 @@ func (api *API) StripeWebhook(c *gin.Context) {
 	}
 
 	webhookSecret := config.GetConfigValue("STRIPE_WEBHOOK_SECRET")
-	event, err := webhook.ConstructEvent(body, c.Request.Header.Get("Stripe-Signature"), webhookSecret)
+	event, err := webhook.ConstructEventWithOptions(body, c.Request.Header.Get("Stripe-Signature"), webhookSecret, webhook.ConstructEventOptions{
+		IgnoreAPIVersionMismatch: true,
+	})
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to verify webhook signature")
 		c.JSON(http.StatusBadRequest, gin.H{"detail": "invalid signature"})
