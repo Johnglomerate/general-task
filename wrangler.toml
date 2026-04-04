@@ -3,7 +3,7 @@ name = "frontend"
 compatibility_date = "2026-04-03"
 
 [build]
-command = 'cd frontend && printf "npmScopes:\n  fortawesome:\n    npmRegistryServer: https://npm.fontawesome.com/\n    npmAlwaysAuth: true\n    npmAuthToken: %s\n" "$FONTAWESOME_NPM_AUTH_TOKEN" > .yarnrc.yml && printf "@fortawesome:registry=https://npm.fontawesome.com/\n//npm.fontawesome.com/:_authToken=%s\n" "$FONTAWESOME_NPM_AUTH_TOKEN" > .npmrc && yarn install && yarn build'
+command = "cd frontend && node -e \"var fs=require('fs');fs.writeFileSync('.yarnrc.yml','npmScopes:\\n  fortawesome:\\n    npmRegistryServer: https://npm.fontawesome.com/\\n    npmAlwaysAuth: true\\n    npmAuthToken: '+process.env.FONTAWESOME_NPM_AUTH_TOKEN+'\\n')\" && printf \"@fortawesome:registry=https://npm.fontawesome.com/\\n//npm.fontawesome.com/:_authToken=%s\\n\" \"$FONTAWESOME_NPM_AUTH_TOKEN\" > .npmrc && yarn install && yarn build"
 
 [assets]
 directory = "./frontend/dist"
