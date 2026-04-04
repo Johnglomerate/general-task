@@ -13,15 +13,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/customer"
+	"github.com/stripe/stripe-go/v76/subscription"
 	"github.com/stripe/stripe-go/v76/webhook"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
-	SubscriptionStatusActive   = "active"
-	SubscriptionStatusTrialing = "trialing"
-	TrialPeriodDays            = 67
+	SubscriptionStatusActive    = "active"
+	SubscriptionStatusTrialing  = "trialing"
+	TrialPeriodDays             = 67
+	SubscriptionRefreshCooldown = 2 * time.Hour
 )
 
 func init() {
@@ -44,6 +46,21 @@ func (api *API) SubscriptionStatus(c *gin.Context) {
 		api.Logger.Error().Err(err).Msg("failed to find user for subscription status")
 		Handle500(c)
 		return
+	}
+
+	// Refresh subscription from Stripe if cooldown has elapsed
+	refreshed, err := maybeRefreshSubscriptionFromStripe(api, &userObject)
+	if err != nil {
+		api.Logger.Error().Err(err).Msg("failed to refresh subscription from stripe")
+	}
+	if refreshed {
+		// Re-read the user to get the updated subscription fields
+		err = userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
+		if err != nil {
+			api.Logger.Error().Err(err).Msg("failed to re-read user after subscription refresh")
+			Handle500(c)
+			return
+		}
 	}
 
 	c.JSON(200, gin.H{
@@ -212,4 +229,99 @@ func updateUserSubscriptionFull(api *API, stripeCustomerID string, subscriptionI
 // isUserSubscribed checks if a user has an active or trialing subscription
 func isUserSubscribed(user *database.User) bool {
 	return user.SubscriptionStatus == SubscriptionStatusActive || user.SubscriptionStatus == SubscriptionStatusTrialing
+}
+
+// maybeRefreshSubscriptionFromStripe checks if the subscription cooldown has
+// elapsed and, if so, fetches the latest subscription state from Stripe and
+// persists it. Returns true if a refresh was performed.
+func maybeRefreshSubscriptionFromStripe(api *API, user *database.User) (bool, error) {
+	if user.StripeCustomerID == "" {
+		return false, nil
+	}
+
+	now := api.GetCurrentTime()
+	lastRefreshed := user.SubscriptionLastRefreshedAt.Time()
+	if !lastRefreshed.IsZero() && now.Sub(lastRefreshed) < SubscriptionRefreshCooldown {
+		return false, nil
+	}
+
+	logger := logging.GetSentryLogger()
+
+	// List active/trialing subscriptions for this customer
+	params := &stripe.SubscriptionListParams{}
+	params.Customer = stripe.String(user.StripeCustomerID)
+	params.Filters.AddFilter("limit", "", "1")
+
+	iter := subscription.List(params)
+
+	userCollection := database.GetUserCollection(api.DB)
+	updateFields := bson.M{
+		"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(now),
+	}
+
+	if iter.Next() {
+		stripeSub := iter.Subscription()
+		newStatus := string(stripeSub.Status)
+		newSubID := stripeSub.ID
+		newPriceID := ""
+		if len(stripeSub.Items.Data) > 0 {
+			newPriceID = stripeSub.Items.Data[0].Price.ID
+		}
+		newPeriodEnd := primitive.NewDateTimeFromTime(time.Unix(stripeSub.CurrentPeriodEnd, 0))
+
+		// Log at error level if any field was modified — this means webhooks missed an update
+		if user.SubscriptionID != newSubID {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionID).Str("new", newSubID).Msg("subscription refresh changed subscription_id — webhook may have failed")
+		}
+		if user.SubscriptionStatus != newStatus {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionStatus).Str("new", newStatus).Msg("subscription refresh changed subscription_status — webhook may have failed")
+		}
+		if user.SubscriptionPriceID != newPriceID {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionPriceID).Str("new", newPriceID).Msg("subscription refresh changed subscription_price_id — webhook may have failed")
+		}
+		if user.SubscriptionCurrentPeriodEnd != newPeriodEnd {
+			logger.Error().Str("user_id", user.ID.Hex()).Msg("subscription refresh changed subscription_current_period_end — webhook may have failed")
+		}
+
+		updateFields["subscription_id"] = newSubID
+		updateFields["subscription_status"] = newStatus
+		if newPriceID != "" {
+			updateFields["subscription_price_id"] = newPriceID
+		}
+		updateFields["subscription_current_period_end"] = newPeriodEnd
+
+		logger.Info().Str("user_id", user.ID.Hex()).Str("status", newStatus).Msg("refreshed subscription from stripe")
+	} else {
+		// No active subscription found — mark as canceled if it was previously set
+		if user.SubscriptionStatus != "" && user.SubscriptionStatus != "canceled" {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionStatus).Str("new", "canceled").Msg("subscription refresh changed subscription_status — webhook may have failed")
+			updateFields["subscription_status"] = "canceled"
+		}
+		logger.Info().Str("user_id", user.ID.Hex()).Msg("no active subscription found on stripe refresh")
+	}
+
+	if err := iter.Err(); err != nil {
+		logger.Error().Err(err).Str("user_id", user.ID.Hex()).Msg("stripe subscription list error")
+		// Still update the timestamp so we don't hammer Stripe on repeated failures
+		_, updateErr := userCollection.UpdateOne(
+			context.Background(),
+			bson.M{"_id": user.ID},
+			bson.M{"$set": bson.M{"subscription_last_refreshed_at": primitive.NewDateTimeFromTime(now)}},
+		)
+		if updateErr != nil {
+			logger.Error().Err(updateErr).Msg("failed to update refresh timestamp after stripe error")
+		}
+		return false, err
+	}
+
+	_, err := userCollection.UpdateOne(
+		context.Background(),
+		bson.M{"_id": user.ID},
+		bson.M{"$set": updateFields},
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
