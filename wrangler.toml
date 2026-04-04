@@ -3,7 +3,7 @@ name = "frontend"
 compatibility_date = "2026-04-03"
 
 [build]
-command = 'cd frontend && printf "@fortawesome:registry=https://npm.fontawesome.com/\n//npm.fontawesome.com/:_authToken=%s\n" "$FONTAWESOME_NPM_AUTH_TOKEN" > .npmrc && yarn install --frozen-lockfile && yarn build'
+command = 'cd frontend && printf "@fortawesome:registry=https://npm.fontawesome.com/\n//npm.fontawesome.com/:_authToken=%s\n" "$FONTAWESOME_NPM_AUTH_TOKEN" > .npmrc && yarn install && yarn build'
 
 [assets]
 directory = "./frontend/dist"
