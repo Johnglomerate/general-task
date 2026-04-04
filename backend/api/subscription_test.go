@@ -481,16 +481,16 @@ func TestMaybeRefreshSubscriptionFromStripe(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
 
-		authToken := login("refresh_unset_timestamp@generaltask.com", "")
-		userID := getUserIDFromAuthToken(t, api.DB, authToken)
-
-		// Set up user with a Stripe customer ID but no last_refreshed_at
-		_, err := database.GetUserCollection(api.DB).UpdateOne(
+		// Directly insert a user with a Stripe customer ID but no last_refreshed_at
+		// (avoids login() which may set the field via the request flow)
+		userID := primitive.NewObjectID()
+		_, err := database.GetUserCollection(api.DB).InsertOne(
 			context.Background(),
-			bson.M{"_id": userID},
 			bson.M{
-				"$set":   bson.M{"stripe_customer_id": "cus_nonexistent_unset_test"},
-				"$unset": bson.M{"subscription_last_refreshed_at": ""},
+				"_id":                userID,
+				"google_id":          "goog_unset_refresh_test",
+				"email":              "refresh_unset_timestamp@generaltask.com",
+				"stripe_customer_id": "cus_nonexistent_unset_test",
 			},
 		)
 		assert.NoError(t, err)
