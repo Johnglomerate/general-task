@@ -84,23 +84,22 @@ func SubscriptionMiddleware(db *mongo.Database, api *API) func(c *gin.Context) {
 			return
 		}
 
-		if !isUserSubscribed(&userObject) {
-			// Try refreshing from Stripe before rejecting
-			refreshed, refreshErr := maybeRefreshSubscriptionFromStripe(api, &userObject)
-			if refreshErr != nil {
-				api.Logger.Error().Err(refreshErr).Msg("failed to refresh subscription in middleware")
-			}
-			if refreshed {
-				err = userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
-				if err != nil {
-					c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
-					return
-				}
-			}
-			if !isUserSubscribed(&userObject) {
+		// Always attempt to refresh subscription from Stripe if cooldown has elapsed
+		// This catches both directions: unsubscribed->subscribed and subscribed->canceled
+		refreshed, refreshErr := maybeRefreshSubscriptionFromStripe(api, &userObject)
+		if refreshErr != nil {
+			api.Logger.Error().Err(refreshErr).Msg("failed to refresh subscription in middleware")
+		}
+		if refreshed {
+			err = userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
+			if err != nil {
 				c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
 				return
 			}
+		}
+		if !isUserSubscribed(&userObject) {
+			c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
+			return
 		}
 	}
 }

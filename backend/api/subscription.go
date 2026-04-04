@@ -237,7 +237,7 @@ func maybeRefreshSubscriptionFromStripe(api *API, user *database.User) (bool, er
 		return false, nil
 	}
 
-	now := api.getNow()
+	now := api.GetCurrentTime()
 	lastRefreshed := user.SubscriptionLastRefreshedAt.Time()
 	if !lastRefreshed.IsZero() && now.Sub(lastRefreshed) < SubscriptionRefreshCooldown {
 		return false, nil
@@ -259,18 +259,40 @@ func maybeRefreshSubscriptionFromStripe(api *API, user *database.User) (bool, er
 
 	if iter.Next() {
 		stripeSub := iter.Subscription()
-		updateFields["subscription_id"] = stripeSub.ID
-		updateFields["subscription_status"] = string(stripeSub.Status)
+		newStatus := string(stripeSub.Status)
+		newSubID := stripeSub.ID
+		newPriceID := ""
 		if len(stripeSub.Items.Data) > 0 {
-			updateFields["subscription_price_id"] = stripeSub.Items.Data[0].Price.ID
+			newPriceID = stripeSub.Items.Data[0].Price.ID
 		}
-		updateFields["subscription_current_period_end"] = primitive.NewDateTimeFromTime(
-			time.Unix(stripeSub.CurrentPeriodEnd, 0),
-		)
-		logger.Info().Str("user_id", user.ID.Hex()).Str("status", string(stripeSub.Status)).Msg("refreshed subscription from stripe")
+		newPeriodEnd := primitive.NewDateTimeFromTime(time.Unix(stripeSub.CurrentPeriodEnd, 0))
+
+		// Log at error level if any field was modified — this means webhooks missed an update
+		if user.SubscriptionID != newSubID {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionID).Str("new", newSubID).Msg("subscription refresh changed subscription_id — webhook may have failed")
+		}
+		if user.SubscriptionStatus != newStatus {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionStatus).Str("new", newStatus).Msg("subscription refresh changed subscription_status — webhook may have failed")
+		}
+		if user.SubscriptionPriceID != newPriceID {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionPriceID).Str("new", newPriceID).Msg("subscription refresh changed subscription_price_id — webhook may have failed")
+		}
+		if user.SubscriptionCurrentPeriodEnd != newPeriodEnd {
+			logger.Error().Str("user_id", user.ID.Hex()).Msg("subscription refresh changed subscription_current_period_end — webhook may have failed")
+		}
+
+		updateFields["subscription_id"] = newSubID
+		updateFields["subscription_status"] = newStatus
+		if newPriceID != "" {
+			updateFields["subscription_price_id"] = newPriceID
+		}
+		updateFields["subscription_current_period_end"] = newPeriodEnd
+
+		logger.Info().Str("user_id", user.ID.Hex()).Str("status", newStatus).Msg("refreshed subscription from stripe")
 	} else {
 		// No active subscription found — mark as canceled if it was previously set
-		if user.SubscriptionStatus != "" {
+		if user.SubscriptionStatus != "" && user.SubscriptionStatus != "canceled" {
+			logger.Error().Str("user_id", user.ID.Hex()).Str("old", user.SubscriptionStatus).Str("new", "canceled").Msg("subscription refresh changed subscription_status — webhook may have failed")
 			updateFields["subscription_status"] = "canceled"
 		}
 		logger.Info().Str("user_id", user.ID.Hex()).Msg("no active subscription found on stripe refresh")
@@ -300,12 +322,4 @@ func maybeRefreshSubscriptionFromStripe(api *API, user *database.User) (bool, er
 	}
 
 	return true, nil
-}
-
-// getNow returns the current time, or the override time for testing.
-func (api *API) getNow() time.Time {
-	if api.OverrideTime != nil {
-		return *api.OverrideTime
-	}
-	return time.Now()
 }
