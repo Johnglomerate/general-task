@@ -2,7 +2,7 @@ import { useLayoutEffect } from 'react'
 import styled from 'styled-components'
 import { useGTLocalStorage, useWindowSize } from '../../hooks'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
-import { MEDIA_MAX_WIDTH, TOOLTIP_MAX_WIDTH, WINDOW_MIN_WIDTH } from '../../styles/dimensions'
+import { TOOLTIP_MAX_WIDTH, WINDOW_MIN_WIDTH } from '../../styles/dimensions'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import CalendarView, { TCalendarType } from '../views/CalendarView'
 import NavigationView from '../views/NavigationView'
@@ -45,16 +45,13 @@ const TasksandDetails = styled.div`
     position: relative;
     overflow: hidden;
     background-color: inherit;
-    @media only screen and (max-device-width: ${MEDIA_MAX_WIDTH}) {
-        overflow: auto;
-    }
 `
 interface DefaultTemplateProps {
     children: React.ReactNode
 }
 
 const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
-    const { width } = useWindowSize(false)
+    const { width } = useWindowSize()
     const {
         calendarType,
         showTaskToCalSidebar,

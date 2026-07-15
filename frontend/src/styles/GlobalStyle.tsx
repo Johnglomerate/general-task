@@ -11,6 +11,10 @@ const GlobalStyle = createGlobalStyle`
         height: 100%;
         margin: 0;
         padding: 0;
+        /* Stop iOS Safari from inflating text in portrait; without this it silently overrides font sizes. */
+        -webkit-text-size-adjust: 100%;
+        /* Suppress the grey flash iOS paints over every tapped element. */
+        -webkit-tap-highlight-color: transparent;
         font-family: -apple-system, BlinkMacSystemFont, sans-serif, 'Segoe UI', Helvetica, Roboto, Oxygen, Ubuntu, Cantarell,
             Arial, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
     }

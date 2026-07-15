@@ -33,7 +33,27 @@ export const modalSize = {
 
 export type TModalSize = keyof typeof modalSize
 
-export const MEDIA_MAX_WIDTH = '650px'
+// Viewport widths (in px) at which the layout changes shape. `phone` is the widest common phone
+// in landscape; at or above `tablet` there is room for the full multi-column desktop shell.
+export const BREAKPOINTS = {
+    phone: 768,
+    tablet: 1024,
+} as const
+
+// Subtracting 0.02 keeps `max-width` and `min-width` queries from both matching on displays that
+// report fractional widths (zoom, scaled DPI).
+const below = (px: number) => `@media (max-width: ${px - 0.02}px)`
+const atLeast = (px: number) => `@media (min-width: ${px}px)`
+
+// Use from a styled-components template literal, e.g.
+//   ${mediaQuery.phone} { flex-direction: column; }
+export const mediaQuery = {
+    phone: below(BREAKPOINTS.phone),
+    tabletOrSmaller: below(BREAKPOINTS.tablet),
+    tabletOrLarger: atLeast(BREAKPOINTS.phone),
+    desktop: atLeast(BREAKPOINTS.tablet),
+}
+
 export const WINDOW_MIN_WIDTH = '800px'
 export const NAVIGATION_BAR_WIDTH = '250px'
 export const TASK_ACTION_WIDTH = '200px'
