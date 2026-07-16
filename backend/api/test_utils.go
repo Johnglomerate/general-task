@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -71,6 +72,22 @@ func login(email string, name string) string {
 		}
 	}
 	return ""
+}
+
+// setUserCreatedAt pins a user's signup time. Users are created with $setOnInsert, so a test DB that
+// survives a previous run would otherwise carry a stale signup time and make trial-derived fields
+// (is_in_trial, trial_days_remaining) depend on when the suite last ran.
+func setUserCreatedAt(t *testing.T, authToken string, createdAt time.Time) {
+	db, dbCleanup, err := database.GetDBConnection()
+	assert.NoError(t, err)
+	defer dbCleanup()
+	userID := getUserIDFromAuthToken(t, db, authToken)
+	_, err = database.GetUserCollection(db).UpdateOne(
+		context.Background(),
+		bson.M{"_id": userID},
+		bson.M{"$set": bson.M{"created_at": primitive.NewDateTimeFromTime(createdAt.UTC())}},
+	)
+	assert.NoError(t, err)
 }
 
 func getUserIDFromAuthToken(t *testing.T, db *mongo.Database, authToken string) primitive.ObjectID {

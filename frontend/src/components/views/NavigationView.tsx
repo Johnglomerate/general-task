@@ -14,6 +14,7 @@ import { BodySmallUpper } from '../atoms/typography/Typography'
 import CommandPalette from '../molecules/CommandPalette'
 import FeedbackModal from '../molecules/FeedbackModal'
 import SettingsModalButton from '../molecules/SettingsModalButton'
+import TrialIndicator from '../molecules/TrialIndicator'
 import NavigationSectionLinks from '../navigation_sidebar/NavigationSectionLinks'
 import NoteCreateButton from '../notes/NoteCreateButton'
 import StreakPopover from '../streaks/StreakPopover'
@@ -116,6 +117,7 @@ const NavigationView = ({ isCollapsed, setIsCollapsed }: NavigationViewProps) =>
                         <NavigationSectionLinks />
                     </OverflowContainer>
                     <GapView>
+                        <TrialIndicator />
                         <FeedbackModal />
                         <SettingsModalButton type="nav-button" />
                     </GapView>

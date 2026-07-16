@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/GeneralTask/task-manager/backend/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -22,6 +23,7 @@ func TestUserInfo(t *testing.T) {
 	t.Run("SuccessGet", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
+		setUserCreatedAt(t, authToken, time.Now().UTC())
 
 		user := database.UserChangeable{
 			Email:             accountID,
@@ -44,13 +46,14 @@ func TestUserInfo(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, `{"agreed_to_terms":false,"opted_into_marketing":false,"name":"name","is_employee":true,"email":"userinfo@generaltask.com","is_company_email":true,"linear_name":"linearName","linear_display_name":"linearDisplayName","is_subscribed":false}`, string(body))
+		assert.Equal(t, `{"agreed_to_terms":false,"opted_into_marketing":false,"name":"name","is_employee":true,"email":"userinfo@generaltask.com","is_company_email":true,"linear_name":"linearName","linear_display_name":"linearDisplayName","is_subscribed":false,"is_in_trial":true,"trial_days_remaining":67,"has_product_access":true}`, string(body))
 	})
 	authToken = login("userinfo2@generaltask.com", "")
 	t.Run("SuccessNonEmployee", func(t *testing.T) {
 		nonEmployeeAuthToken := login("userinfo@gmail.com", "")
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
+		setUserCreatedAt(t, nonEmployeeAuthToken, time.Now().UTC())
 		router := GetRouter(api)
 		request, _ := http.NewRequest("GET", "/user_info/", nil)
 		request.Header.Add("Authorization", "Bearer "+nonEmployeeAuthToken)
@@ -59,7 +62,7 @@ func TestUserInfo(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, "{\"agreed_to_terms\":false,\"opted_into_marketing\":false,\"name\":\"\",\"is_employee\":false,\"email\":\"userinfo@gmail.com\",\"is_company_email\":false,\"is_subscribed\":false}", string(body))
+		assert.Equal(t, "{\"agreed_to_terms\":false,\"opted_into_marketing\":false,\"name\":\"\",\"is_employee\":false,\"email\":\"userinfo@gmail.com\",\"is_company_email\":false,\"is_subscribed\":false,\"is_in_trial\":true,\"trial_days_remaining\":67,\"has_product_access\":true}", string(body))
 	})
 	UnauthorizedTest(t, "PATCH", "/user_info/", nil)
 	t.Run("EmptyPayload", func(t *testing.T) {
@@ -94,6 +97,7 @@ func TestUserInfo(t *testing.T) {
 	t.Run("SuccessUpdate", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
+		setUserCreatedAt(t, authToken, time.Now().UTC())
 		router := GetRouter(api)
 		request, _ := http.NewRequest(
 			"PATCH",
@@ -115,12 +119,13 @@ func TestUserInfo(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err = io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, "{\"agreed_to_terms\":true,\"opted_into_marketing\":true,\"name\":\"\",\"is_employee\":true,\"email\":\"userinfo2@generaltask.com\",\"is_company_email\":true,\"is_subscribed\":false}", string(body))
+		assert.Equal(t, "{\"agreed_to_terms\":true,\"opted_into_marketing\":true,\"name\":\"\",\"is_employee\":true,\"email\":\"userinfo2@generaltask.com\",\"is_company_email\":true,\"is_subscribed\":false,\"is_in_trial\":true,\"trial_days_remaining\":67,\"has_product_access\":true}", string(body))
 	})
 	t.Run("SuccessPartialUpdate", func(t *testing.T) {
 		// assuming the fields are still true as above
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
+		setUserCreatedAt(t, authToken, time.Now().UTC())
 		router := GetRouter(api)
 		request, _ := http.NewRequest(
 			"PATCH",
@@ -142,6 +147,6 @@ func TestUserInfo(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err = io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, "{\"agreed_to_terms\":true,\"opted_into_marketing\":false,\"name\":\"\",\"is_employee\":true,\"email\":\"userinfo2@generaltask.com\",\"is_company_email\":true,\"is_subscribed\":false}", string(body))
+		assert.Equal(t, "{\"agreed_to_terms\":true,\"opted_into_marketing\":false,\"name\":\"\",\"is_employee\":true,\"email\":\"userinfo2@generaltask.com\",\"is_company_email\":true,\"is_subscribed\":false,\"is_in_trial\":true,\"trial_days_remaining\":67,\"has_product_access\":true}", string(body))
 	})
 }

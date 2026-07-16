@@ -23,7 +23,8 @@ const SubscriptionGate = () => {
     if (isLoading) {
         return <Spinner />
     }
-    if (!userInfo?.is_subscribed) {
+    // Users in their free trial get full access; the paywall only kicks in once the trial expires
+    if (!userInfo?.has_product_access) {
         window.location.href = LOGIN_URL
         return null
     }

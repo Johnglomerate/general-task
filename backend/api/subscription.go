@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"time"
 
@@ -46,12 +47,24 @@ func (api *API) SubscriptionStatus(c *gin.Context) {
 		return
 	}
 
+	// Users with no signup time have no meaningful trial window, so report a null end date rather
+	// than an epoch-derived one
+	var trialEnd *primitive.DateTime
+	if userObject.CreatedAt != 0 {
+		endsAt := primitive.NewDateTimeFromTime(trialEndsAt(&userObject))
+		trialEnd = &endsAt
+	}
+
 	c.JSON(200, gin.H{
 		"subscription_status":             userObject.SubscriptionStatus,
 		"subscription_id":                 userObject.SubscriptionID,
 		"subscription_price_id":           userObject.SubscriptionPriceID,
 		"subscription_current_period_end": userObject.SubscriptionCurrentPeriodEnd,
 		"is_subscribed":                   isUserSubscribed(&userObject),
+		"is_in_trial":                     isUserInFreeTrial(&userObject),
+		"trial_days_remaining":            trialDaysRemaining(&userObject),
+		"trial_ends_at":                   trialEnd,
+		"has_product_access":              hasProductAccess(&userObject),
 	})
 }
 
@@ -212,4 +225,34 @@ func updateUserSubscriptionFull(api *API, stripeCustomerID string, subscriptionI
 // isUserSubscribed checks if a user has an active or trialing subscription
 func isUserSubscribed(user *database.User) bool {
 	return user.SubscriptionStatus == SubscriptionStatusActive || user.SubscriptionStatus == SubscriptionStatusTrialing
+}
+
+// trialEndsAt returns the moment the user's free trial expires. The trial starts at signup, so it is
+// derived from CreatedAt, which is only ever written on user insert.
+func trialEndsAt(user *database.User) time.Time {
+	return user.CreatedAt.Time().UTC().AddDate(0, 0, TrialPeriodDays)
+}
+
+// isUserInFreeTrial checks whether the user is still within the free trial granted at signup.
+// Users with no CreatedAt predate the field and are treated as having no trial left.
+func isUserInFreeTrial(user *database.User) bool {
+	if user.CreatedAt == 0 {
+		return false
+	}
+	return time.Now().UTC().Before(trialEndsAt(user))
+}
+
+// trialDaysRemaining returns whole days left in the free trial, rounded up so that a trial with any
+// time left always reads as at least 1 day. Returns 0 once the trial has ended.
+func trialDaysRemaining(user *database.User) int {
+	if !isUserInFreeTrial(user) {
+		return 0
+	}
+	return int(math.Ceil(time.Until(trialEndsAt(user)).Hours() / 24))
+}
+
+// hasProductAccess checks whether the user may use the paid product, either by paying or by still
+// being inside the free trial that starts at signup.
+func hasProductAccess(user *database.User) bool {
+	return isUserSubscribed(user) || isUserInFreeTrial(user)
 }
