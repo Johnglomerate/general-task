@@ -107,7 +107,6 @@
     "@babel/preset-env": "^7.16.11",
     "@babel/preset-react": "^7.16.7",
     "@babel/preset-typescript": "^7.16.7",
-    "@cloudflare/wrangler": "^1.19.11",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.5",
     "@sentry/webpack-plugin": "^1.18.9",
     "@testing-library/cypress": "^8.0.2",
