@@ -19,7 +19,7 @@ yarn install
 
 The `@fortawesome/*` packages come from FontAwesome's private registry. If `yarn install` fails with a `401 Unauthorized` from `npm.fontawesome.com`, you need to supply the auth token.
 
-This project pins Yarn Classic (v1, per `yarn.lock`), which reads npm auth from `.npmrc` — not the `.yarnrc.yml` in this directory (that is a Yarn Berry config used by the Cloudflare build). For a local install, point the registry and token at `.npmrc` once, then install:
+This project pins Yarn Classic (v1, per `yarn.lock`), which reads npm auth from `.npmrc` rather than the Yarn Berry `.yarnrc.yml` in this directory. For a local install, point the registry and token at `.npmrc` once, then install:
 
 ```
 npm config set "@fortawesome:registry" https://npm.fontawesome.com/
