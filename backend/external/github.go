@@ -109,7 +109,7 @@ func (githubService GithubService) HandleLinkCallback(db *mongo.Database, params
 
 	githubAccountID, githubLogin, err := getGithubUserInfoFromToken(extCtx, token, CurrentlyAuthedUserFilter, githubService.Config.ConfigValues.GetUserURL)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to fetch Github user")
+		logger.Error().Err(err).Msg("failed to fetch Github user")
 		return errors.New("internal server error")
 	}
 

@@ -91,7 +91,8 @@ func processAndStoreEvent(event *calendar.Event, db *mongo.Database, userID prim
 		},
 	)
 	if err != nil {
-		log.Error().Msgf("could not store event in db %+v", dbEvent)
+		logger := logging.GetSentryLogger()
+		logger.Error().Msgf("could not store event in db %+v", dbEvent)
 		return &database.CalendarEvent{}
 	}
 	return dbEvent
@@ -128,6 +129,7 @@ func (googleCalendar GoogleCalendarSource) fetchEvents(calendarService *calendar
 }
 
 func (googleCalendar GoogleCalendarSource) GetEvents(db *mongo.Database, userID primitive.ObjectID, accountID string, startTime time.Time, endTime time.Time, scopes []string, result chan<- CalendarResult) {
+	logger := logging.GetSentryLogger()
 	calendarService, err := createGcalService(googleCalendar.Google.OverrideURLs.CalendarFetchURL, userID, accountID, context.Background(), db)
 	if err != nil {
 		result <- emptyCalendarResult(err)
@@ -135,7 +137,7 @@ func (googleCalendar GoogleCalendarSource) GetEvents(db *mongo.Database, userID 
 	}
 	err = updateUserTimezone(calendarService, db, userID, accountID)
 	if err != nil {
-		log.Error().Err(err).Send()
+		logger.Error().Err(err).Send()
 	}
 	calendarAccount := database.CalendarAccount{
 		UserID:     userID,
@@ -152,13 +154,13 @@ func (googleCalendar GoogleCalendarSource) GetEvents(db *mongo.Database, userID 
 		if err == nil && calendarList != nil {
 			fetchAllCalendars = true
 		} else {
-			log.Error().Err(err).Send()
+			logger.Error().Err(err).Send()
 		}
 	}
 
 	colors, err := calendarService.Colors.Get().Do()
 	if err != nil {
-		log.Error().Err(err).Msg("could not get color mapping")
+		logger.Error().Err(err).Msg("could not get color mapping")
 	}
 
 	// If we can't fetch the calendar list, we try fetching just the primary calendar
@@ -215,7 +217,7 @@ func (googleCalendar GoogleCalendarSource) GetEvents(db *mongo.Database, userID 
 	calendarAccount.Calendars = calendars
 	_, err = database.UpdateOrCreateCalendarAccount(db, userID, accountID, TASK_SOURCE_ID_GCAL, calendarAccount, nil)
 	if err != nil {
-		log.Error().Err(err).Msgf("could not create CalendarAccount: %+v", calendarAccount)
+		logger.Error().Err(err).Msgf("could not create CalendarAccount: %+v", calendarAccount)
 	}
 	result <- CalendarResult{CalendarEvents: events, Error: nil}
 }

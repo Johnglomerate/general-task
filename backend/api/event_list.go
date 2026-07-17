@@ -105,7 +105,7 @@ func (api *API) EventsList(c *gin.Context) {
 	for _, calendarEventChannel := range calendarEventChannels {
 		calendarResult := <-calendarEventChannel
 		if calendarResult.Error != nil {
-			log.Error().Err(calendarResult.Error).Send()
+			api.Logger.Error().Err(calendarResult.Error).Send()
 			continue
 		}
 		calendarEventsForChannel := []EventResult{}
@@ -144,7 +144,7 @@ func (api *API) calendarEventToResult(event *database.CalendarEvent, userID prim
 	}
 	taskSourceResult, err := api.ExternalConfig.GetSourceResult(event.SourceID)
 	if err != nil {
-		log.Error().Err(err).Msgf("could not find task source: %s for event: %+v", event.SourceID, event)
+		api.Logger.Error().Err(err).Msgf("could not find task source: %s for event: %+v", event.SourceID, event)
 	}
 
 	logo := taskSourceResult.Details.LogoV2
