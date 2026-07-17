@@ -14,20 +14,6 @@ Edit the mock API contents in mock-api.json
 
 # Deploy to Cloudflare:
 
-1. Install <a href="https://developers.cloudflare.com/workers/cli-wrangler/install-update">wrangler</a>(Cloudflare CLI):
+Deploys are handled by Cloudflare Workers, which builds directly from the repository root using the top-level `wrangler.toml` (a Workers Assets SPA build). Pushing to the deploy branch triggers Cloudflare to run the build command and publish the contents of `frontend/dist` — there is no manual `wrangler publish` step.
 
--   Recommended to use <a href="https://github.com/nvm-sh/nvm#installing-and-updating">nvm</a> to install Node.js if encountering issues with npm
-
-2. `cd frontend/`
-
-3. `yarn install`
-
-4. Authenticate with cloudflare (get credentials from John): `wrangler login`
-
-5. Ensure that routing is properly configured by adding `mapRequestToAsset: serveSinglePageApp` field to the worker-site configuration file. 
-
-5. `yarn run build` - this builds with generaltask.com links built in
-
-6. `npx wrangler publish`
-
-7. Check out your work at https://generaltask.com
+To reproduce the build locally: `cd frontend/ && yarn install && yarn build`, then check the output in `frontend/dist`. Check out the live site at https://generaltask.com
