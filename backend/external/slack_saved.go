@@ -10,7 +10,6 @@ import (
 
 	"github.com/GeneralTask/task-manager/backend/constants"
 	"github.com/GeneralTask/task-manager/backend/logging"
-	"github.com/rs/zerolog/log"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
@@ -162,7 +161,8 @@ func getSlackDeeplink(client *slack.Client, channelID string, ts string, result 
 	}
 	permalink, err := client.GetPermalink(&params)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to fetch Slack message permalink")
+		logger := logging.GetSentryLogger()
+		logger.Error().Err(err).Msg("failed to fetch Slack message permalink")
 		result <- ""
 		return
 	}
@@ -176,7 +176,8 @@ func GetSlackUsername(client *slack.Client, userID string, result chan<- string)
 	}
 	userProfile, err := client.GetUserInfo(userID)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to fetch Slack username")
+		logger := logging.GetSentryLogger()
+		logger.Error().Err(err).Msg("failed to fetch Slack username")
 		result <- ""
 		return
 	}

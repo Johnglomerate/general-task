@@ -122,7 +122,8 @@ func AuthorizationMiddleware(db *mongo.Database) func(c *gin.Context) {
 				c.AbortWithStatusJSON(401, gin.H{"detail": "incorrect auth token format"})
 				return
 			}
-			log.Error().Err(err).Msg("token auth failed")
+			logger := logging.GetSentryLogger()
+			logger.Error().Err(err).Msg("token auth failed")
 			c.AbortWithStatusJSON(401, gin.H{"detail": "unauthorized"})
 		}
 	}
@@ -214,7 +215,8 @@ func LogRequestMiddleware(db *mongo.Database) func(c *gin.Context) {
 			objectID, err := primitive.ObjectIDFromHex(id)
 			if err != nil {
 				// This means the task ID is improperly formatted
-				log.Error().Err(err).Msgf("could not parse object_id=%s", objectID)
+				logger := logging.GetSentryLogger()
+				logger.Error().Err(err).Msgf("could not parse object_id=%s", objectID)
 				return
 			}
 		}
