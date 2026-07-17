@@ -21,6 +21,7 @@ import { useCalendarContext } from '../calendar/CalendarContext'
 import CommandPalette from '../molecules/CommandPalette'
 import FeedbackModal from '../molecules/FeedbackModal'
 import SettingsModalButton from '../molecules/SettingsModalButton'
+import TrialIndicator from '../molecules/TrialIndicator'
 import IntegrationLinks from '../navigation_sidebar/IntegrationLinks'
 import NavigationLink, { CollapsedIconContainer } from '../navigation_sidebar/NavigationLink'
 import NoteCreateButton from '../notes/NoteCreateButton'
@@ -207,6 +208,7 @@ const NavigationViewCollapsed = ({ setIsCollapsed }: NavigationViewCollapsedProp
                 </FoldersContainer>
             </MiddleContainer>
             <LowerContainer>
+                <TrialIndicator isCollapsed />
                 <FeedbackModal isCollapsed />
                 <SettingsModalButton type="collapsed-nav-button" />
                 {userInfo?.is_employee && (

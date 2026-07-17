@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/GeneralTask/task-manager/backend/database"
 	"github.com/stretchr/testify/assert"
@@ -107,7 +108,18 @@ func TestAuthenticationMiddleware(t *testing.T) {
 func TestSubscriptionMiddleware(t *testing.T) {
 	authToken := login("test_subscription_middleware@generaltask.com", "")
 
+	t.Run("AllowedDuringFreeTrial", func(t *testing.T) {
+		// a user who just signed up is inside the free trial, with no subscription
+		setUserCreatedAt(t, authToken, time.Now().UTC())
+
+		recorder := runSubscribedEndpoint("Bearer " + authToken)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+	})
+
 	t.Run("Forbidden", func(t *testing.T) {
+		// expire the free trial by backdating signup beyond the trial window
+		setUserCreatedAt(t, authToken, time.Now().UTC().AddDate(0, 0, -(TrialPeriodDays+1)))
+
 		recorder := runSubscribedEndpoint("Bearer " + authToken)
 		assert.Equal(t, http.StatusForbidden, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)

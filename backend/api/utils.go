@@ -79,7 +79,7 @@ func SubscriptionMiddleware(db *mongo.Database) func(c *gin.Context) {
 		userCollection := database.GetUserCollection(db)
 		var userObject database.User
 		err := userCollection.FindOne(context.Background(), bson.M{"_id": userID}).Decode(&userObject)
-		if err != nil || !isUserSubscribed(&userObject) {
+		if err != nil || !hasProductAccess(&userObject) {
 			c.AbortWithStatusJSON(403, gin.H{"detail": "an active subscription is required to use this endpoint"})
 			return
 		}

@@ -43,6 +43,64 @@ func TestIsUserSubscribed(t *testing.T) {
 	})
 }
 
+func daysAgo(days int) primitive.DateTime {
+	return primitive.NewDateTimeFromTime(time.Now().UTC().AddDate(0, 0, -days))
+}
+
+func TestIsUserInFreeTrial(t *testing.T) {
+	t.Run("JustSignedUp", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(0)}
+		assert.True(t, isUserInFreeTrial(user))
+	})
+	t.Run("MidTrial", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(TrialPeriodDays - 1)}
+		assert.True(t, isUserInFreeTrial(user))
+	})
+	t.Run("TrialExpired", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(TrialPeriodDays + 1)}
+		assert.False(t, isUserInFreeTrial(user))
+	})
+	t.Run("NoCreatedAt", func(t *testing.T) {
+		// users predating the created_at field get no trial rather than an infinite one
+		user := &database.User{}
+		assert.False(t, isUserInFreeTrial(user))
+	})
+}
+
+func TestTrialDaysRemaining(t *testing.T) {
+	t.Run("JustSignedUp", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(0)}
+		assert.Equal(t, TrialPeriodDays, trialDaysRemaining(user))
+	})
+	t.Run("PartialDayRoundsUp", func(t *testing.T) {
+		user := &database.User{CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC().AddDate(0, 0, -TrialPeriodDays).Add(90 * time.Minute))}
+		assert.Equal(t, 1, trialDaysRemaining(user))
+	})
+	t.Run("Expired", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(TrialPeriodDays + 5)}
+		assert.Equal(t, 0, trialDaysRemaining(user))
+	})
+}
+
+func TestHasProductAccess(t *testing.T) {
+	t.Run("InTrialWithoutSubscription", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(1)}
+		assert.True(t, hasProductAccess(user))
+	})
+	t.Run("SubscribedAfterTrial", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(TrialPeriodDays + 1), SubscriptionStatus: "active"}
+		assert.True(t, hasProductAccess(user))
+	})
+	t.Run("TrialOverAndUnsubscribed", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(TrialPeriodDays + 1)}
+		assert.False(t, hasProductAccess(user))
+	})
+	t.Run("TrialOverAndCanceled", func(t *testing.T) {
+		user := &database.User{CreatedAt: daysAgo(TrialPeriodDays + 1), SubscriptionStatus: "canceled"}
+		assert.False(t, hasProductAccess(user))
+	})
+}
+
 func TestSubscriptionStatusEndpoint(t *testing.T) {
 	authToken := login("subscription_status_test@generaltask.com", "")
 	UnauthorizedTest(t, "GET", "/subscriptions/status/", nil)

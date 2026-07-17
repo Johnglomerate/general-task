@@ -21,6 +21,9 @@ type UserInfo struct {
 	LinearDisplayName  string `json:"linear_display_name,omitempty"`
 	SubscriptionStatus string `json:"subscription_status,omitempty"`
 	IsSubscribed       bool   `json:"is_subscribed"`
+	IsInTrial          bool   `json:"is_in_trial"`
+	TrialDaysRemaining int    `json:"trial_days_remaining"`
+	HasProductAccess   bool   `json:"has_product_access"`
 }
 
 type UserInfoParams struct {
@@ -50,6 +53,9 @@ func (api *API) UserInfoGet(c *gin.Context) {
 		LinearDisplayName:  userObject.LinearDisplayName,
 		SubscriptionStatus: userObject.SubscriptionStatus,
 		IsSubscribed:       isUserSubscribed(&userObject),
+		IsInTrial:          isUserInFreeTrial(&userObject),
+		TrialDaysRemaining: trialDaysRemaining(&userObject),
+		HasProductAccess:   hasProductAccess(&userObject),
 	})
 }
 

@@ -161,7 +161,7 @@ func (api *API) LoginCallback(c *gin.Context) {
 		if userIsNew != nil && *userIsNew {
 			c.Redirect(302, config.GetConfigValue("HOME_URL")+"tos-summary")
 		} else {
-			// Check subscription status and redirect to Stripe Checkout if not subscribed
+			// Redirect to Stripe Checkout only once the free trial has run out
 			redirectURL := getPostLoginRedirectURL(api, userID)
 			c.Redirect(302, redirectURL)
 		}
@@ -177,11 +177,12 @@ func getPostLoginRedirectURL(api *API, userID primitive.ObjectID) string {
 		return config.GetConfigValue("HOME_URL")
 	}
 
-	if isUserSubscribed(&userObject) {
+	// Paying users and users still inside their free trial go straight into the app
+	if hasProductAccess(&userObject) {
 		return config.GetConfigValue("HOME_URL")
 	}
 
-	// User is not subscribed — create a Stripe Checkout session and redirect
+	// Trial is over and the user is not subscribed — create a Stripe Checkout session and redirect
 	stripeCustomerID, err := getOrCreateStripeCustomer(api, &userObject)
 	if err != nil {
 		api.Logger.Error().Err(err).Msg("failed to create stripe customer on login")
@@ -203,9 +204,8 @@ func getPostLoginRedirectURL(api *API, userID primitive.ObjectID) string {
 		},
 		SuccessURL: stripe.String(homeURL + "?subscription=success"),
 		CancelURL:  stripe.String(homeURL + "?subscription=canceled"),
-		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
-			TrialPeriodDays: stripe.Int64(TrialPeriodDays),
-		},
+		// No Stripe trial: the trial is granted in-app from signup, and this code is only reached
+		// once it has run out, so a Stripe-side trial would hand out a second free period.
 	}
 
 	session, err := checkoutsession.New(params)

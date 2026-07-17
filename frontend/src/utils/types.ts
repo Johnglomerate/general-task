@@ -302,6 +302,9 @@ export interface TUserInfo {
     linear_display_name?: string
     subscription_status?: string
     is_subscribed?: boolean
+    is_in_trial?: boolean
+    trial_days_remaining?: number
+    has_product_access?: boolean
 }
 
 // React-DND Item Types
