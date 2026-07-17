@@ -11,6 +11,8 @@ const StatusBadeContainer = styled.div<{ status: SharedTaskStatus }>`
     padding: ${Spacing._4} ${Spacing._8};
     width: fit-content;
     height: fit-content;
+    flex-shrink: 0;
+    white-space: nowrap;
     border-radius: ${Border.radius.small};
     ${({ status }) =>
         `

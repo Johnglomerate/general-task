@@ -55,6 +55,8 @@ export const mediaQuery = {
 }
 
 export const WINDOW_MIN_WIDTH = '800px'
+// Reading width of the shared /task/:id and /note/:id pages. A max-width, not a fixed width.
+export const SHARED_ITEM_WIDTH = '750px'
 export const NAVIGATION_BAR_WIDTH = '250px'
 export const TASK_ACTION_WIDTH = '200px'
 export const DEFAULT_VIEW_WIDTH = '480px'

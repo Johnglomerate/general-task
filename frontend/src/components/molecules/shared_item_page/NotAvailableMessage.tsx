@@ -10,8 +10,10 @@ import NoStyleAnchor from '../../atoms/NoStyleAnchor'
 import GTButton from '../../atoms/buttons/GTButton'
 import { BodyLarge, TitleLarge } from '../../atoms/typography/Typography'
 
+// The signed-out state puts two full-sentence buttons here, which do not fit on one phone-width row.
 const FlexMargin8Top = styled(Flex)`
     margin-top: ${Spacing._8};
+    flex-wrap: wrap;
 `
 
 const getTitleAndBody = (type: 'note' | 'task', isLoggedIn: boolean) => {
