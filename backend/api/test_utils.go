@@ -307,8 +307,12 @@ func UnauthorizedTest(t *testing.T, method string, url string, body io.Reader) b
 	})
 }
 
+// NoSubscriptionAccessTest asserts the endpoint is gated. Access is granted by a subscription *or*
+// an unexpired free trial, so the trial is expired first — a freshly created user is otherwise still
+// inside the trial that starts at signup and would be let through.
 func NoSubscriptionAccessTest(t *testing.T, method string, url string, api *API, authToken string) {
 	t.Run("NoSubscriptionAccess", func(t *testing.T) {
+		setUserCreatedAt(t, authToken, time.Now().UTC().AddDate(0, 0, -(TrialPeriodDays+1)))
 		ServeRequest(t, authToken, method, url, nil, http.StatusForbidden, api)
 	})
 }
