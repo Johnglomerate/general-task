@@ -87,13 +87,13 @@ func (api *API) OverviewViewsSuggestion(c *gin.Context) {
 		return
 	}
 
-	ignoreMeetingPreparation, err := GetBooleanQueryParameter(c, constants.IgnoreMeetingPreparation)
-	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-
-	overviewResponse, err := api.GetOverviewResults(views, userID, timezoneOffset, showMovedOrDeleted, ignoreMeetingPreparation)
+	// Meeting preparation tasks take their titles verbatim from Google Calendar
+	// events, so including them would send Google user data to OpenAI. Google's
+	// API Services User Data Policy limits use of that data to user-facing
+	// features and forbids transferring it to third parties, so this view is
+	// always excluded here regardless of what the caller asks for. The view still
+	// appears in the suggestion, just without its items.
+	overviewResponse, err := api.GetOverviewResults(views, userID, timezoneOffset, showMovedOrDeleted, true)
 	if err != nil {
 		api.Logger.Error().Err(err).Msg("failed to load views")
 		Handle500(c)
@@ -119,7 +119,9 @@ func (api *API) OverviewViewsSuggestion(c *gin.Context) {
 		nameSanitized := sanitizeGPTString(gptView.Name)
 		promptConstruction = promptConstruction + `"` + nameSanitized + `" with tasks (`
 		for _, gptTask := range gptView.ViewItems {
-			promptConstruction = promptConstruction + `"` + gptTask.Title + `", `
+			// Task titles are user-controlled, so they get the same sanitization as
+			// view names to keep them from rewriting the prompt.
+			promptConstruction = promptConstruction + `"` + sanitizeGPTString(gptTask.Title) + `", `
 		}
 		promptConstruction = promptConstruction + `), `
 	}
@@ -207,7 +209,14 @@ func (api *API) OverviewViewsSuggestion(c *gin.Context) {
 		if suggestion.ID == primitive.NilObjectID && suggestion.Reasoning != "" {
 			for _, view := range missingList {
 				for _, task := range view.ViewItems {
-					if strings.Contains(suggestion.Reasoning, task.Title) {
+					// The model only ever saw the sanitized title, so match on that.
+					// Skip titles that sanitize to nothing: strings.Contains always
+					// reports true for an empty needle, which would match any view.
+					sanitizedTitle := sanitizeGPTString(task.Title)
+					if sanitizedTitle == "" {
+						continue
+					}
+					if strings.Contains(suggestion.Reasoning, sanitizedTitle) {
 						response[idx].ID = view.ID
 						missingList = removeFromList(missingList, view.ID)
 						continue

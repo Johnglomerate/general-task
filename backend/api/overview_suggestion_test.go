@@ -262,3 +262,76 @@ func TestDecrementGPTRemainingByOne(t *testing.T) {
 		assert.Equal(t, primitive.NewDateTimeFromTime(updateTime), resultUser.GPTLastSuggestionTime)
 	})
 }
+
+// Google's Limited Use requirements forbid transferring Google user data to a
+// third-party AI service, so no calendar-derived content may reach OpenAI.
+func TestOverviewSuggestionExcludesGoogleCalendarData(t *testing.T) {
+	api, dbCleanup := GetAPIWithDBCleanup()
+	defer dbCleanup()
+	testTime := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
+	api.OverrideTime = &testTime
+	router := GetRouter(api)
+
+	capturedPrompt := ""
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		capturedPrompt = string(body)
+		w.Header().Add("Content-Type", "application/json")
+		_, err = w.Write([]byte(`{"id": "1", "choices": [{"text": "1. Meeting Preparation: Reasoning"}]}`))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+	api.ExternalConfig.OpenAIOverrideURL = server.URL
+
+	authtoken := login("suggestion_no_gcal@generaltask.com", "")
+	userID := getUserIDFromAuthToken(t, api.DB, authtoken)
+
+	_, err := database.UpdateOrCreateCalendarAccount(api.DB, userID, "123abc", "foobar_source",
+		&database.CalendarAccount{
+			UserID:     userID,
+			IDExternal: "acctid",
+			Calendars:  []database.Calendar{{AccessRole: constants.AccessControlOwner, CalendarID: "calid"}},
+		}, nil)
+	assert.NoError(t, err)
+
+	// The title of a real calendar event: exactly the Google user data that used
+	// to be interpolated into the prompt via its meeting preparation task.
+	secretTitle := "Secret Board Meeting"
+	_, err = createTestEvent(
+		database.GetCalendarEventCollection(api.DB),
+		userID,
+		secretTitle,
+		primitive.NewObjectID().Hex(),
+		api.GetCurrentTime().Add(1*time.Hour),
+		api.GetCurrentTime().Add(24*time.Hour),
+		primitive.NilObjectID,
+		"acctid",
+		"calid",
+	)
+	assert.NoError(t, err)
+
+	_, err = database.GetViewCollection(api.DB).InsertOne(context.Background(), database.View{
+		UserID: userID,
+		Type:   string(constants.ViewMeetingPreparation),
+	})
+	assert.NoError(t, err)
+
+	_, err = database.GetUserCollection(api.DB).UpdateOne(
+		context.Background(),
+		bson.M{"_id": userID},
+		bson.M{"$set": bson.M{"gpt_suggestions_left": constants.MAX_OVERVIEW_SUGGESTION}},
+	)
+	assert.NoError(t, err)
+
+	request, _ := http.NewRequest("GET", "/overview/views/suggestion/", nil)
+	request.Header.Set("Authorization", "Bearer "+authtoken)
+	request.Header.Set("Timezone-Offset", "0")
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+
+	assert.NotEmpty(t, capturedPrompt, "expected a prompt to be sent to OpenAI")
+	assert.NotContains(t, capturedPrompt, secretTitle)
+	// The view itself is still described to the model, just without its items.
+	assert.Contains(t, capturedPrompt, "Meeting Preparation")
+}

@@ -3,8 +3,11 @@ package external
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -28,7 +31,14 @@ type GoogleURLOverrides struct {
 	CalendarCreateURL *string
 	CalendarModifyURL *string
 	CalendarDeleteURL *string
+	RevokeURL         *string
 }
+
+// GoogleRevokeURL is Google's OAuth2 token revocation endpoint.
+const GoogleRevokeURL = "https://oauth2.googleapis.com/revoke"
+
+// GoogleRevokeTimeout bounds a single revocation call.
+const GoogleRevokeTimeout = 10 * time.Second
 
 type GoogleService struct {
 	LoginConfig  OauthConfigWrapper
@@ -78,6 +88,55 @@ func getGoogleLinkConfig() OauthConfigWrapper {
 
 func getGoogleHttpClient(db *mongo.Database, userID primitive.ObjectID, accountID string) *http.Client {
 	return getExternalOauth2Client(db, userID, accountID, TASK_SERVICE_ID_GOOGLE, getGoogleLoginConfig())
+}
+
+// RevokeGoogleToken revokes an OAuth grant with Google so access ends on Google's
+// side rather than only in our database. tokenJSON is the serialized oauth2.Token
+// as stored in the external_api_tokens collection.
+//
+// A grant that Google already considers invalid reports as success: the caller
+// wants the grant gone, and it is.
+func RevokeGoogleToken(tokenJSON string, overrideURL *string) error {
+	var token oauth2.Token
+	err := json.Unmarshal([]byte(tokenJSON), &token)
+	if err != nil {
+		return err
+	}
+
+	// Revoking a refresh token also revokes access tokens derived from it, so it
+	// is the more complete choice when we have one.
+	tokenValue := token.RefreshToken
+	if tokenValue == "" {
+		tokenValue = token.AccessToken
+	}
+	if tokenValue == "" {
+		return errors.New("no google token to revoke")
+	}
+
+	revokeURL := GoogleRevokeURL
+	if overrideURL != nil {
+		revokeURL = *overrideURL
+	}
+
+	// Bounded explicitly: account deletion and unlink both block on this, and
+	// http.DefaultClient would wait forever if Google stalls rather than fails.
+	client := &http.Client{Timeout: GoogleRevokeTimeout}
+	response, err := client.PostForm(revokeURL, url.Values{"token": {tokenValue}})
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		return nil
+	}
+	body, _ := io.ReadAll(response.Body)
+	// Google answers 400 invalid_token when the grant is already gone (user
+	// revoked it from their Google account page, or we revoked it before).
+	if response.StatusCode == http.StatusBadRequest && strings.Contains(string(body), "invalid_token") {
+		return nil
+	}
+	return fmt.Errorf("google token revocation failed with status %d: %s", response.StatusCode, string(body))
 }
 
 func (Google GoogleService) GetLinkURL(stateTokenID primitive.ObjectID, userID primitive.ObjectID) (*string, error) {
