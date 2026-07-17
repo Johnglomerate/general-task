@@ -115,6 +115,10 @@ func GetRouter(handlers *API) *gin.Engine {
 	router.GET("/user_info/", handlers.UserInfoGet)
 	router.PATCH("/user_info/", handlers.UserInfoUpdate)
 
+	// Must stay above the subscription middleware: a user whose subscription has
+	// lapsed still has the right to delete their account and their Google data.
+	router.DELETE("/user/", handlers.DeleteAccount)
+
 	router.GET("/sections/", handlers.SectionList)
 	router.GET("/sections/v2/", handlers.SectionListV2)
 	router.POST("/sections/create/", handlers.SectionAdd)

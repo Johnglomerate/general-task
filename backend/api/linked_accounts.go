@@ -136,7 +136,15 @@ func (api *API) DeleteLinkedAccount(c *gin.Context) {
 			return
 		}
 	} else if accountToDelete.ServiceID == external.TASK_SERVICE_ID_GOOGLE {
-		_, err := database.GetCalendarAccountCollection(api.DB).DeleteMany(
+		// Revoke first: after the token row is gone we can no longer tell Google
+		// the grant is over. A failure here must not block the unlink, since the
+		// user can also revoke from their Google account page.
+		err := external.RevokeGoogleToken(accountToDelete.Token, api.ExternalConfig.GoogleOverrideURLs.RevokeURL)
+		if err != nil {
+			api.Logger.Error().Err(err).Msg("failed to revoke google token on unlink")
+		}
+
+		_, err = database.GetCalendarAccountCollection(api.DB).DeleteMany(
 			context.Background(),
 			bson.M{"$and": []bson.M{
 				{"id_external": accountToDelete.AccountID},
@@ -145,6 +153,16 @@ func (api *API) DeleteLinkedAccount(c *gin.Context) {
 		)
 		if err != nil {
 			api.Logger.Error().Err(err).Msg("failed to clean up calendar accounts")
+			Handle500(c)
+			return
+		}
+
+		// Calendar events hold Google user data (titles, descriptions, attendee
+		// emails). Unlinking is a withdrawal of access, so the data it produced
+		// goes with it rather than lingering indefinitely.
+		err = api.deleteCalendarDataForAccount(getUserIDFromContext(c), accountToDelete.AccountID)
+		if err != nil {
+			api.Logger.Error().Err(err).Msg("failed to clean up calendar data")
 			Handle500(c)
 			return
 		}
@@ -160,4 +178,46 @@ func (api *API) DeleteLinkedAccount(c *gin.Context) {
 		return
 	}
 	c.JSON(200, gin.H{})
+}
+
+// deleteCalendarDataForAccount removes the calendar events synced from a Google
+// account along with the meeting preparation tasks derived from them.
+//
+// Meeting prep tasks copy the event title, so they carry Google user data too.
+// They record no source account, so they have to be found via the event IDs
+// while those events still exist.
+func (api *API) deleteCalendarDataForAccount(userID primitive.ObjectID, accountID string) error {
+	ctx := context.Background()
+	eventFilter := bson.M{"$and": []bson.M{
+		{"source_account_id": accountID},
+		{"user_id": userID},
+	}}
+
+	var events []database.CalendarEvent
+	cursor, err := database.GetCalendarEventCollection(api.DB).Find(ctx, eventFilter)
+	if err != nil {
+		return err
+	}
+	err = cursor.All(ctx, &events)
+	if err != nil {
+		return err
+	}
+
+	if len(events) > 0 {
+		eventIDs := []primitive.ObjectID{}
+		for _, event := range events {
+			eventIDs = append(eventIDs, event.ID)
+		}
+		_, err = database.GetTaskCollection(api.DB).DeleteMany(ctx, bson.M{"$and": []bson.M{
+			{"user_id": userID},
+			{"is_meeting_preparation_task": true},
+			{"meeting_preparation_params.event_id": bson.M{"$in": eventIDs}},
+		}})
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = database.GetCalendarEventCollection(api.DB).DeleteMany(ctx, eventFilter)
+	return err
 }

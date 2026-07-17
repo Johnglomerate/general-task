@@ -239,6 +239,90 @@ func TestDeleteLinkedAccount(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "otherAccountID", account.IDExternal)
 	})
+	t.Run("SuccessGoogleDeletesCalendarData", func(t *testing.T) {
+		server, revoked := revokeTestServer(http.StatusOK)
+		defer server.Close()
+		api.ExternalConfig.GoogleOverrideURLs.RevokeURL = &server.URL
+		defer func() { api.ExternalConfig.GoogleOverrideURLs.RevokeURL = nil }()
+
+		authToken := login("unlink_calendar_data@generaltask.com", "")
+		userID := getUserIDFromAuthToken(t, api.DB, authToken)
+		accountID := "unlinkme@generaltask.com"
+
+		eventCollection := database.GetCalendarEventCollection(api.DB)
+		taskCollection := database.GetTaskCollection(api.DB)
+
+		res, err := eventCollection.InsertOne(context.Background(), &database.CalendarEvent{
+			UserID:          userID,
+			SourceAccountID: accountID,
+			Title:           "quarterly review",
+			Body:            "private agenda",
+			AttendeeEmails:  []string{"someone@example.com"},
+		})
+		assert.NoError(t, err)
+		eventToDeleteID := res.InsertedID.(primitive.ObjectID)
+
+		// An event from a different Google account that stays linked.
+		res, err = eventCollection.InsertOne(context.Background(), &database.CalendarEvent{
+			UserID:          userID,
+			SourceAccountID: "keepme@generaltask.com",
+			Title:           "keep me",
+		})
+		assert.NoError(t, err)
+		eventToKeepID := res.InsertedID.(primitive.ObjectID)
+
+		// The meeting prep task derived from the event carries the event's title,
+		// so it has to go when the event does.
+		prepTitle := "quarterly review"
+		res, err = taskCollection.InsertOne(context.Background(), &database.Task{
+			UserID:                   userID,
+			Title:                    &prepTitle,
+			IsMeetingPreparationTask: true,
+			MeetingPreparationParams: &database.MeetingPreparationParams{CalendarEventID: eventToDeleteID},
+		})
+		assert.NoError(t, err)
+		prepTaskID := res.InsertedID.(primitive.ObjectID)
+
+		// A normal task that must survive an unlink.
+		normalTitle := "write the report"
+		res, err = taskCollection.InsertOne(context.Background(), &database.Task{UserID: userID, Title: &normalTitle})
+		assert.NoError(t, err)
+		normalTaskID := res.InsertedID.(primitive.ObjectID)
+
+		res, err = database.GetExternalTokenCollection(api.DB).InsertOne(
+			context.Background(),
+			&database.ExternalAPIToken{
+				AccountID:    accountID,
+				ServiceID:    external.TASK_SERVICE_ID_GOOGLE,
+				UserID:       userID,
+				DisplayID:    "Google",
+				IsUnlinkable: true,
+				Token:        `{"access_token":"abc","refresh_token":"refresh_abc"}`,
+			},
+		)
+		assert.NoError(t, err)
+		externalTokenID := res.InsertedID.(primitive.ObjectID)
+
+		ServeRequest(t, authToken, "DELETE", "/linked_accounts/"+externalTokenID.Hex()+"/", nil, http.StatusOK, api)
+
+		assert.Equal(t, []string{"refresh_abc"}, *revoked)
+
+		count, err := eventCollection.CountDocuments(context.Background(), bson.M{"_id": eventToDeleteID})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), count)
+
+		count, err = taskCollection.CountDocuments(context.Background(), bson.M{"_id": prepTaskID})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), count)
+
+		count, err = eventCollection.CountDocuments(context.Background(), bson.M{"_id": eventToKeepID})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), count)
+
+		count, err = taskCollection.CountDocuments(context.Background(), bson.M{"_id": normalTaskID})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), count)
+	})
 	UnauthorizedTest(t, "DELETE", "/linked_accounts/123/", nil)
 }
 

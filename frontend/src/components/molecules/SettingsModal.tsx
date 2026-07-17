@@ -22,6 +22,7 @@ import { BodyLarge, BodyMedium, BodySmall } from '../atoms/typography/Typography
 import CalendarSettings from '../calendar/CalendarSettings'
 import { getCalendarAuthButton } from '../calendar/utils/utils'
 import GTModal from '../mantine/GTModal'
+import DeleteAccountButton from './DeleteAccountButton'
 import SignOutButton from './SignOutButton'
 
 const SERVICE_WIDTH = '150px'
@@ -262,6 +263,17 @@ const SettingsModal = ({ isOpen, setIsOpen, defaultTabIndex }: SettingsModalProp
                             <div>
                                 <SignOutButton />
                             </div>
+                            <Divider color={Colors.background.border} />
+                            <Flex column gap={Spacing._12}>
+                                <BodyLarge>Delete account</BodyLarge>
+                                <ServiceDetails>
+                                    Permanently delete your account and all of the data we hold for you, including
+                                    everything from your connected Google accounts.
+                                </ServiceDetails>
+                                <div>
+                                    <DeleteAccountButton />
+                                </div>
+                            </Flex>
                         </Flex>
                     ),
                 },

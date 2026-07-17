@@ -185,3 +185,18 @@ const deleteLinkedAccount = async (data: { id: string }) => {
         throw 'deleteLinkedAccount failed'
     }
 }
+
+// Deletes the user's account and all associated data, including everything we
+// hold from Google. Not queued through useGTMutation: the caller needs to await
+// the result before signing out, and there is no cache left to reconcile.
+export const useDeleteUserAccount = () => {
+    return useMutation(deleteUserAccount)
+}
+const deleteUserAccount = async () => {
+    try {
+        const res = await apiClient.delete('/user/')
+        return castImmutable(res.data)
+    } catch {
+        throw 'deleteUserAccount failed'
+    }
+}
