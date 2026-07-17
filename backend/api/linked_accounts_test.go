@@ -283,6 +283,39 @@ func TestDeleteLinkedAccount(t *testing.T) {
 		assert.NoError(t, err)
 		prepTaskID := res.InsertedID.(primitive.ObjectID)
 
+		// A prep task whose event we already deleted because it disappeared from
+		// Google (EventsList does this, and SyncMeetingTasksWithEvents keeps the
+		// task). It still holds the event title, so the unlink has to reach it via
+		// its own source account rather than through an event that no longer exists.
+		orphanTitle := "cancelled offsite"
+		res, err = taskCollection.InsertOne(context.Background(), &database.Task{
+			UserID:                   userID,
+			Title:                    &orphanTitle,
+			SourceAccountID:          accountID,
+			IsMeetingPreparationTask: true,
+			MeetingPreparationParams: &database.MeetingPreparationParams{
+				CalendarEventID:     primitive.NewObjectID(),
+				EventMovedOrDeleted: true,
+			},
+		})
+		assert.NoError(t, err)
+		orphanTaskID := res.InsertedID.(primitive.ObjectID)
+
+		// An orphaned prep task belonging to a different Google account must survive.
+		otherOrphanTitle := "other account offsite"
+		res, err = taskCollection.InsertOne(context.Background(), &database.Task{
+			UserID:                   userID,
+			Title:                    &otherOrphanTitle,
+			SourceAccountID:          "keepme@generaltask.com",
+			IsMeetingPreparationTask: true,
+			MeetingPreparationParams: &database.MeetingPreparationParams{
+				CalendarEventID:     primitive.NewObjectID(),
+				EventMovedOrDeleted: true,
+			},
+		})
+		assert.NoError(t, err)
+		otherOrphanTaskID := res.InsertedID.(primitive.ObjectID)
+
 		// A normal task that must survive an unlink.
 		normalTitle := "write the report"
 		res, err = taskCollection.InsertOne(context.Background(), &database.Task{UserID: userID, Title: &normalTitle})
@@ -320,6 +353,16 @@ func TestDeleteLinkedAccount(t *testing.T) {
 		assert.Equal(t, int64(1), count)
 
 		count, err = taskCollection.CountDocuments(context.Background(), bson.M{"_id": normalTaskID})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), count)
+
+		// The orphan carries a Google event title, so it goes with the unlink.
+		count, err = taskCollection.CountDocuments(context.Background(), bson.M{"_id": orphanTaskID})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), count)
+
+		// ...but only for the account being disconnected.
+		count, err = taskCollection.CountDocuments(context.Background(), bson.M{"_id": otherOrphanTaskID})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), count)
 	})

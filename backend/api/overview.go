@@ -796,11 +796,16 @@ func CreateMeetingTasksFromEvents(db *mongo.Database, userID primitive.ObjectID,
 		isCompleted := false
 		isDeleted := false
 		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			Title:                    &event.Title,
-			UserID:                   userID,
-			IsCompleted:              &isCompleted,
-			IsDeleted:                &isDeleted,
-			SourceID:                 event.SourceID,
+			Title:       &event.Title,
+			UserID:      userID,
+			IsCompleted: &isCompleted,
+			IsDeleted:   &isDeleted,
+			SourceID:    event.SourceID,
+			// The title above is copied verbatim from the Google event, so the task
+			// carries Google user data. Record which account it came from: the event
+			// it was built from can be deleted before the account is unlinked, and
+			// without this the task would be unattributable and outlive the unlink.
+			SourceAccountID:          event.SourceAccountID,
 			CreatedAtExternal:        primitive.NewDateTimeFromTime(time.Now()),
 			UpdatedAt:                primitive.NewDateTimeFromTime(time.Now()),
 			IsMeetingPreparationTask: true,

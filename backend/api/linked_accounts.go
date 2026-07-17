@@ -184,8 +184,11 @@ func (api *API) DeleteLinkedAccount(c *gin.Context) {
 // account along with the meeting preparation tasks derived from them.
 //
 // Meeting prep tasks copy the event title, so they carry Google user data too.
-// They record no source account, so they have to be found via the event IDs
-// while those events still exist.
+// They are matched on their own source account rather than only via their event,
+// because a prep task outlives its event: EventsList deletes stored events that
+// have disappeared from Google, and SyncMeetingTasksWithEvents keeps the task
+// and flags it event_moved_or_deleted. Tasks created before source_account_id
+// was recorded are still reachable through their event while it exists.
 func (api *API) deleteCalendarDataForAccount(userID primitive.ObjectID, accountID string) error {
 	ctx := context.Background()
 	eventFilter := bson.M{"$and": []bson.M{
@@ -203,19 +206,21 @@ func (api *API) deleteCalendarDataForAccount(userID primitive.ObjectID, accountI
 		return err
 	}
 
-	if len(events) > 0 {
-		eventIDs := []primitive.ObjectID{}
-		for _, event := range events {
-			eventIDs = append(eventIDs, event.ID)
-		}
-		_, err = database.GetTaskCollection(api.DB).DeleteMany(ctx, bson.M{"$and": []bson.M{
-			{"user_id": userID},
-			{"is_meeting_preparation_task": true},
+	eventIDs := []primitive.ObjectID{}
+	for _, event := range events {
+		eventIDs = append(eventIDs, event.ID)
+	}
+
+	_, err = database.GetTaskCollection(api.DB).DeleteMany(ctx, bson.M{"$and": []bson.M{
+		{"user_id": userID},
+		{"is_meeting_preparation_task": true},
+		{"$or": []bson.M{
+			{"source_account_id": accountID},
 			{"meeting_preparation_params.event_id": bson.M{"$in": eventIDs}},
-		}})
-		if err != nil {
-			return err
-		}
+		}},
+	}})
+	if err != nil {
+		return err
 	}
 
 	_, err = database.GetCalendarEventCollection(api.DB).DeleteMany(ctx, eventFilter)

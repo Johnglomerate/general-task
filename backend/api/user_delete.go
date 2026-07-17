@@ -69,16 +69,19 @@ func (api *API) revokeExternalGrants(userID primitive.ObjectID) {
 func (api *API) purgeUserData(userID primitive.ObjectID) error {
 	ctx := context.Background()
 
+	// Runs before the collection loop so that the loop's credentials-last ordering
+	// holds for the purge as a whole: if this fails, the user still has a session
+	// to retry from.
+	err := api.purgeDashboardData(userID)
+	if err != nil {
+		return err
+	}
+
 	for _, collection := range api.userScopedCollections() {
 		_, err := collection.DeleteMany(ctx, bson.M{"user_id": userID})
 		if err != nil {
 			return err
 		}
-	}
-
-	err := api.purgeDashboardData(userID)
-	if err != nil {
-		return err
 	}
 
 	_, err = database.GetUserCollection(api.DB).DeleteOne(ctx, bson.M{"_id": userID})
@@ -109,7 +112,8 @@ func (api *API) userScopedCollections() []*mongo.Collection {
 		database.GetFeedbackItemCollection(api.DB),
 		database.GetLogEventsCollection(api.DB),
 		database.GetServerRequestCollection(api.DB),
-		// Credentials, deleted last so a partial failure leaves them revocable
+		// Credentials last: while these survive, a purge that failed part way
+		// through is still retryable from the user's existing session.
 		database.GetOauth1RequestsSecretsCollection(api.DB),
 		database.GetStateTokenCollection(api.DB),
 		database.GetExternalTokenCollection(api.DB),
