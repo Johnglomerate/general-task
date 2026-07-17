@@ -37,6 +37,9 @@ type GoogleURLOverrides struct {
 // GoogleRevokeURL is Google's OAuth2 token revocation endpoint.
 const GoogleRevokeURL = "https://oauth2.googleapis.com/revoke"
 
+// GoogleRevokeTimeout bounds a single revocation call.
+const GoogleRevokeTimeout = 10 * time.Second
+
 type GoogleService struct {
 	LoginConfig  OauthConfigWrapper
 	LinkConfig   OauthConfigWrapper
@@ -115,7 +118,10 @@ func RevokeGoogleToken(tokenJSON string, overrideURL *string) error {
 		revokeURL = *overrideURL
 	}
 
-	response, err := http.PostForm(revokeURL, url.Values{"token": {tokenValue}})
+	// Bounded explicitly: account deletion and unlink both block on this, and
+	// http.DefaultClient would wait forever if Google stalls rather than fails.
+	client := &http.Client{Timeout: GoogleRevokeTimeout}
+	response, err := client.PostForm(revokeURL, url.Values{"token": {tokenValue}})
 	if err != nil {
 		return err
 	}

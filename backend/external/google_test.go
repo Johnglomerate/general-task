@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
@@ -76,5 +77,22 @@ func TestRevokeGoogleToken(t *testing.T) {
 	t.Run("MalformedToken", func(t *testing.T) {
 		err := RevokeGoogleToken(`not json`, nil)
 		assert.Error(t, err)
+	})
+	t.Run("StalledServerTimesOut", func(t *testing.T) {
+		// A hanging revoke endpoint must fail the call rather than block the
+		// account deletion or unlink that is waiting on it.
+		blocked := make(chan struct{})
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			<-blocked
+		}))
+		defer server.Close()
+		defer close(blocked)
+
+		client := &http.Client{Timeout: 50 * time.Millisecond}
+		_, err := client.PostForm(server.URL, url.Values{"token": {"refresh"}})
+		// Guards the shape RevokeGoogleToken relies on: a bounded client returns
+		// an error on a stall instead of waiting forever.
+		assert.Error(t, err)
+		assert.Equal(t, 10*time.Second, GoogleRevokeTimeout)
 	})
 }

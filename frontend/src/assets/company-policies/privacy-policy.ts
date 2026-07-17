@@ -617,10 +617,13 @@ color:black'>&#9679;<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp
 		<p class=MsoNormal align=left style='margin-top:0in;text-align:left;text-indent:
 0in'><b><span lang=EN style='font-family:"Calibri",sans-serif'>Disconnecting a
 					Google account. </span></b><span lang=EN style='font-family:"Calibri",sans-serif'>You
-				can disconnect a Google account at any time from Settings &rarr; Integrations.
-				When you do, we revoke our access token with Google and delete the calendar
-				events we stored from that account, together with the meeting preparation tasks
-				created from those events.</span></p>
+				can disconnect any additional Google account you have connected at any time
+				from Settings &rarr; Integrations. When you do, we revoke our access token with
+				Google and delete the calendar events we stored from that account, together
+				with the meeting preparation tasks created from those events. The Google
+				account you use to sign in cannot be disconnected on its own, because it is
+				what identifies your account to us; to remove it and the data associated with
+				it, delete your account as described below.</span></p>
 
 		<p class=MsoNormal align=left style='margin-top:0in;text-align:left;text-indent:
 0in'><span lang=EN style='font-family:"Calibri",sans-serif'>&nbsp;</span></p>
