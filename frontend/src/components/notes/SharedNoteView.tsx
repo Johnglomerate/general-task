@@ -21,6 +21,10 @@ import NoteActionsDropdown from './NoteActionsDropdown'
 const FlexPadding8Horizontal = styled(Flex)`
     padding: 0 ${Spacing._8};
 `
+// The footer's two labels sit side by side on desktop and stack once there is no room for both.
+const FooterFlex = styled(FlexPadding8Horizontal)`
+    flex-wrap: wrap;
+`
 
 const SharedNoteView = () => {
     const navigate = useNavigate()
@@ -57,7 +61,11 @@ const SharedNoteView = () => {
                             note && note.shared_until ? (
                                 <>
                                     <Flex column gap={Spacing._8}>
-                                        <FlexPadding8Horizontal alignItems="flex-start" justifyContent="space-between">
+                                        <FlexPadding8Horizontal
+                                            alignItems="flex-start"
+                                            justifyContent="space-between"
+                                            gap={Spacing._8}
+                                        >
                                             <TitleLarge>{note.title}</TitleLarge>
                                             <NoteActionsDropdown note={note} isOwner={isUserNoteOwner} />
                                         </FlexPadding8Horizontal>
@@ -90,7 +98,7 @@ const SharedNoteView = () => {
                         footer={
                             note &&
                             note.shared_until && (
-                                <FlexPadding8Horizontal justifyContent="space-between" alignItems="center">
+                                <FooterFlex justifyContent="space-between" alignItems="center" gap={Spacing._8}>
                                     <Flex gap={Spacing._4}>
                                         {isLoggedIn && isUserNoteOwner ? (
                                             <>
@@ -112,7 +120,7 @@ const SharedNoteView = () => {
                                         )}
                                     </Flex>
                                     <LabelSmall color="light">{`Shared with ${getSharedWithText()}`}</LabelSmall>
-                                </FlexPadding8Horizontal>
+                                </FooterFlex>
                             )
                         }
                     />

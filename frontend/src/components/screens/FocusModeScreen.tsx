@@ -20,6 +20,7 @@ import Log from '../../services/api/log'
 import { useCreateNote, useGetNotes, useModifyNote } from '../../services/api/notes.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
+import { mediaQuery } from '../../styles/dimensions'
 import { focusModeBackground, icons, logos } from '../../styles/images'
 import { getMonthsAroundDate, isDateToday } from '../../utils/time'
 import { TEvent } from '../../utils/types'
@@ -43,9 +44,12 @@ import SingleViewTemplate from '../templates/SingleViewTemplate'
 import CalendarView from '../views/CalendarView'
 
 const FOCUS_MODE_WIDTH = '956px'
+// Vertical room the fixed logo (64px, offset 16px) and Exit button need before the card starts.
+const MOBILE_HEADER_CLEARANCE = '88px'
 
 const EventHeaderContainer = styled.div`
     display: flex;
+    gap: ${Spacing._8};
 `
 const ActionsContainer = styled.div`
     margin-left: auto;
@@ -54,9 +58,15 @@ const ActionsContainer = styled.div`
     gap: ${Spacing._4};
 `
 const TemplateViewContainer = styled.div`
+    box-sizing: border-box;
     height: 100%;
     background: url(${focusModeBackground});
     background-size: cover;
+    /* On desktop the floating logo/Exit sit in the margin beside the card; at phone width the card is
+       full-bleed, so the card has to start below them instead. */
+    ${mediaQuery.phone} {
+        padding-top: ${MOBILE_HEADER_CLEARANCE};
+    }
 `
 const FloatTopRight = styled.div`
     position: fixed;
@@ -67,7 +77,8 @@ const FloatTopRight = styled.div`
     gap: ${Spacing._8};
 `
 const FocusModeContainer = styled.div`
-    width: ${FOCUS_MODE_WIDTH};
+    width: 100%;
+    max-width: ${FOCUS_MODE_WIDTH};
     height: 100%;
     margin: 0 auto;
     display: flex;
@@ -87,6 +98,15 @@ const ClockContainer = styled.div`
     ${Typography.display.medium};
     padding: ${Spacing._24} ${Spacing._32};
     font-weight: 274;
+    ${mediaQuery.phone} {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: ${Spacing._8};
+        padding: ${Spacing._16};
+        ${Typography.headline.medium};
+        /* Re-applied because the line above resets the weight the desktop rule sets. */
+        font-weight: 274;
+    }
 `
 
 const NextEventContainer = styled.div`
@@ -101,17 +121,31 @@ const AdvanceEventContainer = styled.div`
     cursor: pointer;
     gap: ${Spacing._8};
     ${Typography.body.large};
+    /* Out of flow, this pins to the bottom of the viewport and lands on top of the stacked clock row. */
+    ${mediaQuery.phone} {
+        position: static;
+    }
 `
 const EventContainer = styled.div`
+    box-sizing: border-box;
     padding: ${Spacing._32};
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: ${Spacing._32};
     overflow-y: auto;
+    ${mediaQuery.phone} {
+        padding: ${Spacing._16};
+        gap: ${Spacing._24};
+    }
 `
+// The calendar is a 300px context panel with no room to sit beside the event column on a phone.
+// Kept mounted (its data fetching and event selection still drive the screen) but not painted.
 const CalendarContainer = styled.div`
     margin-left: auto;
+    ${mediaQuery.phone} {
+        display: none;
+    }
 `
 const FloatTopLeft = styled.div`
     position: fixed;

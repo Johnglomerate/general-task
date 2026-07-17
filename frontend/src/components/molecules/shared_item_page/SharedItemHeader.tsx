@@ -6,24 +6,36 @@ import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../../constants'
 import { useAuthWindow } from '../../../hooks'
 import useAnalyticsEventTracker from '../../../hooks/useAnalyticsEventTracker'
 import { Spacing } from '../../../styles'
+import { SHARED_ITEM_WIDTH, mediaQuery } from '../../../styles/dimensions'
 import { buttons } from '../../../styles/images'
 import GTButton from '../../atoms/buttons/GTButton'
 import NoStyleButton from '../../atoms/buttons/NoStyleButton'
 
 const Logo = styled.img`
     width: 193px;
+    ${mediaQuery.phone} {
+        width: 140px;
+    }
 `
 export const HeaderContainer = styled.div`
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: ${Spacing._16};
     padding: ${Spacing._24};
-    width: 750px;
+    width: 100%;
+    max-width: ${SHARED_ITEM_WIDTH};
     z-index: 10;
+    ${mediaQuery.phone} {
+        padding: ${Spacing._16};
+    }
 `
 const SignInButton = styled(NoStyleButton)`
     width: 200px;
+    ${mediaQuery.phone} {
+        width: 160px;
+    }
 `
 const GoogleImage = styled.img`
     width: 100%;

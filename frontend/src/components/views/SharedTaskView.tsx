@@ -52,9 +52,13 @@ const TitleContainer = styled.div`
     margin-bottom: ${Spacing._12};
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: ${Spacing._8};
 `
 const TaskFieldContainer = styled.div`
     display: flex;
+    flex-wrap: wrap;
+    gap: ${Spacing._8};
     margin-bottom: ${Spacing._12};
 `
 const MarkdownContainer = styled.div`
