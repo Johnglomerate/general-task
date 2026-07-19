@@ -225,6 +225,39 @@ func TestGetPullRequests(t *testing.T) {
 		assert.Equal(t, 1, len(result.PullRequests))
 		assert.Equal(t, "Fix big oopsie", result.PullRequests[0].Title)
 	})
+	t.Run("RefetchesWhenWaitingOnCI", func(t *testing.T) {
+		userID := primitive.NewObjectID()
+
+		pullRequestCollection := database.GetPullRequestCollection(db)
+		falseBool := false
+		// cached PR still waiting on CI; check runs won't bump the PR's Last-Modified,
+		// so a 304 conditional response must not keep it stuck on "Waiting on CI"
+		_, err := pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
+			UserID:         userID,
+			IDExternal:     "1",
+			SourceID:       TASK_SOURCE_ID_GITHUB_PR,
+			IsCompleted:    &falseBool,
+			Title:          "stale waiting on CI title",
+			RequiredAction: ActionWaitingOnCI,
+		})
+		assert.NoError(t, err)
+
+		githubPullRequestNotModifiedServer := testutils.GetMockAPIServer(t, 304, ``)
+		pullRequestNotModifiedURL := &githubPullRequestNotModifiedServer.URL
+		defer githubPullRequestNotModifiedServer.Close()
+		githubPR.Github.Config.ConfigValues.PullRequestModifiedURL = pullRequestNotModifiedURL
+
+		var pullRequests = make(chan PullRequestResult)
+		go githubPR.GetPullRequests(db, userID, "exampleAccountID", pullRequests)
+		result := <-pullRequests
+
+		assert.NoError(t, result.Error)
+		assert.Equal(t, 1, len(result.PullRequests))
+		// despite the 304, it should refetch from Github and update the stale title
+		assert.Equal(t, "Fix big oopsie", result.PullRequests[0].Title)
+
+		githubPR.Github.Config.ConfigValues.PullRequestModifiedURL = pullRequestModifiedURL
+	})
 	t.Run("NoPullRequests", func(t *testing.T) {
 		userId := primitive.NewObjectID()
 

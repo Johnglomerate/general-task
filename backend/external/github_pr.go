@@ -471,6 +471,14 @@ func pullRequestHasBeenModified(db *mongo.Database, ctx context.Context, userID 
 		return true, nil
 	}
 
+	// CI check run completions do not modify the pull request resource itself, so a
+	// conditional request against the PR endpoint returns 304 Not Modified even after
+	// the checks finish. If the cached PR is still waiting on CI, always refetch so the
+	// completed check runs are picked up instead of leaving the PR stuck on "Waiting on CI".
+	if dbPR.RequiredAction == ActionWaitingOnCI {
+		return true, dbPR
+	}
+
 	requestURL := GithubAPIBaseURL + "repos/" + *repository.Owner.Login + "/" + *repository.Name + "/pulls/" + fmt.Sprint(*pullRequest.Number)
 	if overrideURL != nil {
 		requestURL = *overrideURL
