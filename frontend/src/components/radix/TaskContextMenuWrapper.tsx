@@ -13,6 +13,7 @@ import {
     useReorderTask,
 } from '../../services/api/tasks.hooks'
 import { externalStatusIcons, icons } from '../../styles/images'
+import { getExternalStatusMenuItems } from '../../utils/externalStatusMenuItems'
 import { TTaskFolder, TTaskV4 } from '../../utils/types'
 import adf2md from '../atoms/GTTextField/AtlassianEditor/adfToMd'
 import GTDatePicker from '../molecules/GTDatePicker'
@@ -267,12 +268,7 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange }: TaskContextMen
                   {
                       label: 'Set status',
                       icon: externalStatusIcons[task.external_status.type],
-                      subItems: task.all_statuses.map((status) => ({
-                          label: status.state,
-                          onClick: () => modifyTask({ id: task.id, status: status }, task.optimisticId),
-                          icon: externalStatusIcons[status.type],
-                          selected: status.state === task.external_status?.state,
-                      })),
+                      subItems: getExternalStatusMenuItems(task, modifyTask),
                   },
               ]
             : []),
