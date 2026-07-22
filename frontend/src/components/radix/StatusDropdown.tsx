@@ -1,5 +1,6 @@
 import { useModifyTask } from '../../services/api/tasks.hooks'
 import { externalStatusIcons, icons } from '../../styles/images'
+import { getExternalStatusMenuItems } from '../../utils/externalStatusMenuItems'
 import { TTaskV4 } from '../../utils/types'
 import GTButton from '../atoms/buttons/GTButton'
 import { GTButtonHack } from '../molecules/Task'
@@ -18,19 +19,7 @@ const StatusDropdown = ({ task, disabled, condensedTrigger }: StatusDropdownProp
     const allStatuses = task.all_statuses ? task.all_statuses : null
     if (!externalStatus || !allStatuses) return null
 
-    const dropdownItems = allStatuses.map((status) => ({
-        label: status.state,
-        icon: externalStatusIcons[status.type],
-        onClick: () => modifyTask({ id: task.id, status: status }, task.optimisticId),
-        selected: status.state === externalStatus.state,
-        disabled: status.is_valid_transition === false,
-        tip:
-            status.is_valid_transition === false && task.source.name === 'Jira'
-                ? `A workflow rule is preventing 
-        you from moving this issue to 
-        "${status.state}."`
-                : undefined,
-    }))
+    const dropdownItems = getExternalStatusMenuItems(task, modifyTask)
 
     return (
         <GTDropdownMenu

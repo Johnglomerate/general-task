@@ -7,6 +7,7 @@ import Log from '../../services/api/log'
 import { useModifyTask } from '../../services/api/tasks.hooks'
 import { Spacing } from '../../styles'
 import { externalStatusIcons } from '../../styles/images'
+import { getExternalStatusMenuItems } from '../../utils/externalStatusMenuItems'
 import { DropType, TTaskV4 } from '../../utils/types'
 import CommentCount from '../atoms/CommentCount'
 import Domino from '../atoms/Domino'
@@ -93,12 +94,7 @@ const LinearTask = ({ task }: LinearTaskProps) => {
                     <Domino isVisible={isHovered} />
                     {task.external_status && task.all_statuses && (
                         <GTDropdownMenu
-                            items={task.all_statuses.map((status) => ({
-                                label: status.state,
-                                onClick: () => modifyTask({ id: task.id, status: status }, task.optimisticId),
-                                icon: externalStatusIcons[status.type],
-                                selected: status.state === task.external_status?.state,
-                            }))}
+                            items={getExternalStatusMenuItems(task, modifyTask)}
                             trigger={
                                 <GTButtonHack
                                     icon={externalStatusIcons[task.external_status.type]}
