@@ -207,6 +207,7 @@ export default function useEventBanners(date: DateTime) {
                             oldToast(<ToastTemplate {...toastProps} />, {
                                 toastId: `${event.id}-banner`,
                                 autoClose: EVENT_BANNER_TOAST_DURATION,
+                                pauseOnFocusLoss: false,
                                 closeOnClick: false,
                                 theme: 'light',
                             })
