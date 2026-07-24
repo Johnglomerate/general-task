@@ -14,10 +14,10 @@ jobs:
       has_cypress: ${{ steps.cypress_check.outputs.has_cypress }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
@@ -42,14 +42,14 @@ jobs:
         if: steps.cypress_check.outputs.has_cypress == 'true'
         uses: cypress-io/github-action@v6
         with:
-          install-command: yarn install --frozen-lockfile
+          install: yarn install --frozen-lockfile
           working-directory: frontend
           runTests: false
           build: yarn build:test
 
       - name: Save build folder
         if: steps.cypress_check.outputs.has_cypress == 'true'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           if-no-files-found: error
@@ -69,20 +69,20 @@ jobs:
         containers: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.18'
       
       - name: Download the build folders
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: frontend/dist
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
