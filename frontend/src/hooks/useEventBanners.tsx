@@ -23,6 +23,8 @@ const isEventWithinTenMinutes = (event: TEvent) => {
     return eventStart < DateTime.now().plus({ minutes: 10 }) && eventEnd > DateTime.now()
 }
 
+const EVENT_BANNER_TOAST_DURATION = 30 * 1000
+
 export default function useEventBanners(date: DateTime) {
     const eventBannerLastShownAt = useRef<Map<string, number>>(new Map<string, number>())
     const eventsWithinTenMinutes = useRef<TEvent[]>([])
@@ -81,7 +83,7 @@ export default function useEventBanners(date: DateTime) {
                 const previewToastArgs: ToastArgs = {
                     toastId: `${event.id}-banner`,
                     title: eventTitle,
-                    duration: Infinity,
+                    duration: EVENT_BANNER_TOAST_DURATION,
                 }
                 if (event.conference_call.url) {
                     previewToastArgs.actions = [
@@ -204,7 +206,7 @@ export default function useEventBanners(date: DateTime) {
                         ) {
                             oldToast(<ToastTemplate {...toastProps} />, {
                                 toastId: `${event.id}-banner`,
-                                autoClose: false,
+                                autoClose: EVENT_BANNER_TOAST_DURATION,
                                 closeOnClick: false,
                                 theme: 'light',
                             })
