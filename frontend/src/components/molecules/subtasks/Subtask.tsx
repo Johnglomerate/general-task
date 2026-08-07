@@ -6,6 +6,7 @@ import styled, { css, keyframes } from 'styled-components'
 import { TASK_PRIORITIES } from '../../../constants'
 import { useNavigateToTask } from '../../../hooks'
 import { Border, Colors, Spacing, Typography } from '../../../styles'
+import { pointerQuery } from '../../../styles/dimensions'
 import { DropType, TSubtask } from '../../../utils/types'
 import Domino from '../../atoms/Domino'
 import DueDate from '../../atoms/DueDate'
@@ -39,8 +40,16 @@ export const SubtaskContainer = styled.div<{ forceHoverStyle?: boolean; isDone?:
     padding: ${Spacing._16};
     ${Typography.body.large};
     cursor: pointer;
-    :hover {
-        background-color: ${Colors.background.sub};
+    /* See ItemContainer: a stuck :hover after a tap reads as a selected row. */
+    ${pointerQuery.canHover} {
+        :hover {
+            background-color: ${Colors.background.sub};
+        }
+    }
+    ${pointerQuery.noHover} {
+        :active {
+            background-color: ${Colors.background.sub};
+        }
     }
     ${({ forceHoverStyle }) => forceHoverStyle && `background-color: ${Colors.background.sub};`}
     user-select: none;
