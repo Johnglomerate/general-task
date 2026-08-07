@@ -46,6 +46,24 @@ const TaskSectionViewItems = forwardRef(
             [view.task_section_id]
         )
 
+        // Reordering is otherwise drag-only here too. Same drop indices the container above sends.
+        const canReorderTasks = sortAndFilterSettings.selectedSort.id === 'manual'
+        const moveTask = useCallback(
+            (task: TTaskV4, dropIndex: number) => {
+                if (!view.task_section_id) return
+                reorderTask(
+                    {
+                        id: task.id,
+                        orderingId: dropIndex,
+                        dropSectionId: view.task_section_id,
+                        dragSectionId: task.id_folder,
+                    },
+                    task.optimisticId
+                )
+            },
+            [view.task_section_id]
+        )
+
         const onCreateNewTaskSubmit = (title: string) => {
             if (!sectionId) return
             const optimisticId = uuidv4()
@@ -87,6 +105,18 @@ const TaskSectionViewItems = forwardRef(
                                 sectionScrollingRef={scrollRef}
                                 isSelected={overviewViewId === view.id && overviewItemId === item.id}
                                 link={`/overview/${view.id}/${item.id}`}
+                                reorder={
+                                    canReorderTasks && !item.is_done
+                                        ? {
+                                              // bounded by the whole list, not the visible slice
+                                              moveUp: index === 0 ? undefined : () => moveTask(item, index),
+                                              moveDown:
+                                                  index === view.view_items.length - 1
+                                                      ? undefined
+                                                      : () => moveTask(item, index + 3),
+                                          }
+                                        : undefined
+                                }
                             />
                         </ReorderDropContainer>
                     ))
