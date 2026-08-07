@@ -4,6 +4,7 @@ import { useGTLocalStorage } from '../../../hooks'
 import { TOverviewSuggestion, useBulkModifyViews } from '../../../services/api/overview.hooks'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../../styles'
 import { TIconColor } from '../../../styles/colors'
+import { mediaQuery } from '../../../styles/dimensions'
 import { icons } from '../../../styles/images'
 import Flex from '../../atoms/Flex'
 import { Icon, TIconType } from '../../atoms/Icon'
@@ -21,6 +22,9 @@ const Suggestion = styled.div`
     padding: ${Spacing._16} 0;
     gap: ${Spacing._16};
     width: 100%;
+    ${mediaQuery.phone} {
+        flex-direction: column;
+    }
 `
 const ListContainer = styled.div`
     display: flex;
@@ -37,6 +41,9 @@ const Reasoning = styled.span`
     ${Typography.body.small};
     width: 300px;
     color: ${Colors.text.light};
+    ${mediaQuery.phone} {
+        width: auto;
+    }
 `
 
 interface SmartSuggestionProps {

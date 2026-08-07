@@ -1,8 +1,9 @@
 import { ReactElement } from 'react'
 import Modal from 'react-modal'
 import styled from 'styled-components'
+import { useIsMobile } from '../../hooks'
 import { Border, Colors, Dimensions, Shadows, Spacing, Typography } from '../../styles'
-import { TModalSize } from '../../styles/dimensions'
+import { TModalSize, mediaQuery } from '../../styles/dimensions'
 import { icons } from '../../styles/images'
 import { Icon } from './Icon'
 import NoStyleButton from './buttons/NoStyleButton'
@@ -17,6 +18,12 @@ const ModalContainer = styled.div<{ type: TModalSize }>`
     flex: auto;
     flex-direction: column;
     justify-content: space-between;
+    /* The sheet owns the whole screen, so the desktop size tokens have to get out of the way. */
+    ${mediaQuery.phone} {
+        min-height: 0;
+        max-height: none;
+        height: 100%;
+    }
 `
 const Header = styled.div`
     color: ${Colors.text.black};
@@ -60,16 +67,35 @@ const SHARED_MODAL_CONTENT_STYLE = {
     borderRadius: Border.radius.medium,
 }
 
-const getModalStyle = (modalSize: TModalSize): Modal.Styles => ({
+// react-modal only takes inline styles, so the phone sheet cannot be expressed as a media query
+// here the way it is on ModalContainer above.
+const MOBILE_MODAL_CONTENT_STYLE = {
+    ...SHARED_MODAL_CONTENT_STYLE,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    margin: 0,
+    width: 'auto',
+    height: 'auto',
+    minHeight: 0,
+    maxHeight: 'none',
+    borderRadius: 0,
+    paddingBottom: `calc(${Spacing._16} + env(safe-area-inset-bottom))`,
+}
+
+const getModalStyle = (modalSize: TModalSize, isMobile: boolean): Modal.Styles => ({
     overlay: {
         zIndex: 1000,
     },
-    content: {
-        ...SHARED_MODAL_CONTENT_STYLE,
-        maxHeight: Dimensions.modalSize[modalSize].max_height,
-        minHeight: Dimensions.modalSize[modalSize].min_height,
-        width: Dimensions.modalSize[modalSize].width,
-    },
+    content: isMobile
+        ? MOBILE_MODAL_CONTENT_STYLE
+        : {
+              ...SHARED_MODAL_CONTENT_STYLE,
+              maxHeight: Dimensions.modalSize[modalSize].max_height,
+              minHeight: Dimensions.modalSize[modalSize].min_height,
+              width: Dimensions.modalSize[modalSize].width,
+          },
 })
 
 interface GTModalProps {
@@ -84,6 +110,7 @@ interface GTModalProps {
     onClose?: () => void
 }
 const GTModal = (props: GTModalProps) => {
+    const isMobile = useIsMobile()
     const handleClose = () => {
         if (props.onClose) {
             props.onClose()
@@ -96,7 +123,7 @@ const GTModal = (props: GTModalProps) => {
         // @ts-ignore
         <Modal
             isOpen={props.isOpen}
-            style={getModalStyle(props.type)}
+            style={getModalStyle(props.type, isMobile)}
             onRequestClose={handleClose}
             shouldCloseOnOverlayClick={shouldCloseOverlay}
         >

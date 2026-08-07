@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import styled from 'styled-components'
 import { Border, Colors, Spacing, Typography } from '../../styles'
+import { OVERLAY_MAX_HEIGHT, OVERLAY_MAX_WIDTH } from '../../styles/dimensions'
 import Flex from '../atoms/Flex'
 import GTButton from '../atoms/buttons/GTButton'
 import { MenuContentShared } from './RadixUIConstants'
@@ -22,7 +23,10 @@ const DialogOverlay = styled(Dialog.Overlay)`
 const DialogContent = styled(Dialog.Content)`
     ${MenuContentShared};
     border-radius: ${Border.radius.medium};
-    max-width: ${MAX_WIDTH};
+    max-width: min(${MAX_WIDTH}, calc(${OVERLAY_MAX_WIDTH} - ${Spacing._24} * 2));
+    /* Centred on the viewport, so it needs its own height bound to stay reachable on a short one. */
+    max-height: ${OVERLAY_MAX_HEIGHT};
+    overflow-y: auto;
     position: fixed;
     top: 50%;
     left: 50%;

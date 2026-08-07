@@ -3,6 +3,7 @@ import { Calendar, DayModifiers } from '@mantine/dates'
 import { DateTime } from 'luxon'
 import styled from 'styled-components'
 import { Border, Colors, Spacing, Typography } from '../../../../styles'
+import { mediaQuery } from '../../../../styles/dimensions'
 import { icons } from '../../../../styles/images'
 import { RecurrenceRate } from '../../../../utils/enums'
 import Flex from '../../../atoms/Flex'
@@ -13,6 +14,12 @@ const Container = styled.div`
     width: 250px;
     padding-left: ${Spacing._16};
     box-sizing: border-box;
+    /* Stacked under the form rather than beside it, so it takes the full sheet width. */
+    ${mediaQuery.phone} {
+        width: 100%;
+        padding-left: 0;
+        padding-top: ${Spacing._16};
+    }
 `
 const Header = styled.div`
     display: flex;

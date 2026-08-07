@@ -13,6 +13,7 @@ export const checkboxSize = {
     parentContainer: '20px',
 }
 
+// Desktop sizes only. Below `BREAKPOINTS.phone` GTModal ignores these and fills the screen.
 export const modalSize = {
     dialog: {
         max_height: '200px',
@@ -53,6 +54,17 @@ export const mediaQuery = {
     tabletOrLarger: atLeast(BREAKPOINTS.phone),
     desktop: atLeast(BREAKPOINTS.tablet),
 }
+
+// Clear space an overlay (popover, menu, tooltip, toast) keeps on each side so it never sits flush
+// against a phone's screen edge. Doubles as Radix's `collisionPadding`, which wants a number.
+export const OVERLAY_COLLISION_PADDING = 8
+export const OVERLAY_GUTTER = `${OVERLAY_COLLISION_PADDING}px`
+// Widest an overlay can be and still fit the viewport with those gutters. Anchored overlays need
+// this on top of `collisionPadding`: Radix shifts content to stay on screen, but cannot shrink it.
+export const OVERLAY_MAX_WIDTH = `calc(100vw - ${OVERLAY_GUTTER} * 2)`
+// Tallest a centred or anchored overlay can be. `dvh` so mobile Safari's collapsing toolbars do
+// not cut off the bottom.
+export const OVERLAY_MAX_HEIGHT = `calc(100dvh - ${OVERLAY_GUTTER} * 2)`
 
 // Reading width of the shared /task/:id and /note/:id pages. A max-width, not a fixed width.
 export const SHARED_ITEM_WIDTH = '750px'
