@@ -2,6 +2,7 @@ import { Fragment, useCallback, useRef } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import styled from 'styled-components'
 import { Colors, Spacing, Typography } from '../../styles'
+import { OVERLAY_COLLISION_PADDING, OVERLAY_MAX_WIDTH } from '../../styles/dimensions'
 import { icons } from '../../styles/images'
 import { emptyFunction, stopKeydownPropogation } from '../../utils/utils'
 import { Icon } from '../atoms/Icon'
@@ -29,8 +30,10 @@ const DropdownMenuContent = styled(DropdownMenu.Content)<{
     max-height: ${DROPDOWN_MENU_ITEM_MAX_HEIGHT};
     overflow: auto;
     ${({ $menuInModal }) => $menuInModal && `z-index: 1000;`}
-    ${({ $width }) => $width && `width: ${$width}px;`}
-    max-width: ${({ $width }) => ($width ? `${$width}px` : `${DROPDOWN_MENU_ITEM_MAX_WIDTH}`)};
+    /* A trigger-matched width can exceed the screen once the shell is single-pane, so clamp both
+       the width and the cap to the viewport. */
+    ${({ $width }) => $width && `width: min(${$width}px, ${OVERLAY_MAX_WIDTH});`}
+    max-width: ${({ $width }) => `min(${$width ? `${$width}px` : DROPDOWN_MENU_ITEM_MAX_WIDTH}, ${OVERLAY_MAX_WIDTH})`};
     ${({ $textColor }) => $textColor && `color: ${$textColor};`}
     ${({ $fontStyle }) => $fontStyle && Typography.body[$fontStyle]};
     box-sizing: border-box;
@@ -50,6 +53,8 @@ const DropdownMenuSubTrigger = styled(DropdownMenu.SubTrigger)`
 const DropdownMenuSubContent = styled(DropdownMenu.SubContent)`
     ${MenuContentShared};
     user-select: none;
+    max-height: ${DROPDOWN_MENU_ITEM_MAX_HEIGHT};
+    overflow: auto;
 `
 const Description = styled(BodySmall)`
     padding: ${Spacing._8} ${Spacing._12};
@@ -118,6 +123,7 @@ const GTDropdownMenu = ({
                         $width={useTriggerWidth ? triggerRef.current?.getBoundingClientRect().width : undefined}
                         $fontStyle={fontStyle}
                         side={side}
+                        collisionPadding={OVERLAY_COLLISION_PADDING}
                     >
                         {groups.map((group, groupIndex) => (
                             <Fragment key={groupIndex}>

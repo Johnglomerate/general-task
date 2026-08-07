@@ -4,6 +4,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import 'animate.css'
 import styled from 'styled-components'
 import { Border, Colors, Shadows, Spacing } from '../../../styles'
+import { OVERLAY_GUTTER, OVERLAY_MAX_WIDTH } from '../../../styles/dimensions'
 import { icons } from '../../../styles/images'
 import { Icon } from '../Icon'
 import NoStyleButton from '../buttons/NoStyleButton'
@@ -33,7 +34,7 @@ const StyledToastContainer = styled(ToastContainer).attrs({
     closeButton: CloseButton,
     newestOnTop: true,
 })`
-    --toastify-toast-width: 400px;
+    --toastify-toast-width: min(400px, ${OVERLAY_MAX_WIDTH});
     --toastify-color-light: ${Colors.background.white};
     --toastify-color-dark: ${Colors.legacyColors.black};
     --toastify-text-color-light: ${Colors.text.black};
@@ -51,6 +52,21 @@ const StyledToastContainer = styled(ToastContainer).attrs({
             Cantarell, Arial, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Apple Color Emoji', 'Segoe UI Emoji',
             'Segoe UI Symbol';
         min-width: 0;
+    }
+    /* react-toastify ships its own <=480px rule that pins the container to 100vw with square
+       corners. Keep the floating card instead; && outranks that single-class rule. */
+    @media only screen and (max-width: 480px) {
+        && {
+            width: var(--toastify-toast-width);
+            left: auto;
+            right: ${OVERLAY_GUTTER};
+            bottom: calc(${OVERLAY_GUTTER} + env(safe-area-inset-bottom));
+            padding: 0;
+        }
+        .toast {
+            border-radius: ${Border.radius.medium};
+            margin-bottom: ${Spacing._8};
+        }
     }
 `
 
