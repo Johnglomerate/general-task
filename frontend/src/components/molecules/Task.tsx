@@ -29,6 +29,7 @@ import PriorityDropdown from '../radix/PriorityDropdown'
 import StatusDropdown from '../radix/StatusDropdown'
 import TaskContextMenuWrapper from '../radix/TaskContextMenuWrapper'
 import Tip from '../radix/Tip'
+import { ReorderActions } from '../radix/reorderMenuItems'
 import ItemContainer from './ItemContainer'
 import LinearCycle from './LinearCycle'
 import { useGetRecurringTaskTemplateFromId } from './recurring-tasks/recurringTasks.utils'
@@ -73,6 +74,7 @@ interface TaskProps {
     shouldScrollToTask?: boolean
     setShouldScrollToTask?: (shouldScrollToTask: boolean) => void
     onMarkTaskDone?: (id: string) => void
+    reorder?: ReorderActions
 }
 
 const Task = ({
@@ -86,6 +88,7 @@ const Task = ({
     shouldScrollToTask,
     setShouldScrollToTask,
     onMarkTaskDone,
+    reorder,
 }: TaskProps) => {
     const navigate = useNavigate()
     const observer = useRef<IntersectionObserver>()
@@ -242,7 +245,7 @@ const Task = ({
     }
 
     return (
-        <TaskContextMenuWrapper task={task} onOpenChange={setContextMenuOpen}>
+        <TaskContextMenuWrapper task={task} onOpenChange={setContextMenuOpen} reorder={reorder}>
             <TaskTemplate
                 ref={elementRef}
                 isVisible={isVisible}

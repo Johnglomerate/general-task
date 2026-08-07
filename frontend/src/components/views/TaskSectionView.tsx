@@ -137,6 +137,22 @@ const TaskSectionView = () => {
         [folder]
     )
 
+    // Same arithmetic as the moveTaskUp/moveTaskDown shortcuts below: id_ordering is 1-based, and
+    // moving down has to clear the slot of the task it swaps with.
+    const canReorderTasks = selectedSort.id === 'manual' && !folder?.is_done && !folder?.is_trash
+    const moveTask = useCallback(
+        (taskToMove: TTaskV4, direction: 'up' | 'down', folderId: string) =>
+            reorderTask(
+                {
+                    id: taskToMove.id,
+                    orderingId: direction === 'up' ? taskToMove.id_ordering - 1 : taskToMove.id_ordering + 2,
+                    dropSectionId: folderId,
+                },
+                taskToMove.optimisticId
+            ),
+        [reorderTask]
+    )
+
     // deal with invalid routes
     useEffect(() => {
         if (folders && folders.length > 0 && (!folder || !task)) {
@@ -249,6 +265,20 @@ const TaskSectionView = () => {
                                         shouldScrollToTask={shouldScrollToTask}
                                         setShouldScrollToTask={setShouldScrollToTask}
                                         onMarkTaskDone={selectTaskAfterCompletion}
+                                        reorder={
+                                            canReorderTasks
+                                                ? {
+                                                      moveUp:
+                                                          index === 0
+                                                              ? undefined
+                                                              : () => moveTask(task, 'up', folder.id),
+                                                      moveDown:
+                                                          index === sortedTasks.length - 1
+                                                              ? undefined
+                                                              : () => moveTask(task, 'down', folder.id),
+                                                  }
+                                                : undefined
+                                        }
                                     />
                                 </ReorderDropContainer>
                             ))}

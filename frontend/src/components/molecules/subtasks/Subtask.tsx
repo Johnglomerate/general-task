@@ -12,6 +12,7 @@ import DueDate from '../../atoms/DueDate'
 import { Icon } from '../../atoms/Icon'
 import MarkTaskDoneButton from '../../atoms/buttons/MarkTaskDoneButton'
 import TaskContextMenuWrapper from '../../radix/TaskContextMenuWrapper'
+import { ReorderActions } from '../../radix/reorderMenuItems'
 
 const strike = keyframes`
     0% { width: 0; }
@@ -77,8 +78,9 @@ export const TitleSpan = styled.span<{ isDone: boolean; shouldAnimate: boolean }
 
 interface SubtaskProps {
     subtask: TSubtask
+    reorder?: ReorderActions
 }
-const Subtask = ({ subtask }: SubtaskProps) => {
+const Subtask = ({ subtask, reorder }: SubtaskProps) => {
     const navigateToTask = useNavigateToTask()
     const [isVisible, setIsVisible] = useState(false)
     const dueDate = DateTime.fromISO(subtask.due_date)
@@ -105,7 +107,7 @@ const Subtask = ({ subtask }: SubtaskProps) => {
 
     return (
         <SubtaskDropOffset>
-            <TaskContextMenuWrapper task={subtask} onOpenChange={setContextMenuOpen}>
+            <TaskContextMenuWrapper task={subtask} onOpenChange={setContextMenuOpen} reorder={reorder}>
                 <SubtaskContainer
                     onClick={() => navigateToTask({ taskId: subtask.id })}
                     ref={drag}

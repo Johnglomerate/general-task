@@ -68,6 +68,20 @@ const SubtaskList = ({ parentTask }: SubtasksProps) => {
         [parentTask.id_folder, parentTask.id]
     )
 
+    const moveSubtask = useCallback(
+        (id: string, dropIndex: number) => {
+            if (!parentTask.id_folder) return
+            reorderMutate({
+                id,
+                parentId: parentTask.id,
+                isSubtask: true,
+                orderingId: dropIndex,
+                dropSectionId: parentTask.id_folder,
+            })
+        },
+        [parentTask.id_folder, parentTask.id]
+    )
+
     const subtasks =
         allTasks?.filter((task): task is TSubtask => task.id_parent === parentTask.id && !task.is_deleted) ?? []
     subtasks.sort((a, b) => a.id_ordering - b.id_ordering)
@@ -108,7 +122,18 @@ const SubtaskList = ({ parentTask }: SubtasksProps) => {
                         onReorder={handleReorder}
                         disabled={false}
                     >
-                        <Subtask key={subtask.id} subtask={subtask} />
+                        <Subtask
+                            key={subtask.id}
+                            subtask={subtask}
+                            reorder={{
+                                // the same drop indices the reorder drop target above produces
+                                moveUp: index === 0 ? undefined : () => moveSubtask(subtask.id, index),
+                                moveDown:
+                                    index === subtasks.length - 1
+                                        ? undefined
+                                        : () => moveSubtask(subtask.id, index + 3),
+                            }}
+                        />
                     </ReorderDropContainer>
                 ))}
             </TaskListContainer>

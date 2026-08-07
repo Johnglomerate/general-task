@@ -34,13 +34,26 @@ const ListOrderTab = () => {
             reorderViews({ id: item.id, idOrdering: dropIndex }, item.view?.optimisticId),
         [reorderViews]
     )
+    // Reordering is otherwise drag-only. idOrdering is a 1-based insertion slot, so moving down has
+    // to clear the slot of the list it swaps with — the same indices the drop target produces.
+    const handleMove = useCallback(
+        (id: string, dropIndex: number) => reorderViews({ id, idOrdering: dropIndex }),
+        [reorderViews]
+    )
     const preferenceSubtext = `Once a list that was previously empty or completed is filled with items again, it${'\n'}will return to its original position.`
     return (
         <Flex column flex="1">
             <SmartPrioritize state={smartPrioritizeState} setState={setSmartPrioritizeState} />
             {!smartPrioritizeState &&
                 lists?.map((view, index) => (
-                    <EditListsSelectedList key={view.id} view={view} viewIndex={index} onReorder={handleReorder} />
+                    <EditListsSelectedList
+                        key={view.id}
+                        view={view}
+                        viewIndex={index}
+                        isLast={index === lists.length - 1}
+                        onReorder={handleReorder}
+                        onMove={handleMove}
+                    />
                 ))}
             <ReorderDropContainer
                 index={lists?.length ?? 0}
