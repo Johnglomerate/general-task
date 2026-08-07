@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useDrag } from 'react-dnd'
 import { getEmptyImage } from 'react-dnd-html5-backend'
 import styled from 'styled-components'
@@ -6,10 +6,14 @@ import { useGetMeetingPreparationTasks } from '../../services/api/meeting-prepar
 import { Colors, Spacing, Typography } from '../../styles'
 import { icons } from '../../styles/images'
 import { DropType, TOverviewView } from '../../utils/types'
+import { emptyFunction } from '../../utils/utils'
 import Flex from '../atoms/Flex'
 import { Icon } from '../atoms/Icon'
 import StatusLabel from '../atoms/StatusLabel'
 import { BodyLarge, BodySmall } from '../atoms/typography/Typography'
+import ScheduleTaskModal from '../molecules/ScheduleTaskModal'
+import GTContextMenu from '../radix/GTContextMenu'
+import { getScheduleMenuItem } from '../radix/TaskContextMenuWrapper'
 import { getOverviewAccordionHeaderIcon } from './AccordionItem'
 
 const TriggerTitle = styled.div`
@@ -68,7 +72,10 @@ const AccordionHeader = ({ list, isOpen }: AccordionHeaderProps) => {
     const viewItemLength =
         list.type === 'meeting_preparation' ? activeMeetingPreparationTasks.length : list.view_items.length
 
-    return (
+    // dragging the header onto the calendar is otherwise the only way to block time for a list
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+
+    const header = (
         <StyledFlex justifyContent="space-between" ref={drag}>
             <TriggerTitle>
                 <Icon
@@ -89,6 +96,17 @@ const AccordionHeader = ({ list, isOpen }: AccordionHeaderProps) => {
                 <Icon icon={isOpen ? icons.caret_up : icons.caret_down} className="AccordionChevron" />
             </TriggerRightContainer>
         </StyledFlex>
+    )
+
+    return (
+        <>
+            <GTContextMenu
+                items={[getScheduleMenuItem(() => setIsScheduleModalOpen(true))]}
+                trigger={header}
+                onOpenChange={emptyFunction}
+            />
+            {isScheduleModalOpen && <ScheduleTaskModal view={list} onClose={() => setIsScheduleModalOpen(false)} />}
+        </>
     )
 }
 

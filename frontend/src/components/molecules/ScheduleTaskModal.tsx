@@ -4,7 +4,7 @@ import styled from 'styled-components'
 import { usePreviewMode, useToast } from '../../hooks'
 import { Spacing } from '../../styles'
 import { icons } from '../../styles/images'
-import { TPullRequest, TTaskV4 } from '../../utils/types'
+import { TOverviewView, TPullRequest, TTaskV4 } from '../../utils/types'
 import Flex from '../atoms/Flex'
 import GTTimeInput, { TIME_INPUT_FORMAT, parseTimeInput } from '../atoms/GTTimeInput'
 import GTButton from '../atoms/buttons/GTButton'
@@ -46,13 +46,14 @@ const getNextInterval = () => {
 interface ScheduleTaskModalProps {
     task?: TTaskV4
     pullRequest?: TPullRequest
+    view?: TOverviewView
     onClose: () => void
 }
 /*
- * Schedules a task or pull request onto the calendar without dragging. Drag-to-schedule is the
- * only other path and it never fires on touch, so this is the only way in on a phone.
+ * Schedules a task, pull request, or list onto the calendar without dragging. Drag-to-schedule
+ * is the only other path and it never fires on touch, so this is the only way in on a phone.
  */
-const ScheduleTaskModal = ({ task, pullRequest, onClose }: ScheduleTaskModalProps) => {
+const ScheduleTaskModal = ({ task, pullRequest, view, onClose }: ScheduleTaskModalProps) => {
     const { scheduleOnCalendar } = useScheduleTask()
     const oldToast = useToast()
     const { isPreviewMode } = usePreviewMode()
@@ -61,7 +62,7 @@ const ScheduleTaskModal = ({ task, pullRequest, onClose }: ScheduleTaskModalProp
     const [startInput, setStartInput] = useState(() => start.toFormat(TIME_INPUT_FORMAT))
     const [durationInMinutes, setDurationInMinutes] = useState(String(DEFAULT_EVENT_DURATION_IN_MINUTES))
 
-    const title = task?.title ?? pullRequest?.title ?? ''
+    const title = task?.title ?? pullRequest?.title ?? view?.name ?? ''
 
     const onStartTimeChange = (value: string) => {
         setStartInput(value)
@@ -81,6 +82,7 @@ const ScheduleTaskModal = ({ task, pullRequest, onClose }: ScheduleTaskModalProp
             durationInMinutes: Number(durationInMinutes),
             task,
             pullRequest,
+            view,
         })
         if (scheduled) {
             const message = `Scheduled “${title}” for ${start.toFormat("ccc LLL d 'at' h:mm a")}`

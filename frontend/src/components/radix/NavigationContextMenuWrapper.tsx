@@ -5,6 +5,7 @@ import { TTaskFolder } from '../../utils/types'
 import { emptyFunction } from '../../utils/utils'
 import GTContextMenu from './GTContextMenu'
 import { GTMenuItem } from './RadixUIConstants'
+import getReorderMenuItems from './reorderMenuItems'
 
 interface NavigationContextMenuWrapperProps {
     children: React.ReactNode
@@ -31,18 +32,14 @@ const NavigationContextMenuWrapper = ({
     const canMoveDown = index >= 0 && reorderableFolders[reorderableFolders.length - 1]?.id !== folder.id
 
     const items: GTMenuItem[] = [
-        {
-            label: 'Move up',
-            icon: icons.arrow_up,
-            disabled: !canMoveUp,
-            onClick: () => modifyFolder({ id: folder.id, id_ordering: index - 1 }, folder.optimisticId),
-        },
-        {
-            label: 'Move down',
-            icon: icons.arrow_down,
-            disabled: !canMoveDown,
-            onClick: () => modifyFolder({ id: folder.id, id_ordering: index + 2 }, folder.optimisticId),
-        },
+        ...getReorderMenuItems({
+            moveUp: canMoveUp
+                ? () => modifyFolder({ id: folder.id, id_ordering: index - 1 }, folder.optimisticId)
+                : undefined,
+            moveDown: canMoveDown
+                ? () => modifyFolder({ id: folder.id, id_ordering: index + 2 }, folder.optimisticId)
+                : undefined,
+        }),
         {
             label: 'Rename Folder',
             icon: icons.pencil,

@@ -22,6 +22,7 @@ import RecurringTaskTemplateModal from '../molecules/recurring-tasks/RecurringTa
 import { toast } from '../molecules/toast'
 import GTContextMenu from './GTContextMenu'
 import { GTMenuItem } from './RadixUIConstants'
+import getReorderMenuItems, { ReorderActions } from './reorderMenuItems'
 
 export const getDeleteLabel = (task: TTaskV4) => {
     if (task.is_deleted) {
@@ -91,8 +92,10 @@ interface TaskContextMenuProps {
     task: TTaskV4
     children: React.ReactNode
     onOpenChange: (open: boolean) => void
+    // supplied only where the surrounding list has a manual order; reordering is otherwise drag-only
+    reorder?: ReorderActions
 }
-const TaskContextMenuWrapper = ({ task, children, onOpenChange }: TaskContextMenuProps) => {
+const TaskContextMenuWrapper = ({ task, children, onOpenChange, reorder }: TaskContextMenuProps) => {
     const { data: allTasks } = useGetTasksV4(false)
     const { data: folders } = useGetFolders(false)
     const { mutate: createTask } = useCreateTask()
@@ -223,6 +226,7 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange }: TaskContextMen
     }
 
     const contextMenuItems: GTMenuItem[] = [
+        ...(reorder ? getReorderMenuItems(reorder) : []),
         ...(task.id_folder && folders ? [getMoveFolderMenuItem(task, folders, onSingleSelectFolderClick)] : []),
         ...(!task.is_deleted && !task.is_done ? [getScheduleMenuItem(() => setIsScheduleModalOpen(true))] : []),
         getSetDueDateMenuItem(task, onSingleSetDueDateClick),
