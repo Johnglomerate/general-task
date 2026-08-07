@@ -5,8 +5,10 @@ import { useNavigateToTask } from '../../hooks'
 import { Colors, Spacing, Typography } from '../../styles'
 import { logos } from '../../styles/images'
 import { DropType, TTaskV4 } from '../../utils/types'
+import { emptyFunction } from '../../utils/utils'
 import { Icon } from '../atoms/Icon'
 import ItemContainer from '../molecules/ItemContainer'
+import TaskContextMenuWrapper from '../radix/TaskContextMenuWrapper'
 
 const TaskTitle = styled.span`
     margin-left: ${Spacing._8};
@@ -40,19 +42,22 @@ const DueTask = ({ task, showDueDate }: DueTaskProps) => {
     }))
 
     return (
-        <ItemContainer
-            key={task.id}
-            isSelected={false}
-            isCompact={true}
-            onClick={() => navigateToTask({ taskId: task.id })}
-            ref={drag}
-        >
-            <TaskDue>
-                <Icon icon={logos[task.source.logo]} />
-                <TaskTitle title={task.title}>{task.title}</TaskTitle>
-            </TaskDue>
-            {showDueDate && <TaskDueDate>{DateTime.fromISO(task.due_date).toFormat('MMM dd')}</TaskDueDate>}
-        </ItemContainer>
+        // the context menu is the only non-drag way to get a due task onto the calendar
+        <TaskContextMenuWrapper task={task} onOpenChange={emptyFunction}>
+            <ItemContainer
+                key={task.id}
+                isSelected={false}
+                isCompact={true}
+                onClick={() => navigateToTask({ taskId: task.id })}
+                ref={drag}
+            >
+                <TaskDue>
+                    <Icon icon={logos[task.source.logo]} />
+                    <TaskTitle title={task.title}>{task.title}</TaskTitle>
+                </TaskDue>
+                {showDueDate && <TaskDueDate>{DateTime.fromISO(task.due_date).toFormat('MMM dd')}</TaskDueDate>}
+            </ItemContainer>
+        </TaskContextMenuWrapper>
     )
 }
 

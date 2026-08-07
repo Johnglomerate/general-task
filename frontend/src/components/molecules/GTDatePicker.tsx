@@ -43,8 +43,17 @@ interface GTDatePickerProps {
     onlyCalendar?: boolean
     disabled?: boolean
     isLinearTask?: boolean
+    // clearing emits the epoch date, which only makes sense where the date is optional
+    showClearButton?: boolean
 }
-const GTDatePicker = ({ initialDate, setDate, showIcon = true, onlyCalendar = false, disabled }: GTDatePickerProps) => {
+const GTDatePicker = ({
+    initialDate,
+    setDate,
+    showIcon = true,
+    onlyCalendar = false,
+    disabled,
+    showClearButton = true,
+}: GTDatePickerProps) => {
     const [currentDate, setCurrentDate] = useState<DateTime | null>(initialDate)
     const formattedDate = useMemo(() => getFormattedDate(currentDate), [currentDate])
 
@@ -115,12 +124,14 @@ const GTDatePicker = ({ initialDate, setDate, showIcon = true, onlyCalendar = fa
                 <DateViewContainer>
                     <Icon icon={icons.calendar_blank} color="black" />
                     <DateViewText>{currentDate.toFormat('ccc LLL d y')}</DateViewText>
-                    <GTButton
-                        styleType="icon"
-                        tooltipText="Remove due date"
-                        icon={icons.x}
-                        onClick={() => handleOnChange(null)}
-                    />
+                    {showClearButton && (
+                        <GTButton
+                            styleType="icon"
+                            tooltipText="Remove due date"
+                            icon={icons.x}
+                            onClick={() => handleOnChange(null)}
+                        />
+                    )}
                 </DateViewContainer>
             )}
         </GTDatePickerWrapper>
