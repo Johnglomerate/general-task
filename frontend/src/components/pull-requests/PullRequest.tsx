@@ -9,6 +9,7 @@ import CommentCount from '../atoms/CommentCount'
 import { EdgeHighlight } from '../atoms/SelectableContainer'
 import ExternalLinkButton from '../atoms/buttons/ExternalLinkButton'
 import { useCalendarContext } from '../calendar/CalendarContext'
+import PullRequestContextMenuWrapper from '../radix/PullRequestContextMenuWrapper'
 import Status from './Status'
 import { Column, LinkButtonContainer, PullRequestRow, TitleContainer } from './styles'
 
@@ -41,17 +42,19 @@ const PullRequest = ({ pullRequest, link, isSelected }: PullRequestProps) => {
     const statusDescription = PULL_REQUEST_ACTIONS.find((action) => action.text === status.text)?.description
 
     return (
-        <PullRequestRow onClick={onClickHandler} isSelected={isSelected} ref={drag}>
-            {isSelected && <EdgeHighlight color={Colors.legacyColors.orange} />}
-            <TitleContainer>{title}</TitleContainer>
-            <Column>
-                <Status description={statusDescription} status={status.text} color={status.color} />
-                {num_comments > 0 && <CommentCount count={num_comments} />}
-                <LinkButtonContainer>
-                    <ExternalLinkButton link={deeplink} />
-                </LinkButtonContainer>
-            </Column>
-        </PullRequestRow>
+        <PullRequestContextMenuWrapper pullRequest={pullRequest}>
+            <PullRequestRow onClick={onClickHandler} isSelected={isSelected} ref={drag}>
+                {isSelected && <EdgeHighlight color={Colors.legacyColors.orange} />}
+                <TitleContainer>{title}</TitleContainer>
+                <Column>
+                    <Status description={statusDescription} status={status.text} color={status.color} />
+                    {num_comments > 0 && <CommentCount count={num_comments} />}
+                    <LinkButtonContainer>
+                        <ExternalLinkButton link={deeplink} />
+                    </LinkButtonContainer>
+                </Column>
+            </PullRequestRow>
+        </PullRequestContextMenuWrapper>
     )
 }
 

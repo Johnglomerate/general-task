@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
 import { DEFAULT_FOLDER_ID } from '../../constants'
@@ -9,10 +10,11 @@ import { TTaskV4 } from '../../utils/types'
 import Flex from '../atoms/Flex'
 import GTButton from '../atoms/buttons/GTButton'
 import { LabelSmall } from '../atoms/typography/Typography'
+import ScheduleTaskModal from '../molecules/ScheduleTaskModal'
 import { toast } from '../molecules/toast'
 import GTDropdownMenu from './GTDropdownMenu'
 import { GTMenuItem } from './RadixUIConstants'
-import { getDeleteLabel } from './TaskContextMenuWrapper'
+import { getDeleteLabel, getScheduleMenuItem } from './TaskContextMenuWrapper'
 
 interface TaskActionsDropdownProps {
     task: TTaskV4
@@ -25,6 +27,7 @@ const TaskActionsDropdown = ({ task }: TaskActionsDropdownProps) => {
     const { mutate: markTaskDoneOrDeleted } = useMarkTaskDoneOrDeleted()
     const oldToast = useToast()
     const { isPreviewMode } = usePreviewMode()
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
 
     const updatedAt = DateTime.fromISO(task.updated_at).toFormat(`MMM d 'at' h:mm a`)
     const createdAt = DateTime.fromISO(task.created_at).toFormat(`MMM d 'at' h:mm a`)
@@ -86,22 +89,30 @@ const TaskActionsDropdown = ({ task }: TaskActionsDropdownProps) => {
         ),
     })
 
+    const getScheduleAction = (): GTMenuItem => getScheduleMenuItem(() => setIsScheduleModalOpen(true))
+
     const getItems = (): GTMenuItem[] | GTMenuItem[][] => {
-        if (task.source.name === 'Jira' || task.is_deleted) {
+        if (task.is_deleted) {
             return [getTaskInfo()]
+        }
+        if (task.source.name === 'Jira') {
+            return [[getScheduleAction()], [getTaskInfo()]]
         }
         if (task.is_done) {
             return [[getDeleteTaskAction()], [getTaskInfo()]]
         }
-        return [[getDuplicateTaskAction(), getDeleteTaskAction()], [getTaskInfo()]]
+        return [[getScheduleAction(), getDuplicateTaskAction(), getDeleteTaskAction()], [getTaskInfo()]]
     }
 
     return (
-        <GTDropdownMenu
-            hideCheckmark
-            items={getItems()}
-            trigger={<GTButton styleType="icon" icon={icons.ellipsisVertical} tooltipText="Task Actions" />}
-        />
+        <>
+            <GTDropdownMenu
+                hideCheckmark
+                items={getItems()}
+                trigger={<GTButton styleType="icon" icon={icons.ellipsisVertical} tooltipText="Task Actions" />}
+            />
+            {isScheduleModalOpen && <ScheduleTaskModal task={task} onClose={() => setIsScheduleModalOpen(false)} />}
+        </>
     )
 }
 

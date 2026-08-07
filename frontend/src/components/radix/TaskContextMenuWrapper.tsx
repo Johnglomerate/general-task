@@ -17,6 +17,7 @@ import { getExternalStatusMenuItems } from '../../utils/externalStatusMenuItems'
 import { TTaskFolder, TTaskV4 } from '../../utils/types'
 import adf2md from '../atoms/GTTextField/AtlassianEditor/adfToMd'
 import GTDatePicker from '../molecules/GTDatePicker'
+import ScheduleTaskModal from '../molecules/ScheduleTaskModal'
 import RecurringTaskTemplateModal from '../molecules/recurring-tasks/RecurringTaskTemplateModal'
 import { toast } from '../molecules/toast'
 import GTContextMenu from './GTContextMenu'
@@ -49,6 +50,13 @@ const getMoveFolderMenuItem = (
         ],
     }
 }
+
+// Dragging onto the calendar is the only other way to schedule, and it never fires on touch.
+export const getScheduleMenuItem = (onClick: () => void): GTMenuItem => ({
+    label: 'Schedule on calendar',
+    icon: icons.calendar_star,
+    onClick,
+})
 
 const getSetDueDateMenuItem = (task: TTaskV4, setDate: (date: string) => void): GTMenuItem => {
     return {
@@ -92,6 +100,7 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange }: TaskContextMen
     const { mutate: modifyTask } = useModifyTask(true)
     const { mutate: markTaskDoneOrDeleted } = useMarkTaskDoneOrDeleted(false)
     const [isRecurringTaskTemplateModalOpen, setIsRecurringTaskTemplateModalOpen] = useState(false)
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
     const { inMultiSelectMode, selectedTaskIds, clearSelectedTaskIds } = useSelectionContext()
     const oldToast = useToast()
     const { isPreviewMode } = usePreviewMode()
@@ -215,6 +224,7 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange }: TaskContextMen
 
     const contextMenuItems: GTMenuItem[] = [
         ...(task.id_folder && folders ? [getMoveFolderMenuItem(task, folders, onSingleSelectFolderClick)] : []),
+        ...(!task.is_deleted && !task.is_done ? [getScheduleMenuItem(() => setIsScheduleModalOpen(true))] : []),
         getSetDueDateMenuItem(task, onSingleSetDueDateClick),
         getPriorityOption(task),
         ...(!task.id_parent && !task.is_deleted && !task.is_done && task.source.name !== 'Jira'
@@ -304,6 +314,7 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange }: TaskContextMen
                     onClose={() => setIsRecurringTaskTemplateModalOpen(false)}
                 />
             )}
+            {isScheduleModalOpen && <ScheduleTaskModal task={task} onClose={() => setIsScheduleModalOpen(false)} />}
         </>
     )
 }
