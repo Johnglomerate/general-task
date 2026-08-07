@@ -1,6 +1,7 @@
 import { MouseEventHandler, forwardRef } from 'react'
 import styled from 'styled-components'
 import { Border, Colors, Shadows, Spacing } from '../../styles'
+import { pointerQuery } from '../../styles/dimensions'
 import { EdgeHighlight } from '../atoms/SelectableContainer'
 
 const ItemContainerDiv = styled.div<{
@@ -18,9 +19,20 @@ const ItemContainerDiv = styled.div<{
     background-color: ${Colors.background.white};
     box-shadow: ${Shadows.deprecated_button.default};
     border-radius: ${Border.radius.small};
-    :hover {
-        outline: ${Border.stroke.medium} solid ${Colors.background.border};
-        background-color: ${Colors.background.sub};
+    /* Touch browsers leave :hover stuck on the last-tapped element, which would read as a selected
+       row. Nothing is gated behind this highlight, so scope it to real hover and give touch the
+       same feedback while the row is actually held instead. */
+    ${pointerQuery.canHover} {
+        :hover {
+            outline: ${Border.stroke.medium} solid ${Colors.background.border};
+            background-color: ${Colors.background.sub};
+        }
+    }
+    ${pointerQuery.noHover} {
+        :active {
+            outline: ${Border.stroke.medium} solid ${Colors.background.border};
+            background-color: ${Colors.background.sub};
+        }
     }
 
     ${({ forceHoverStyle }) =>

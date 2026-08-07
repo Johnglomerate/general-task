@@ -55,6 +55,18 @@ export const mediaQuery = {
     desktop: atLeast(BREAKPOINTS.tablet),
 }
 
+// Input capability rather than viewport size — a narrow window on a desktop still has a mouse, and a
+// tablet in landscape still does not. `canHover` and `noHover` are exact complements, so a rule that
+// uses both never double-applies: the `hover` feature describes the *primary* pointer, so a laptop
+// with a touchscreen reports `hover: hover` and keeps the desktop treatment.
+//
+// Use `canHover` to fence off styling that only reveals itself on hover, and `noHover` to give the
+// same affordance a permanent form (or to remove it, when what it advertises cannot work on touch).
+export const pointerQuery = {
+    canHover: '@media (hover: hover)',
+    noHover: '@media (hover: none)',
+}
+
 // Clear space an overlay (popover, menu, tooltip, toast) keeps on each side so it never sits flush
 // against a phone's screen edge. Doubles as Radix's `collisionPadding`, which wants a number.
 export const OVERLAY_COLLISION_PADDING = 8

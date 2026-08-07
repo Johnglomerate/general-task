@@ -1,5 +1,6 @@
 import styled from 'styled-components'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
+import { pointerQuery } from '../../styles/dimensions'
 
 const SelectableContainer = styled.div<{ isSelected: boolean }>`
     background-color: ${Colors.background.white};
@@ -7,9 +8,18 @@ const SelectableContainer = styled.div<{ isSelected: boolean }>`
     position: relative;
     cursor: pointer;
     box-shadow: ${Shadows.deprecated_button.default};
-    &:hover {
-        background-color: ${Colors.background.sub};
-        outline: ${Border.stroke.medium} solid ${Colors.background.border};
+    /* See ItemContainer: a stuck :hover after a tap reads as a selected row. */
+    ${pointerQuery.canHover} {
+        &:hover {
+            background-color: ${Colors.background.sub};
+            outline: ${Border.stroke.medium} solid ${Colors.background.border};
+        }
+    }
+    ${pointerQuery.noHover} {
+        &:active {
+            background-color: ${Colors.background.sub};
+            outline: ${Border.stroke.medium} solid ${Colors.background.border};
+        }
     }
     display: flex;
     align-items: center;

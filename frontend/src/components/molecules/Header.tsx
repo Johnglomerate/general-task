@@ -8,6 +8,7 @@ import useRefetchStaleQueries from '../../hooks/useRefetchStaleQueries'
 import { useDeleteFolder, useModifyFolder } from '../../services/api/folders.hooks'
 import { Border, Colors, Spacing, Typography } from '../../styles'
 import { TTextColor } from '../../styles/colors'
+import { pointerQuery } from '../../styles/dimensions'
 import { icons } from '../../styles/images'
 import GTTextField from '../atoms/GTTextField'
 import { Icon } from '../atoms/Icon'
@@ -33,6 +34,14 @@ const HeaderButton = styled(NoStyleButton)`
     min-width: 0;
     border-radius: ${Border.radius.medium};
     gap: ${Spacing._8};
+`
+// Without hover there is no way to discover the refresh button, and its only other trigger is the
+// Alt+R shortcut, so leave it showing.
+const HeaderRefreshSpinner = styled(RefreshSpinner)<{ isVisible: boolean }>`
+    opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
+    ${pointerQuery.noHover} {
+        opacity: 1;
+    }
 `
 const HeaderText = styled.div<{ fontColor: TTextColor }>`
     color: ${({ fontColor }) => Colors.text[fontColor]};
@@ -109,9 +118,9 @@ export const Header = (props: HeaderProps) => {
                 ) : (
                     <>
                         <HeaderText fontColor={isHovering ? 'purple' : 'black'}>{folderName}</HeaderText>
-                        <RefreshSpinner isRefreshing={isFetching} style={{ opacity: showRefreshButton ? 1 : 0 }}>
+                        <HeaderRefreshSpinner isRefreshing={isFetching} isVisible={showRefreshButton}>
                             <Icon icon={icons.spinner} color={isHovering ? 'purple' : 'black'} />
-                        </RefreshSpinner>
+                        </HeaderRefreshSpinner>
                     </>
                 )}
             </HeaderButton>
