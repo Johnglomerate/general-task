@@ -9,6 +9,7 @@ import Log from '../../services/api/log'
 import { useReorderTask } from '../../services/api/tasks.hooks'
 import { Border, Colors, Spacing, Typography } from '../../styles'
 import { TIconColor } from '../../styles/colors'
+import { pointerQuery } from '../../styles/dimensions'
 import { icons } from '../../styles/images'
 import { DropItem, DropType, TTaskFolder } from '../../utils/types'
 import { countWithOverflow } from '../../utils/utils'
@@ -26,9 +27,13 @@ export const CollapsedIconContainer = styled.div<{ isSelected?: boolean }>`
         background-color: ${Colors.background.sub};
         mix-blend-mode: multiply;
     `}
-    :hover {
-        background-color: ${Colors.background.white};
-        mix-blend-mode: normal;
+    /* This hover overrides the selected background, so a :hover left stuck on the link you just
+       tapped would erase the "you are here" marker on exactly the folder you navigated to. */
+    ${pointerQuery.canHover} {
+        :hover {
+            background-color: ${Colors.background.white};
+            mix-blend-mode: normal;
+        }
     }
 `
 const LinkContainer = styled.div<{ isSelected: boolean; isOver: boolean }>`
@@ -47,9 +52,12 @@ const LinkContainer = styled.div<{ isSelected: boolean; isOver: boolean }>`
     box-sizing: border-box;
     gap: ${Spacing._12};
     transform: translate(0, 0); // to hide corners when dragging
-    :hover {
-        background-color: ${Colors.background.white};
-        mix-blend-mode: inherit;
+    /* Same as CollapsedIconContainer: hover outranks the selected background. */
+    ${pointerQuery.canHover} {
+        :hover {
+            background-color: ${Colors.background.white};
+            mix-blend-mode: inherit;
+        }
     }
 `
 const FolderTitle = styled.span`

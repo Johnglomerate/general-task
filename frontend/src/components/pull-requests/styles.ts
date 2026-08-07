@@ -1,6 +1,7 @@
 import styled from 'styled-components'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
 import { TStatusColors } from '../../styles/colors'
+import { pointerQuery } from '../../styles/dimensions'
 
 export const Column = styled.div`
     display: flex;
@@ -36,9 +37,18 @@ export const PullRequestRow = styled.div<{ isSelected: boolean }>`
     position: relative;
     cursor: pointer;
     box-shadow: ${Shadows.deprecated_button.default};
-    &:hover {
-        background-color: ${Colors.background.sub};
-        outline: ${Border.stroke.medium} solid ${Colors.background.border};
+    /* See ItemContainer: a stuck :hover after a tap reads as a selected row. */
+    ${pointerQuery.canHover} {
+        &:hover {
+            background-color: ${Colors.background.sub};
+            outline: ${Border.stroke.medium} solid ${Colors.background.border};
+        }
+    }
+    ${pointerQuery.noHover} {
+        &:active {
+            background-color: ${Colors.background.sub};
+            outline: ${Border.stroke.medium} solid ${Colors.background.border};
+        }
     }
     gap: ${Spacing._16};
     align-items: center;

@@ -4,6 +4,7 @@ import { useAuthWindow, usePreviewMode, useSetting } from '../../hooks'
 import { useGetCalendars } from '../../services/api/events.hooks'
 import { useDeleteLinkedAccount, useGetLinkedAccounts, useGetSupportedTypes } from '../../services/api/settings.hooks'
 import { Border, Colors, Spacing } from '../../styles'
+import { pointerQuery } from '../../styles/dimensions'
 import { icons, logos } from '../../styles/images'
 import { TCalendar, TCalendarAccount } from '../../utils/types'
 import Flex from '../atoms/Flex'
@@ -22,6 +23,10 @@ const Calendar = styled(Flex)`
     :hover {
         border: ${Border.stroke.small} solid ${Colors.background.border};
         background-color: ${Colors.background.base};
+    }
+    /* Hover is the only thing marking these rows as selectable. */
+    ${pointerQuery.noHover} {
+        border: ${Border.stroke.small} solid ${Colors.background.border};
     }
 `
 

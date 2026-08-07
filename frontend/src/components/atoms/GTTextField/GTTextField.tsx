@@ -1,6 +1,7 @@
 import { Suspense, forwardRef, lazy, useRef } from 'react'
 import styled from 'styled-components'
 import { Border, Colors, Shadows } from '../../../styles'
+import { pointerQuery } from '../../../styles/dimensions'
 import { stopKeydownPropogation } from '../../../utils/utils'
 import Spinner from '../Spinner'
 import PlainTextEditor from './PlainTextEditor'
@@ -18,6 +19,10 @@ const PlainTextContainer = styled.div<{ hideUnfocusedOutline?: boolean; disabled
         box-shadow: ${Shadows.deprecated_light};
     }
     :hover {
+        border-color: ${({ disabled }) => (disabled ? 'transparent' : Colors.background.border)};
+    }
+    /* Hover is what tells you the field is editable, so without it show the border at rest. */
+    ${pointerQuery.noHover} {
         border-color: ${({ disabled }) => (disabled ? 'transparent' : Colors.background.border)};
     }
     :focus-within {
@@ -44,6 +49,11 @@ const Container = styled.div<{
         background-color: ${Colors.background.white};
     }
     :hover {
+        border-color: ${({ noBorder }) => !noBorder && Colors.background.border};
+    }
+    /* Same reasoning as PlainTextContainer: settle on the hover treatment when there is no hover. */
+    ${pointerQuery.noHover} {
+        background-color: ${Colors.background.white};
         border-color: ${({ noBorder }) => !noBorder && Colors.background.border};
     }
     :focus-within {
