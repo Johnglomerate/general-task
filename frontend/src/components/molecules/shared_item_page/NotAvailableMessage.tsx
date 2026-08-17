@@ -50,10 +50,10 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                     />
                 ) : (
                     <>
-                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_SIGN_UP_URL}>
-                            <GTButton styleType="primary" value="Sign In to General Task" />
+                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_SIGN_UP_URL} target="_self">
+                            <GTButton styleType="primary" value="Start free trial" />
                         </NoStyleAnchor>
-                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>
+                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL} target="_self">
                             <GTButton styleType="secondary" value="Learn more about General Task" />
                         </NoStyleAnchor>
                     </>

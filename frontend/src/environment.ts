@@ -5,7 +5,7 @@ const ENV = {
         REACT_APP_NOTES_BASE_URL: 'http://localhost:3000',
         REACT_APP_TASK_BASE_URL: 'http://localhost:8080',
         REACT_APP_TRY_BASE_URL: 'http://localhost:3000',
-        REACT_APP_TRY_SIGN_UP_URL: 'http://localhost:3000',
+        REACT_APP_TRY_SIGN_UP_URL: 'http://localhost:3000/sign-up',
         COOKIE_DOMAIN: '.localhost',
     },
     prod: {
@@ -13,8 +13,8 @@ const ENV = {
         REACT_APP_FRONTEND_BASE_URL: 'https://generaltask.com',
         REACT_APP_NOTES_BASE_URL: 'https://notes.generaltask.com',
         REACT_APP_TASK_BASE_URL: 'https://share.generaltask.com',
-        REACT_APP_TRY_BASE_URL: 'https://try.generaltask.com',
-        REACT_APP_TRY_SIGN_UP_URL: 'https://try.generaltask.com/sign-up',
+        REACT_APP_TRY_BASE_URL: 'https://generaltask.com',
+        REACT_APP_TRY_SIGN_UP_URL: 'https://generaltask.com/sign-up',
         COOKIE_DOMAIN: '.generaltask.com',
     },
 }

@@ -5,9 +5,11 @@ if [ -f "$HUSKY_SH" ]; then
     . "$HUSKY_SH"
 fi
 
-if [ ! -x frontend/node_modules/.bin/lint-staged ]; then
+cd "$(dirname "$0")/.."
+
+if [ ! -x node_modules/.bin/lint-staged ]; then
     echo "Skipping lint-staged because frontend dependencies are not installed."
     exit 0
 fi
 
-cd frontend && yarn lint-staged
+yarn lint-staged

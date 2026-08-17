@@ -128,9 +128,9 @@ const JohnsLetterStaticContent = () => (
             we are truly honored that you landed on us.
         </p>
         <p>
-            We have spent the last year building what we believe is a focused productivity workspace for software
-            engineers. General Task brings your tasks, calendar, pull requests, and integrations into one place so you
-            can plan your day and keep work moving.
+            We have spent the last year building a focused productivity workspace for people planning real work. General
+            Task brings your tasks, calendar, pull requests, and integrations into one place, starts with a 67-day free
+            trial, and is $2/month after that.
         </p>
         <p>
             Productivity is close to our hearts. Our team has worked at some of the most successful companies in the

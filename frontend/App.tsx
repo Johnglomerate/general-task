@@ -42,22 +42,22 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
             <Helmet>
                 <meta charSet="utf-8" />
-                <title>General Task (beta)</title>
+                <title>General Task — Personal productivity for $2/month</title>
                 <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
                 <meta
-                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
+                    content="Plan tasks, calendar, pull requests, and integrations with General Task. Start with a 67-day free trial, then $2/month."
                     name="description"
                 />
-                <meta content="General Task (beta) - Focused productivity for builders" property="og:title" />
+                <meta content="General Task — Personal productivity for $2/month" property="og:title" />
                 <meta
-                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
+                    content="Plan tasks, calendar, pull requests, and integrations with a 67-day free trial, then $2/month."
                     property="og:description"
                 />
-                <meta content="General Task (beta) - Focused productivity for builders" property="twitter:title" />
+                <meta content="General Task — Personal productivity for $2/month" property="twitter:title" />
                 <meta
-                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
+                    content="Plan tasks, calendar, pull requests, and integrations with a 67-day free trial, then $2/month."
                     property="twitter:description"
                 />
                 <meta property="og:type" content="website" />
@@ -69,6 +69,7 @@ const App = () => {
 
                 <Routes>
                     <Route index element={<LandingScreen />} />
+                    <Route path="sign-up" element={<LandingScreen isSignUp />} />
                     <Route
                         path={TERMS_OF_SERVICE_ROUTE}
                         element={<CompanyPolicyView page={CompanyPolicyPages.TermsOfService} />}
