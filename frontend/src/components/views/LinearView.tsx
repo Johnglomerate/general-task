@@ -65,7 +65,7 @@ const LinearView = () => {
     }, [activeTasks, isMobile, linearIssueId])
 
     useEffect(() => {
-        if (isMobile && !linearIssueId) return
+        if (isMobile) return
         if (task) navigate(`/linear/${task.id}`)
     }, [activeTasks, isMobile, linearIssueId, task])
 

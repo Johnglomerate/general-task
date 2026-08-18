@@ -47,17 +47,17 @@ const NoteListView = () => {
     }, [isMobile, noteId, notes, sortedNotes])
 
     useEffect(() => {
-        if (isMobile && !noteId) return
+        if (isMobile) return
         if (selectedNote == null) return
         navigate(`/notes/${selectedNote.id}`, { replace: true })
     }, [isMobile, noteId, selectedNote, navigate])
 
     const selectNote = useCallback(
         (note: TNote) => {
-            navigate(`/notes/${note.id}`, { replace: true })
+            navigate(`/notes/${note.id}`, { replace: !isMobile })
             Log(`notes_select_${note.id}`)
         },
-        [sortedNotes]
+        [isMobile]
     )
 
     useItemSelectionController(sortedNotes, selectNote)

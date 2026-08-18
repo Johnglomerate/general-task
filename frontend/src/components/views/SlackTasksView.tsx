@@ -47,7 +47,7 @@ const SlackTasksView = () => {
     }, [activeTasks, isMobile, slackTaskId])
 
     useEffect(() => {
-        if (isMobile && !slackTaskId) return
+        if (isMobile) return
         if (task) navigate(`/slack/${task.id}`)
     }, [activeTasks, isMobile, slackTaskId, task])
 
