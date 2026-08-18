@@ -1,4 +1,13 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+HUSKY_SH="$(dirname "$0")/_/husky.sh"
+
+if [ -f "$HUSKY_SH" ]; then
+    . "$HUSKY_SH"
+fi
+
+if [ ! -x frontend/node_modules/.bin/lint-staged ]; then
+    echo "Skipping lint-staged because frontend dependencies are not installed."
+    exit 0
+fi
 
 cd frontend && yarn lint-staged

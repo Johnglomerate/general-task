@@ -128,11 +128,9 @@ const JohnsLetterStaticContent = () => (
             we are truly honored that you landed on us.
         </p>
         <p>
-            We have spent the last year building what we believe to be the best productivity solution on the market for
-            software engineers. And it’s free! We don’t limit our software to those who can afford to pay $30+/month,
-            like many of our competitors do. At General Task, we believe that everyone, not just a select few, should
-            have access to the very best productivity tools and services. That means we will be keeping our personal
-            productivity solution <strong>free forever</strong>.
+            We have spent the last year building what we believe is a focused productivity workspace for software
+            engineers. General Task brings your tasks, calendar, pull requests, and integrations into one place so you
+            can plan your day and keep work moving.
         </p>
         <p>
             Productivity is close to our hearts. Our team has worked at some of the most successful companies in the
