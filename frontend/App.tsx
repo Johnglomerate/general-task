@@ -47,23 +47,17 @@ const App = () => {
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
                 <meta
-                    content="Find focus like never before with the best free productivity tool on the market!"
+                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
                     name="description"
                 />
+                <meta content="General Task (beta) - Focused productivity for builders" property="og:title" />
                 <meta
-                    content="General Task (beta) — Free productivity tools for builders like you"
-                    property="og:title"
-                />
-                <meta
-                    content="Find focus like never before with the best free productivity tool on the market!"
+                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
                     property="og:description"
                 />
+                <meta content="General Task (beta) - Focused productivity for builders" property="twitter:title" />
                 <meta
-                    content="General Task (beta) — Free productivity tools for builders like you"
-                    property="twitter:title"
-                />
-                <meta
-                    content="Find focus like never before with the best free productivity tool on the market!"
+                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
                     property="twitter:description"
                 />
                 <meta property="og:type" content="website" />
