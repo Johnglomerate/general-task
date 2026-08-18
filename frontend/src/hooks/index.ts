@@ -6,6 +6,7 @@ import useGTLocalStorage from './useGTLocalStorage'
 import useGlobalKeyboardShortcuts from './useGlobalKeyboardShortcuts'
 import useInterval from './useInterval'
 import useIsDragging from './useIsDragging'
+import useIsMobile from './useIsMobile'
 import useItemSelectionController from './useItemSelectionController'
 import useKeyboardShortcut from './useKeyboardShortcut'
 import useNavigateToPullRequest from './useNavigateToPullRequest'
@@ -25,6 +26,7 @@ export {
     useGTLocalStorage,
     useInterval,
     useIsDragging,
+    useIsMobile,
     useItemSelectionController,
     useKeyboardShortcut,
     useNavigateToPullRequest,

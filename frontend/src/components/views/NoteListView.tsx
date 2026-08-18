@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController } from '../../hooks'
 import Log from '../../services/api/log'
 import { useGetNotes } from '../../services/api/notes.hooks'
 import { icons } from '../../styles/images'
@@ -25,6 +25,7 @@ const NoteListView = () => {
     const { data: notes } = useGetNotes()
     const { noteId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
 
     const sortAndFilterSettings = useSortAndFilterSettings<TNote>(NOTE_SORT_AND_FILTER_CONFIG)
@@ -42,13 +43,14 @@ const NoteListView = () => {
 
     const selectedNote = useMemo(() => {
         if (sortedNotes.length === 0) return null
-        return sortedNotes.find((note) => note.id === noteId) ?? sortedNotes[0]
-    }, [noteId, notes, sortedNotes])
+        return sortedNotes.find((note) => note.id === noteId) ?? (isMobile ? null : sortedNotes[0])
+    }, [isMobile, noteId, notes, sortedNotes])
 
     useEffect(() => {
+        if (isMobile && !noteId) return
         if (selectedNote == null) return
         navigate(`/notes/${selectedNote.id}`, { replace: true })
-    }, [selectedNote, navigate])
+    }, [isMobile, noteId, selectedNote, navigate])
 
     const selectNote = useCallback(
         (note: TNote) => {
@@ -80,7 +82,7 @@ const NoteListView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || noteId) && (
                 <>
                     {selectedNote ? (
                         <NoteDetails note={selectedNote} link={`/notes/${selectedNote.id}`} />

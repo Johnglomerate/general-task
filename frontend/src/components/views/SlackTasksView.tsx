@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -28,6 +28,7 @@ const SlackTasksView = () => {
     const { data: activeTasks } = useGetActiveTasks()
     const { slackTaskId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType, setCalendarType, setDate, dayViewDate } = useCalendarContext()
 
     const slackTasks = useMemo(() => activeTasks?.filter((task) => task.source.name === 'Slack') || [], [activeTasks])
@@ -42,12 +43,13 @@ const SlackTasksView = () => {
         for (const task of slackTasks) {
             if (task.id === slackTaskId) return { task }
         }
-        return { task: slackTasks[0] }
-    }, [activeTasks, slackTaskId])
+        return { task: isMobile ? null : slackTasks[0] }
+    }, [activeTasks, isMobile, slackTaskId])
 
     useEffect(() => {
+        if (isMobile && !slackTaskId) return
         if (task) navigate(`/slack/${task.id}`)
-    }, [activeTasks, task])
+    }, [activeTasks, isMobile, slackTaskId, task])
 
     const onClick = (id: string) => {
         if (calendarType === 'week' && slackTaskId === id) {
@@ -87,7 +89,7 @@ const SlackTasksView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || slackTaskId) && (
                 <>
                     {task ? (
                         <TaskDetails task={task} />

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Flex } from '@mantine/core'
 import styled from 'styled-components'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -28,6 +28,7 @@ const JiraView = () => {
     const { data: tasks } = useGetActiveTasks()
     const { jiraTaskId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
 
     const jiraTasks = useMemo(() => {
@@ -49,8 +50,8 @@ const JiraView = () => {
         for (const task of jiraTasks) {
             if (task.id === jiraTaskId) return { task }
         }
-        return { task: jiraTasks[0] }
-    }, [jiraTasks, jiraTaskId])
+        return { task: isMobile ? null : jiraTasks[0] }
+    }, [isMobile, jiraTasks, jiraTaskId])
 
     const { data: linkedAccounts } = useGetLinkedAccounts()
     const isJiraIntegrationLinked = isJiraLinked(linkedAccounts || [])
@@ -79,7 +80,7 @@ const JiraView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || jiraTaskId) && (
                 <>
                     {selectedTask ? (
                         <TaskDetails task={selectedTask} />

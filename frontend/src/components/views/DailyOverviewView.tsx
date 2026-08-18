@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import useOverviewContext from '../../context/OverviewContextProvider'
+import { useIsMobile } from '../../hooks'
 import { useGetMeetingPreparationTasks } from '../../services/api/meeting-preparation-tasks.hooks'
 import { icons } from '../../styles/images'
 import ActionsContainer from '../atoms/ActionsContainer'
@@ -16,13 +17,14 @@ import SmartPrioritizationBanner from '../overview/SmartPrioritizationBanner'
 import useOverviewLists from '../overview/useOverviewLists'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
-const useSelectFirstItemOnFirstLoad = () => {
+const useSelectFirstItemOnFirstLoad = (isMobile: boolean) => {
     const { setOpenListIds } = useOverviewContext()
     const { lists, isSuccess } = useOverviewLists()
     const isFirstSuccess = useRef(true)
     const navigate = useNavigate()
 
     useEffect(() => {
+        if (isMobile) return
         if (!isFirstSuccess.current || lists?.length === 0) return
         const firstNonEmptyView = lists?.find((list) => list.view_item_ids.length > 0)
         if (firstNonEmptyView) {
@@ -37,15 +39,17 @@ const useSelectFirstItemOnFirstLoad = () => {
             navigate(`/overview`, { replace: true })
         }
         isFirstSuccess.current = false
-    }, [lists, isSuccess])
+    }, [isMobile, lists, isSuccess])
 }
 
 const DailyOverviewView = () => {
     const [isEditListsModalOpen, setIsEditListsModalOpen] = useState(false)
     const [editListTabIndex, setEditListTabIndex] = useState(0) // 0 - add, 1 - reorder
+    const isMobile = useIsMobile()
+    const { overviewItemId } = useParams()
 
     const { calendarType } = useCalendarContext()
-    useSelectFirstItemOnFirstLoad()
+    useSelectFirstItemOnFirstLoad(isMobile)
     const { expandAll, collapseAll } = useOverviewContext()
 
     const { lists, isLoading: isOverviewListsLoading } = useOverviewLists()
@@ -105,7 +109,7 @@ const DailyOverviewView = () => {
                     ))}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && <OverviewDetails />}
+            {calendarType === 'day' && (!isMobile || overviewItemId) && <OverviewDetails />}
             <EditModal
                 isOpen={isEditListsModalOpen}
                 setisOpen={setIsEditListsModalOpen}

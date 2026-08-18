@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -33,6 +33,7 @@ const LinearView = () => {
     const { data: activeTasks } = useGetActiveTasks()
     const { linearIssueId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
     const sortAndFilterSettings = useSortAndFilterSettings<TTaskV4>(
         LINEAR_SORT_AND_FILTER_CONFIG,
@@ -60,12 +61,13 @@ const LinearView = () => {
         for (const task of linearTasks) {
             if (task.id === linearIssueId) return { task }
         }
-        return { task: linearTasks[0] }
-    }, [activeTasks, linearIssueId])
+        return { task: isMobile ? null : linearTasks[0] }
+    }, [activeTasks, isMobile, linearIssueId])
 
     useEffect(() => {
+        if (isMobile && !linearIssueId) return
         if (task) navigate(`/linear/${task.id}`)
-    }, [activeTasks, task])
+    }, [activeTasks, isMobile, linearIssueId, task])
 
     const { data: linkedAccounts, isLoading: isLinkedAccountsLoading } = useGetLinkedAccounts()
     const isLinearIntegrationLinked = isLinearLinked(linkedAccounts || [])
@@ -92,7 +94,7 @@ const LinearView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || linearIssueId) && (
                 <>
                     {task ? (
                         <TaskDetails task={task} />
