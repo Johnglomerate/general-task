@@ -46,11 +46,11 @@ const TaskSectionView = () => {
     const { data: meetingPreparationTasks, isLoading: isLoadingMeetingPreparationTasks } =
         useGetMeetingPreparationTasks()
     const { data: allTasks, isLoading: isLoadingTasks } = useGetTasksV4()
-    const { data: folders } = useGetFolders()
+    const { data: folders, isLoading: isLoadingFolders } = useGetFolders()
     const { mutate: createTask } = useCreateTask()
     const { mutate: reorderTask } = useReorderTask()
     useFetchExternalTasks()
-    const canValidateTaskRoute = !isLoadingTasks && !isLoadingMeetingPreparationTasks
+    const canValidateTaskRoute = !isLoadingFolders && !isLoadingTasks && !isLoadingMeetingPreparationTasks
 
     const navigate = useNavigate()
     const params = useParams()
@@ -264,6 +264,8 @@ const TaskSectionView = () => {
                 <>
                     {task && folder ? (
                         <TaskDetails task={task} />
+                    ) : isMobile && params.task && (!canValidateTaskRoute || !folder || !task) ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no tasks" />
                     )}

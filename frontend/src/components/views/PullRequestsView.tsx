@@ -77,15 +77,21 @@ const PullRequestsView = () => {
             (isMobile ? null : sortedAndFilteredPullRequests[0])
         )
     }, [isMobile, params.pullRequest, sortedAndFilteredRepositories])
+    const canValidatePullRequestRoute = !isLoading && !areSettingsLoading
 
     const isGithubIntegrationLinked = isGithubLinked(linkedAccounts ?? [])
     const doesNeedRelinking = doesAccountNeedRelinking(linkedAccounts || [], 'GitHub')
     useEffect(() => {
-        if (isMobile && !params.pullRequest) return
+        if (isMobile) {
+            if (params.pullRequest && canValidatePullRequestRoute && !selectedPullRequest) {
+                navigate('/pull-requests', { replace: true })
+            }
+            return
+        }
         if (selectedPullRequest) {
             navigate(`/pull-requests/${selectedPullRequest.id}`, { replace: true })
         }
-    }, [isMobile, params.pullRequest, selectedPullRequest])
+    }, [canValidatePullRequestRoute, isMobile, navigate, params.pullRequest, selectedPullRequest])
 
     if (!repositories || isLoading || areSettingsLoading) {
         return <Spinner />
@@ -128,6 +134,8 @@ const PullRequestsView = () => {
                 <>
                     {selectedPullRequest ? (
                         <PullRequestDetails pullRequest={selectedPullRequest} />
+                    ) : isMobile && params.pullRequest && !selectedPullRequest ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={logos.github} text="You have no pull requests" />
                     )}

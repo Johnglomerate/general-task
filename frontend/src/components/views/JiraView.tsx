@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Flex } from '@mantine/core'
 import styled from 'styled-components'
@@ -10,6 +10,7 @@ import { Colors, Spacing, Typography } from '../../styles'
 import { icons } from '../../styles/images'
 import { TTaskV4 } from '../../utils/types'
 import { doesAccountNeedRelinking, isJiraLinked } from '../../utils/utils'
+import Spinner from '../atoms/Spinner'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import EmptyDetails from '../details/EmptyDetails'
 import TaskDetails from '../details/TaskDetails'
@@ -25,7 +26,7 @@ const BodyHeader = styled.div`
 `
 
 const JiraView = () => {
-    const { data: tasks } = useGetActiveTasks()
+    const { data: tasks, isLoading: areTasksLoading } = useGetActiveTasks()
     const { jiraTaskId } = useParams()
     const navigate = useNavigate()
     const isMobile = useIsMobile()
@@ -52,6 +53,13 @@ const JiraView = () => {
         }
         return { task: isMobile ? null : jiraTasks[0] }
     }, [isMobile, jiraTasks, jiraTaskId])
+    const canValidateJiraRoute = !areTasksLoading
+
+    useEffect(() => {
+        if (isMobile && jiraTaskId && canValidateJiraRoute && !selectedTask) {
+            navigate('/jira', { replace: true })
+        }
+    }, [canValidateJiraRoute, isMobile, jiraTaskId, navigate, selectedTask])
 
     const { data: linkedAccounts } = useGetLinkedAccounts()
     const isJiraIntegrationLinked = isJiraLinked(linkedAccounts || [])
@@ -84,6 +92,8 @@ const JiraView = () => {
                 <>
                     {selectedTask ? (
                         <TaskDetails task={selectedTask} />
+                    ) : isMobile && jiraTaskId && (!canValidateJiraRoute || !selectedTask) ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Jira issues" />
                     )}

@@ -22,7 +22,7 @@ import { RECURRING_TASK_SORT_AND_FILTER_CONFIG } from '../molecules/recurring-ta
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
 const RecurringTasksView = () => {
-    const { data: recurringTaskTemplates } = useRecurringTaskTemplates()
+    const { data: recurringTaskTemplates, isLoading: areRecurringTaskTemplatesLoading } = useRecurringTaskTemplates()
     useBackfillRecurringTasks()
 
     const { recurringTaskId } = useParams()
@@ -50,12 +50,18 @@ const RecurringTasksView = () => {
             (isMobile ? null : filteredRecurringTasks[0])
         )
     }, [isMobile, recurringTaskId, filteredRecurringTasks])
+    const canValidateRecurringTaskRoute = !areRecurringTaskTemplatesLoading && !areSettingsLoading
 
     useEffect(() => {
-        if (isMobile && !recurringTaskId) return
+        if (isMobile) {
+            if (recurringTaskId && canValidateRecurringTaskRoute && !selectedRecurringTask) {
+                navigate('/recurring-tasks', { replace: true })
+            }
+            return
+        }
         if (selectedRecurringTask == null) return
         navigate(`/recurring-tasks/${selectedRecurringTask.id}`, { replace: true })
-    }, [isMobile, recurringTaskId, selectedRecurringTask])
+    }, [canValidateRecurringTaskRoute, isMobile, navigate, recurringTaskId, selectedRecurringTask])
 
     const selectRecurringTask = useCallback((recurringTask: TRecurringTaskTemplate) => {
         navigate(`/recurring-tasks/${recurringTask.id}`)
@@ -93,6 +99,8 @@ const RecurringTasksView = () => {
                 <>
                     {selectedRecurringTask ? (
                         <TaskDetails task={selectedRecurringTask} isRecurringTaskTemplate />
+                    ) : isMobile && recurringTaskId && (!canValidateRecurringTaskRoute || !selectedRecurringTask) ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.arrows_repeat} text="You have no recurring tasks" />
                     )}

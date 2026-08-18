@@ -15,6 +15,7 @@ import { TTaskV4 } from '../../utils/types'
 import { doesAccountNeedRelinking, isLinearLinked } from '../../utils/utils'
 import ActionsContainer from '../atoms/ActionsContainer'
 import Flex from '../atoms/Flex'
+import Spinner from '../atoms/Spinner'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import EmptyDetails from '../details/EmptyDetails'
 import TaskDetails from '../details/TaskDetails'
@@ -30,7 +31,7 @@ const LinearBodyHeader = styled.div`
 `
 
 const LinearView = () => {
-    const { data: activeTasks } = useGetActiveTasks()
+    const { data: activeTasks, isLoading: areActiveTasksLoading } = useGetActiveTasks()
     const { linearIssueId } = useParams()
     const navigate = useNavigate()
     const isMobile = useIsMobile()
@@ -40,6 +41,7 @@ const LinearView = () => {
         undefined,
         '_linear_page'
     )
+    const canValidateLinearRoute = !areActiveTasksLoading && !sortAndFilterSettings.isLoading
 
     const linearTasks = useMemo(() => {
         const filteredLinearTasks = activeTasks?.filter((task) => task.source.name === 'Linear') || []
@@ -62,12 +64,17 @@ const LinearView = () => {
             if (task.id === linearIssueId) return { task }
         }
         return { task: isMobile ? null : linearTasks[0] }
-    }, [activeTasks, isMobile, linearIssueId])
+    }, [isMobile, linearIssueId, linearTasks])
 
     useEffect(() => {
-        if (isMobile) return
+        if (isMobile) {
+            if (linearIssueId && canValidateLinearRoute && !task) {
+                navigate('/linear', { replace: true })
+            }
+            return
+        }
         if (task) navigate(`/linear/${task.id}`)
-    }, [activeTasks, isMobile, linearIssueId, task])
+    }, [canValidateLinearRoute, isMobile, linearIssueId, navigate, task])
 
     const { data: linkedAccounts, isLoading: isLinkedAccountsLoading } = useGetLinkedAccounts()
     const isLinearIntegrationLinked = isLinearLinked(linkedAccounts || [])
@@ -98,6 +105,8 @@ const LinearView = () => {
                 <>
                     {task ? (
                         <TaskDetails task={task} />
+                    ) : isMobile && linearIssueId && (!canValidateLinearRoute || !task) ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Linear tasks" />
                     )}

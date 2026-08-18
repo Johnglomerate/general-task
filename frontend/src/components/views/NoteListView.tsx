@@ -22,7 +22,7 @@ import { NOTE_SORT_AND_FILTER_CONFIG } from '../notes/note.config'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
 const NoteListView = () => {
-    const { data: notes } = useGetNotes()
+    const { data: notes, isLoading: areNotesLoading } = useGetNotes()
     const { noteId } = useParams()
     const navigate = useNavigate()
     const isMobile = useIsMobile()
@@ -45,12 +45,18 @@ const NoteListView = () => {
         if (sortedNotes.length === 0) return null
         return sortedNotes.find((note) => note.id === noteId) ?? (isMobile ? null : sortedNotes[0])
     }, [isMobile, noteId, notes, sortedNotes])
+    const canValidateNoteRoute = !areNotesLoading && !areSettingsLoading
 
     useEffect(() => {
-        if (isMobile) return
+        if (isMobile) {
+            if (noteId && canValidateNoteRoute && !selectedNote) {
+                navigate('/notes', { replace: true })
+            }
+            return
+        }
         if (selectedNote == null) return
         navigate(`/notes/${selectedNote.id}`, { replace: true })
-    }, [isMobile, noteId, selectedNote, navigate])
+    }, [canValidateNoteRoute, isMobile, noteId, selectedNote, navigate])
 
     const selectNote = useCallback(
         (note: TNote) => {
@@ -86,6 +92,8 @@ const NoteListView = () => {
                 <>
                     {selectedNote ? (
                         <NoteDetails note={selectedNote} link={`/notes/${selectedNote.id}`} />
+                    ) : isMobile && noteId && (!canValidateNoteRoute || !selectedNote) ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.note} text="You have no notes" />
                     )}

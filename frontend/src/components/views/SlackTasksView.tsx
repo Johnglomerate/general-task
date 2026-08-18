@@ -10,6 +10,7 @@ import { icons } from '../../styles/images'
 import { TTaskV4 } from '../../utils/types'
 import { doesAccountNeedRelinking, isSlackLinked } from '../../utils/utils'
 import Flex from '../atoms/Flex'
+import Spinner from '../atoms/Spinner'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import EmptyDetails from '../details/EmptyDetails'
 import TaskDetails from '../details/TaskDetails'
@@ -25,7 +26,7 @@ const BodyHeader = styled.div`
 `
 
 const SlackTasksView = () => {
-    const { data: activeTasks } = useGetActiveTasks()
+    const { data: activeTasks, isLoading: areActiveTasksLoading } = useGetActiveTasks()
     const { slackTaskId } = useParams()
     const navigate = useNavigate()
     const isMobile = useIsMobile()
@@ -45,11 +46,17 @@ const SlackTasksView = () => {
         }
         return { task: isMobile ? null : slackTasks[0] }
     }, [activeTasks, isMobile, slackTaskId])
+    const canValidateSlackRoute = !areActiveTasksLoading
 
     useEffect(() => {
-        if (isMobile) return
+        if (isMobile) {
+            if (slackTaskId && canValidateSlackRoute && !task) {
+                navigate('/slack', { replace: true })
+            }
+            return
+        }
         if (task) navigate(`/slack/${task.id}`)
-    }, [activeTasks, isMobile, slackTaskId, task])
+    }, [canValidateSlackRoute, isMobile, navigate, slackTaskId, task])
 
     const onClick = (id: string) => {
         if (calendarType === 'week' && slackTaskId === id) {
@@ -93,6 +100,8 @@ const SlackTasksView = () => {
                 <>
                     {task ? (
                         <TaskDetails task={task} />
+                    ) : isMobile && slackTaskId && (!canValidateSlackRoute || !task) ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Slack tasks" />
                     )}
