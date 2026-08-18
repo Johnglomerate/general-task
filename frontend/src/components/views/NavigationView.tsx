@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useDrop } from 'react-dnd'
 import styled from 'styled-components'
-import { useGlobalKeyboardShortcuts, useKeyboardShortcut, usePreviewMode } from '../../hooks'
+import { useKeyboardShortcut, usePreviewMode } from '../../hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Colors, Dimensions, Shadows, Spacing } from '../../styles'
 import { NAVIGATION_BAR_WIDTH } from '../../styles/dimensions'
@@ -79,9 +79,14 @@ interface NavigationViewProps {
     isCollapsed: boolean
     setIsCollapsed: (isCollapsed: boolean) => void
     hideCollapseControl?: boolean
+    hideCommandPalette?: boolean
 }
-const NavigationView = ({ isCollapsed, setIsCollapsed, hideCollapseControl = false }: NavigationViewProps) => {
-    useGlobalKeyboardShortcuts()
+const NavigationView = ({
+    isCollapsed,
+    setIsCollapsed,
+    hideCollapseControl = false,
+    hideCommandPalette = false,
+}: NavigationViewProps) => {
     const { data: userInfo } = useGetUserInfo()
     const { isPreviewMode, toggle: togglePreviewMode } = usePreviewMode()
 
@@ -118,7 +123,7 @@ const NavigationView = ({ isCollapsed, setIsCollapsed, hideCollapseControl = fal
                                 />
                             )}
                             <NoteCreateButton type="icon" />
-                            <CommandPalette />
+                            {!hideCommandPalette && <CommandPalette />}
                         </Flex>
                     </NavigationViewHeader>
                     <OverflowContainer>

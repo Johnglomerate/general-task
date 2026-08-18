@@ -2,12 +2,13 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
-import { useGTLocalStorage, useIsMobile, useWindowSize } from '../../hooks'
+import { useGlobalKeyboardShortcuts, useGTLocalStorage, useIsMobile, useWindowSize } from '../../hooks'
 import { Border, Colors, Dimensions, Shadows, Spacing, Typography } from '../../styles'
 import { TOOLTIP_MAX_WIDTH } from '../../styles/dimensions'
 import { icons, logos } from '../../styles/images'
 import GTButton from '../atoms/buttons/GTButton'
 import { useCalendarContext } from '../calendar/CalendarContext'
+import CommandPalette from '../molecules/CommandPalette'
 import CalendarView, { TCalendarType } from '../views/CalendarView'
 import NavigationView from '../views/NavigationView'
 
@@ -177,6 +178,7 @@ const MobileAppBar = styled.div`
 const MobileTitle = styled.div`
     ${Typography.title.medium};
     color: ${Colors.text.black};
+    flex: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -223,6 +225,7 @@ interface DefaultTemplateProps {
 }
 
 const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
+    useGlobalKeyboardShortcuts()
     const { width } = useWindowSize()
     const isMobile = useIsMobile()
     const location = useLocation()
@@ -276,6 +279,7 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
                 )}
                 <MobileLogo src={logos.generaltask_yellow_circle} />
                 <MobileTitle>{mobileRouteState.title}</MobileTitle>
+                {isMobile && <CommandPalette />}
             </MobileAppBar>
             {!isMobile && <NavigationView isCollapsed={isNavCollapsed} setIsCollapsed={setIsNavCollapsed} />}
             {(isMobile || calendarType === 'day' || showTaskToCalSidebar) && (
@@ -287,7 +291,12 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
                     <MobileDrawerOverlay />
                     <MobileDrawerContent>
                         <HiddenDialogTitle>Navigation</HiddenDialogTitle>
-                        <NavigationView isCollapsed={false} setIsCollapsed={() => undefined} hideCollapseControl />
+                        <NavigationView
+                            isCollapsed={false}
+                            setIsCollapsed={() => undefined}
+                            hideCollapseControl
+                            hideCommandPalette
+                        />
                     </MobileDrawerContent>
                 </Dialog.Portal>
             </Dialog.Root>

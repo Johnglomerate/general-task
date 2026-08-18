@@ -43,12 +43,14 @@ const TaskSectionView = () => {
 
     const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
-    const { data: meetingPreparationTasks } = useGetMeetingPreparationTasks()
+    const { data: meetingPreparationTasks, isLoading: isLoadingMeetingPreparationTasks } =
+        useGetMeetingPreparationTasks()
     const { data: allTasks, isLoading: isLoadingTasks } = useGetTasksV4()
     const { data: folders } = useGetFolders()
     const { mutate: createTask } = useCreateTask()
     const { mutate: reorderTask } = useReorderTask()
     useFetchExternalTasks()
+    const canValidateTaskRoute = !isLoadingTasks && !isLoadingMeetingPreparationTasks
 
     const navigate = useNavigate()
     const params = useParams()
@@ -136,6 +138,7 @@ const TaskSectionView = () => {
                 navigate(`/tasks/${firstFolderId}/`, { replace: true })
             } else if (isMobile) {
                 if (params.task) {
+                    if (!canValidateTaskRoute) return
                     navigate(`/tasks/${folder.id}/`, { replace: true })
                 }
             } else if (!task && sortedTasks.length > taskIndex) {
@@ -146,7 +149,7 @@ const TaskSectionView = () => {
                 navigate(`/tasks/${folder.id}/${sortedTasks[0].id}`, { replace: true })
             }
         }
-    }, [folders, isMobile, params.section, params.task, sortedTasks])
+    }, [canValidateTaskRoute, folders, isMobile, params.section, params.task, sortedTasks])
 
     useItemSelectionController(sortedTasks, selectTask)
 
