@@ -266,7 +266,7 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
                     <GTButton
                         styleType="icon"
                         icon={icons.arrow_left}
-                        onClick={() => navigate(mobileRouteState.backPath)}
+                        onClick={() => navigate(mobileRouteState.backPath, { replace: true })}
                         tooltipText="Back"
                     />
                 ) : (
