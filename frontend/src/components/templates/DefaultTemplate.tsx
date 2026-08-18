@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { ComponentProps, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useLocation, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
@@ -6,6 +6,7 @@ import { useGlobalKeyboardShortcuts, useGTLocalStorage, useIsMobile, useWindowSi
 import { Border, Colors, Dimensions, Shadows, Spacing, Typography } from '../../styles'
 import { TOOLTIP_MAX_WIDTH } from '../../styles/dimensions'
 import { icons, logos } from '../../styles/images'
+import { GT_MODAL_ROOT_CLASS } from '../atoms/BaseModal'
 import GTButton from '../atoms/buttons/GTButton'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import CommandPalette from '../molecules/CommandPalette'
@@ -14,6 +15,9 @@ import NavigationView from '../views/NavigationView'
 
 const COLLAPSE_BREAKPOINT = 1500
 const MOBILE_APP_BAR_HEIGHT = '56px'
+const GT_MODAL_ROOT_SELECTOR = `[data-gt-modal-root], .${GT_MODAL_ROOT_CLASS}`
+
+type DialogContentProps = ComponentProps<typeof Dialog.Content>
 
 interface MobileRouteState {
     isDetailRoute: boolean
@@ -259,6 +263,13 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
         setIsMobileDrawerOpen(false)
     }, [location.pathname])
 
+    const handleMobileDrawerPointerDownOutside: NonNullable<DialogContentProps['onPointerDownOutside']> = (event) => {
+        const target = event.detail.originalEvent.target
+        if (target instanceof HTMLElement && target.closest(GT_MODAL_ROOT_SELECTOR)) {
+            event.preventDefault()
+        }
+    }
+
     return (
         <DefaultTemplateContainer $calendarType={calendarType} $showSidebar={showTaskToCalSidebar}>
             <MobileAppBar>
@@ -289,7 +300,7 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
             <Dialog.Root open={isMobile && isMobileDrawerOpen} onOpenChange={setIsMobileDrawerOpen}>
                 <Dialog.Portal>
                     <MobileDrawerOverlay />
-                    <MobileDrawerContent>
+                    <MobileDrawerContent onPointerDownOutside={handleMobileDrawerPointerDownOutside}>
                         <HiddenDialogTitle>Navigation</HiddenDialogTitle>
                         <NavigationView
                             isCollapsed={false}
