@@ -17,15 +17,19 @@ import SmartPrioritizationBanner from '../overview/SmartPrioritizationBanner'
 import useOverviewLists from '../overview/useOverviewLists'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
-const useSelectFirstItemOnFirstLoad = (isMobile: boolean) => {
+const useSelectFirstItemOnFirstLoad = (isMobile: boolean, overviewItemId?: string) => {
     const { setOpenListIds } = useOverviewContext()
     const { lists, isSuccess } = useOverviewLists()
     const isFirstSuccess = useRef(true)
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (isMobile) return
-        if (!isFirstSuccess.current || lists?.length === 0) return
+        if (!isFirstSuccess.current || !isSuccess) return
+        if (isMobile || overviewItemId) {
+            isFirstSuccess.current = false
+            return
+        }
+        if (lists?.length === 0) return
         const firstNonEmptyView = lists?.find((list) => list.view_item_ids.length > 0)
         if (firstNonEmptyView) {
             setOpenListIds((ids) => {
@@ -39,7 +43,7 @@ const useSelectFirstItemOnFirstLoad = (isMobile: boolean) => {
             navigate(`/overview`, { replace: true })
         }
         isFirstSuccess.current = false
-    }, [isMobile, lists, isSuccess])
+    }, [isMobile, lists, isSuccess, overviewItemId])
 }
 
 const DailyOverviewView = () => {
@@ -49,7 +53,7 @@ const DailyOverviewView = () => {
     const { overviewItemId } = useParams()
 
     const { calendarType } = useCalendarContext()
-    useSelectFirstItemOnFirstLoad(isMobile)
+    useSelectFirstItemOnFirstLoad(isMobile, overviewItemId)
     const { expandAll, collapseAll } = useOverviewContext()
 
     const { lists, isLoading: isOverviewListsLoading } = useOverviewLists()
