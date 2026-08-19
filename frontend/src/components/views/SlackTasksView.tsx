@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -10,6 +10,7 @@ import { icons } from '../../styles/images'
 import { TTaskV4 } from '../../utils/types'
 import { doesAccountNeedRelinking, isSlackLinked } from '../../utils/utils'
 import Flex from '../atoms/Flex'
+import Spinner from '../atoms/Spinner'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import EmptyDetails from '../details/EmptyDetails'
 import TaskDetails from '../details/TaskDetails'
@@ -25,9 +26,10 @@ const BodyHeader = styled.div`
 `
 
 const SlackTasksView = () => {
-    const { data: activeTasks } = useGetActiveTasks()
+    const { data: activeTasks, isLoading: areActiveTasksLoading } = useGetActiveTasks()
     const { slackTaskId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType, setCalendarType, setDate, dayViewDate } = useCalendarContext()
 
     const slackTasks = useMemo(() => activeTasks?.filter((task) => task.source.name === 'Slack') || [], [activeTasks])
@@ -42,12 +44,21 @@ const SlackTasksView = () => {
         for (const task of slackTasks) {
             if (task.id === slackTaskId) return { task }
         }
-        return { task: slackTasks[0] }
-    }, [activeTasks, slackTaskId])
+        return { task: isMobile ? null : slackTasks[0] }
+    }, [activeTasks, isMobile, slackTaskId])
+    const canValidateSlackRoute = !areActiveTasksLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: slackTaskId,
+        canValidate: canValidateSlackRoute,
+        hasSelectedDetail: Boolean(task),
+        listPath: '/slack',
+    })
 
     useEffect(() => {
+        if (isMobile) return
         if (task) navigate(`/slack/${task.id}`)
-    }, [activeTasks, task])
+    }, [isMobile, navigate, task])
 
     const onClick = (id: string) => {
         if (calendarType === 'week' && slackTaskId === id) {
@@ -87,10 +98,12 @@ const SlackTasksView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || slackTaskId) && (
                 <>
                     {task ? (
                         <TaskDetails task={task} />
+                    ) : shouldShowMobileDetailSpinner ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Slack tasks" />
                     )}

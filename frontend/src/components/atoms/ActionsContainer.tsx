@@ -1,13 +1,24 @@
 import styled from 'styled-components'
-import { Spacing } from '../../styles'
+import { Dimensions, Spacing } from '../../styles'
 
 const Container = styled.div`
     display: flex;
     margin-bottom: ${Spacing._8};
+
+    ${Dimensions.mediaQuery.phone} {
+        flex-wrap: wrap;
+        gap: ${Spacing._8};
+    }
 `
 const RightActions = styled.div`
     margin-left: auto;
     display: flex;
+
+    ${Dimensions.mediaQuery.phone} {
+        margin-left: 0;
+        flex-wrap: wrap;
+        gap: ${Spacing._4};
+    }
 `
 
 interface ActionsContainerProps {

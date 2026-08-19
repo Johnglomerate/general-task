@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -15,6 +15,7 @@ import { TTaskV4 } from '../../utils/types'
 import { doesAccountNeedRelinking, isLinearLinked } from '../../utils/utils'
 import ActionsContainer from '../atoms/ActionsContainer'
 import Flex from '../atoms/Flex'
+import Spinner from '../atoms/Spinner'
 import { useCalendarContext } from '../calendar/CalendarContext'
 import EmptyDetails from '../details/EmptyDetails'
 import TaskDetails from '../details/TaskDetails'
@@ -30,15 +31,17 @@ const LinearBodyHeader = styled.div`
 `
 
 const LinearView = () => {
-    const { data: activeTasks } = useGetActiveTasks()
+    const { data: activeTasks, isLoading: areActiveTasksLoading } = useGetActiveTasks()
     const { linearIssueId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
     const sortAndFilterSettings = useSortAndFilterSettings<TTaskV4>(
         LINEAR_SORT_AND_FILTER_CONFIG,
         undefined,
         '_linear_page'
     )
+    const canValidateLinearRoute = !areActiveTasksLoading && !sortAndFilterSettings.isLoading
 
     const linearTasks = useMemo(() => {
         const filteredLinearTasks = activeTasks?.filter((task) => task.source.name === 'Linear') || []
@@ -60,12 +63,20 @@ const LinearView = () => {
         for (const task of linearTasks) {
             if (task.id === linearIssueId) return { task }
         }
-        return { task: linearTasks[0] }
-    }, [activeTasks, linearIssueId])
+        return { task: isMobile ? null : linearTasks[0] }
+    }, [isMobile, linearIssueId, linearTasks])
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: linearIssueId,
+        canValidate: canValidateLinearRoute,
+        hasSelectedDetail: Boolean(task),
+        listPath: '/linear',
+    })
 
     useEffect(() => {
+        if (isMobile) return
         if (task) navigate(`/linear/${task.id}`)
-    }, [activeTasks, task])
+    }, [isMobile, navigate, task])
 
     const { data: linkedAccounts, isLoading: isLinkedAccountsLoading } = useGetLinkedAccounts()
     const isLinearIntegrationLinked = isLinearLinked(linkedAccounts || [])
@@ -92,10 +103,12 @@ const LinearView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || linearIssueId) && (
                 <>
                     {task ? (
                         <TaskDetails task={task} />
+                    ) : shouldShowMobileDetailSpinner ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Linear tasks" />
                     )}

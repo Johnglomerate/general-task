@@ -4,8 +4,7 @@ import { DateTime } from 'luxon'
 import styled from 'styled-components'
 import { v4 as uuidv4 } from 'uuid'
 import { DONE_FOLDER_ID, TRASH_FOLDER_ID } from '../../constants'
-import { useKeyboardShortcut } from '../../hooks'
-import { useNavigateToTask } from '../../hooks'
+import { useIsMobile, useKeyboardShortcut, useMobileDetailRouteFallback, useNavigateToTask } from '../../hooks'
 import useItemSelectionController from '../../hooks/useItemSelectionController'
 import { useGetFolders } from '../../services/api/folders.hooks'
 import Log from '../../services/api/log'
@@ -42,13 +41,16 @@ const TaskSectionView = () => {
     const sectionScrollingRef = useRef<HTMLDivElement | null>(null)
     const sectionViewRef = useRef<HTMLDivElement>(null)
 
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
-    const { data: meetingPreparationTasks } = useGetMeetingPreparationTasks()
+    const { data: meetingPreparationTasks, isLoading: isLoadingMeetingPreparationTasks } =
+        useGetMeetingPreparationTasks()
     const { data: allTasks, isLoading: isLoadingTasks } = useGetTasksV4()
-    const { data: folders } = useGetFolders()
+    const { data: folders, isLoading: isLoadingFolders } = useGetFolders()
     const { mutate: createTask } = useCreateTask()
     const { mutate: reorderTask } = useReorderTask()
     useFetchExternalTasks()
+    const canValidateTaskRoute = !isLoadingFolders && !isLoadingTasks && !isLoadingMeetingPreparationTasks
 
     const navigate = useNavigate()
     const params = useParams()
@@ -93,6 +95,13 @@ const TaskSectionView = () => {
         const meetingTask = meetingPreparationTasks?.find(({ id }) => id === params.task)
         return meetingTask
     }, [allTasks, meetingPreparationTasks, params.task, params.subtaskId])
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: params.task,
+        canValidate: canValidateTaskRoute && Boolean(folder),
+        hasSelectedDetail: Boolean(task && folder),
+        listPath: folder ? `/tasks/${folder.id}/` : '/tasks',
+    })
 
     const [taskIndex, setTaskIndex] = useState(0)
 
@@ -134,6 +143,11 @@ const TaskSectionView = () => {
             const firstFolderId = folders[0].id
             if (!folder) {
                 navigate(`/tasks/${firstFolderId}/`, { replace: true })
+            } else if (isMobile) {
+                if (params.task) {
+                    if (!canValidateTaskRoute) return
+                    navigate(`/tasks/${folder.id}/`, { replace: true })
+                }
             } else if (!task && sortedTasks.length > taskIndex) {
                 navigate(`/tasks/${folder.id}/${sortedTasks[taskIndex].id}`, { replace: true })
             } else if (!task && sortedTasks.length === taskIndex && taskIndex > 0) {
@@ -142,7 +156,7 @@ const TaskSectionView = () => {
                 navigate(`/tasks/${folder.id}/${sortedTasks[0].id}`, { replace: true })
             }
         }
-    }, [folders, params.section, params.task, sortedTasks])
+    }, [canValidateTaskRoute, folders, isMobile, params.section, params.task, sortedTasks])
 
     useItemSelectionController(sortedTasks, selectTask)
 
@@ -253,10 +267,12 @@ const TaskSectionView = () => {
                     </>
                 )}
             </ScrollableListTemplate>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || params.task) && (
                 <>
                     {task && folder ? (
                         <TaskDetails task={task} />
+                    ) : shouldShowMobileDetailSpinner ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no tasks" />
                     )}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import useOverviewContext from '../../context/OverviewContextProvider'
-import { useGetMeetingPreparationTasks } from '../../services/api/meeting-preparation-tasks.hooks'
+import { useIsMobile, useMobileDetailRouteFallback } from '../../hooks'
 import { icons } from '../../styles/images'
 import ActionsContainer from '../atoms/ActionsContainer'
 import Flex from '../atoms/Flex'
@@ -11,19 +11,24 @@ import { useCalendarContext } from '../calendar/CalendarContext'
 import { Header } from '../molecules/Header'
 import AccordionItem from '../overview/AccordionItem'
 import EditModal from '../overview/EditModal'
-import OverviewDetails from '../overview/OverviewDetails'
+import OverviewDetails, { useOverviewDetailState } from '../overview/OverviewDetails'
 import SmartPrioritizationBanner from '../overview/SmartPrioritizationBanner'
 import useOverviewLists from '../overview/useOverviewLists'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
-const useSelectFirstItemOnFirstLoad = () => {
+const useSelectFirstItemOnFirstLoad = (isMobile: boolean, overviewItemId?: string) => {
     const { setOpenListIds } = useOverviewContext()
     const { lists, isSuccess } = useOverviewLists()
     const isFirstSuccess = useRef(true)
     const navigate = useNavigate()
 
     useEffect(() => {
-        if (!isFirstSuccess.current || lists?.length === 0) return
+        if (!isFirstSuccess.current || !isSuccess) return
+        if (isMobile || overviewItemId) {
+            isFirstSuccess.current = false
+            return
+        }
+        if (lists?.length === 0) return
         const firstNonEmptyView = lists?.find((list) => list.view_item_ids.length > 0)
         if (firstNonEmptyView) {
             setOpenListIds((ids) => {
@@ -37,21 +42,30 @@ const useSelectFirstItemOnFirstLoad = () => {
             navigate(`/overview`, { replace: true })
         }
         isFirstSuccess.current = false
-    }, [lists, isSuccess])
+    }, [isMobile, lists, isSuccess, overviewItemId])
 }
 
 const DailyOverviewView = () => {
     const [isEditListsModalOpen, setIsEditListsModalOpen] = useState(false)
     const [editListTabIndex, setEditListTabIndex] = useState(0) // 0 - add, 1 - reorder
+    const isMobile = useIsMobile()
+    const { overviewViewId, overviewItemId, subtaskId } = useParams()
 
     const { calendarType } = useCalendarContext()
-    useSelectFirstItemOnFirstLoad()
+    useSelectFirstItemOnFirstLoad(isMobile, overviewItemId)
     const { expandAll, collapseAll } = useOverviewContext()
 
-    const { lists, isLoading: isOverviewListsLoading } = useOverviewLists()
-    const { isLoading: isMeetingTasksLoading } = useGetMeetingPreparationTasks()
+    const { lists, isLoading: isOverviewDetailLoading, hasSelectedOverviewDetail } = useOverviewDetailState()
+    const selectedOverviewItemId = subtaskId || overviewItemId
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: overviewViewId && overviewItemId ? selectedOverviewItemId : undefined,
+        canValidate: !isOverviewDetailLoading,
+        hasSelectedDetail: hasSelectedOverviewDetail,
+        listPath: '/overview',
+    })
 
-    if (isOverviewListsLoading || isMeetingTasksLoading) return <Spinner />
+    if (isOverviewDetailLoading) return <Spinner />
     return (
         <>
             <Flex>
@@ -105,7 +119,9 @@ const DailyOverviewView = () => {
                     ))}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && <OverviewDetails />}
+            {calendarType === 'day' &&
+                (!isMobile || overviewItemId) &&
+                (shouldShowMobileDetailSpinner ? <Spinner /> : <OverviewDetails />)}
             <EditModal
                 isOpen={isEditListsModalOpen}
                 setisOpen={setIsEditListsModalOpen}

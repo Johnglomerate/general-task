@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import Log from '../../services/api/log'
 import { useFetchPullRequests, useGetPullRequests } from '../../services/api/pull-request.hooks'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -34,6 +34,7 @@ const PullRequestsView = () => {
     const { data: linkedAccounts, isLoading: isLinkedAccountsLoading } = useGetLinkedAccounts()
     const navigate = useNavigate()
     const params = useParams()
+    const isMobile = useIsMobile()
     const { data: repositories, isLoading } = useGetPullRequests()
     useFetchPullRequests()
     const { calendarType } = useCalendarContext()
@@ -72,17 +73,27 @@ const PullRequestsView = () => {
     const selectedPullRequest = useMemo(() => {
         if (sortedAndFilteredPullRequests.length === 0 || areSettingsLoading) return null
         return (
-            sortedAndFilteredPullRequests.find((pr) => pr.id === params.pullRequest) ?? sortedAndFilteredPullRequests[0]
+            sortedAndFilteredPullRequests.find((pr) => pr.id === params.pullRequest) ??
+            (isMobile ? null : sortedAndFilteredPullRequests[0])
         )
-    }, [params.pullRequest, sortedAndFilteredRepositories])
+    }, [isMobile, params.pullRequest, sortedAndFilteredRepositories])
+    const canValidatePullRequestRoute = !isLoading && !areSettingsLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: params.pullRequest,
+        canValidate: canValidatePullRequestRoute,
+        hasSelectedDetail: Boolean(selectedPullRequest),
+        listPath: '/pull-requests',
+    })
 
     const isGithubIntegrationLinked = isGithubLinked(linkedAccounts ?? [])
     const doesNeedRelinking = doesAccountNeedRelinking(linkedAccounts || [], 'GitHub')
     useEffect(() => {
+        if (isMobile) return
         if (selectedPullRequest) {
             navigate(`/pull-requests/${selectedPullRequest.id}`, { replace: true })
         }
-    }, [selectedPullRequest])
+    }, [isMobile, navigate, selectedPullRequest])
 
     if (!repositories || isLoading || areSettingsLoading) {
         return <Spinner />
@@ -121,10 +132,12 @@ const PullRequestsView = () => {
                     )}
                 </ScrollableListTemplate>
             </PullRequestsContainer>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || params.pullRequest) && (
                 <>
                     {selectedPullRequest ? (
                         <PullRequestDetails pullRequest={selectedPullRequest} />
+                    ) : shouldShowMobileDetailSpinner ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={logos.github} text="You have no pull requests" />
                     )}

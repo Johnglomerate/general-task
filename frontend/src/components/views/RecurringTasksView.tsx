@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import Log from '../../services/api/log'
 import { useBackfillRecurringTasks, useRecurringTaskTemplates } from '../../services/api/recurring-tasks.hooks'
 import { icons } from '../../styles/images'
@@ -22,11 +22,12 @@ import { RECURRING_TASK_SORT_AND_FILTER_CONFIG } from '../molecules/recurring-ta
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
 const RecurringTasksView = () => {
-    const { data: recurringTaskTemplates } = useRecurringTaskTemplates()
+    const { data: recurringTaskTemplates, isLoading: areRecurringTaskTemplatesLoading } = useRecurringTaskTemplates()
     useBackfillRecurringTasks()
 
     const { recurringTaskId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
 
     const sortAndFilterSettings = useSortAndFilterSettings<TRecurringTaskTemplate>(
@@ -44,13 +45,25 @@ const RecurringTasksView = () => {
 
     const selectedRecurringTask = useMemo(() => {
         if (filteredRecurringTasks == null || filteredRecurringTasks.length === 0) return null
-        return filteredRecurringTasks.find((pr) => pr.id === recurringTaskId) ?? filteredRecurringTasks[0]
-    }, [recurringTaskId, filteredRecurringTasks])
+        return (
+            filteredRecurringTasks.find((pr) => pr.id === recurringTaskId) ??
+            (isMobile ? null : filteredRecurringTasks[0])
+        )
+    }, [isMobile, recurringTaskId, filteredRecurringTasks])
+    const canValidateRecurringTaskRoute = !areRecurringTaskTemplatesLoading && !areSettingsLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: recurringTaskId,
+        canValidate: canValidateRecurringTaskRoute,
+        hasSelectedDetail: Boolean(selectedRecurringTask),
+        listPath: '/recurring-tasks',
+    })
 
     useEffect(() => {
+        if (isMobile) return
         if (selectedRecurringTask == null) return
         navigate(`/recurring-tasks/${selectedRecurringTask.id}`, { replace: true })
-    }, [selectedRecurringTask])
+    }, [isMobile, navigate, selectedRecurringTask])
 
     const selectRecurringTask = useCallback((recurringTask: TRecurringTaskTemplate) => {
         navigate(`/recurring-tasks/${recurringTask.id}`)
@@ -84,10 +97,12 @@ const RecurringTasksView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || recurringTaskId) && (
                 <>
                     {selectedRecurringTask ? (
                         <TaskDetails task={selectedRecurringTask} isRecurringTaskTemplate />
+                    ) : shouldShowMobileDetailSpinner ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.arrows_repeat} text="You have no recurring tasks" />
                     )}

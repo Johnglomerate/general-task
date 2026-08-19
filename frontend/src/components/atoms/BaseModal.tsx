@@ -12,6 +12,7 @@ const MODAL_WIDTH = {
     lg: '1004px',
 }
 type TModalSize = keyof typeof MODAL_WIDTH
+export const GT_MODAL_ROOT_CLASS = 'gt-modal-root'
 
 const modalProps: Partial<ModalProps> = {
     withCloseButton: false,
@@ -23,6 +24,9 @@ const modalProps: Partial<ModalProps> = {
     transitionDuration: 150,
     padding: 0,
     onKeyDown: (e) => stopKeydownPropogation(e, [], true),
+    classNames: {
+        root: GT_MODAL_ROOT_CLASS,
+    },
     styles: {
         modal: {
             borderRadius: Border.radius.medium,
@@ -45,7 +49,7 @@ const BaseModal = ({ children, size = 'sm', open, onClose, setIsModalOpen }: Bas
         onClose?.()
     }
     return (
-        <Modal opened={open} onClose={onModalClose} size={MODAL_WIDTH[size]} {...modalProps}>
+        <Modal data-gt-modal-root opened={open} onClose={onModalClose} size={MODAL_WIDTH[size]} {...modalProps}>
             <ModalContentContainer>{children}</ModalContentContainer>
         </Modal>
     )

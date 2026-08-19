@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { Colors, Spacing } from '../../styles'
+import { Colors, Dimensions, Spacing } from '../../styles'
 import { DEFAULT_VIEW_WIDTH } from '../../styles/dimensions'
 
 const ScrollableListTemplate = styled.div`
@@ -8,6 +8,14 @@ const ScrollableListTemplate = styled.div`
     width: ${DEFAULT_VIEW_WIDTH};
     background-color: ${Colors.background.base};
     border-right: 1px solid ${Colors.background.border};
+
+    ${Dimensions.mediaQuery.phone} {
+        width: 100%;
+        min-width: 0;
+        padding: ${Spacing._16} ${Spacing._12} 96px;
+        border-right: 0;
+        box-sizing: border-box;
+    }
 `
 
 export default ScrollableListTemplate

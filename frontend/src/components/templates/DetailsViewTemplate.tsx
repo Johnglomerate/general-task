@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import styled from 'styled-components'
 import useDetailsViewDrop from '../../hooks/useDetailsViewDrop'
-import { Colors, Spacing } from '../../styles'
+import { Colors, Dimensions, Spacing } from '../../styles'
 
-const DetailsViewContainer = styled.div`
+const DetailsViewContainer = styled.div.attrs({ 'data-mobile-pane': 'detail' })`
     position: relative;
     flex: 1;
     display: flex;
@@ -13,6 +13,13 @@ const DetailsViewContainer = styled.div`
     padding: ${Spacing._32} ${Spacing._16} ${Spacing._16};
     gap: ${Spacing._8};
     overflow: auto;
+
+    ${Dimensions.mediaQuery.phone} {
+        min-width: 0;
+        width: 100%;
+        padding: ${Spacing._16} ${Spacing._12};
+        box-sizing: border-box;
+    }
 `
 
 const DetailsViewTemplate = ({ children }: { children: React.ReactNode }) => {

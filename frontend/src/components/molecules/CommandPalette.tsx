@@ -10,7 +10,7 @@ import useNavigateToTask from '../../hooks/useNavigateToTask'
 import { useGetFolders } from '../../services/api/folders.hooks'
 import Log from '../../services/api/log'
 import { useGetTasksV4 } from '../../services/api/tasks.hooks'
-import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
+import { Border, Colors, Dimensions, Shadows, Spacing, Typography } from '../../styles'
 import { icons, logos } from '../../styles/images'
 import { TShortcut, TShortcutCategory } from '../../utils/types'
 import { stopKeydownPropogation } from '../../utils/utils'
@@ -36,6 +36,12 @@ const CommandDialog = styled(Command.Dialog)`
     padding-bottom: ${Spacing._4};
     z-index: 1500; // should appear over modals
     user-select: none;
+
+    ${Dimensions.mediaQuery.phone} {
+        top: ${Spacing._64};
+        width: calc(100vw - ${Spacing._24});
+        max-width: ${COMMAND_PALETTE_WIDTH};
+    }
 `
 const Searchbar = styled.div`
     display: flex;

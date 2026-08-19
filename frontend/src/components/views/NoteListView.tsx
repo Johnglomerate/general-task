@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import Log from '../../services/api/log'
 import { useGetNotes } from '../../services/api/notes.hooks'
 import { icons } from '../../styles/images'
@@ -22,9 +22,10 @@ import { NOTE_SORT_AND_FILTER_CONFIG } from '../notes/note.config'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
 const NoteListView = () => {
-    const { data: notes } = useGetNotes()
+    const { data: notes, isLoading: areNotesLoading } = useGetNotes()
     const { noteId } = useParams()
     const navigate = useNavigate()
+    const isMobile = useIsMobile()
     const { calendarType } = useCalendarContext()
 
     const sortAndFilterSettings = useSortAndFilterSettings<TNote>(NOTE_SORT_AND_FILTER_CONFIG)
@@ -42,20 +43,29 @@ const NoteListView = () => {
 
     const selectedNote = useMemo(() => {
         if (sortedNotes.length === 0) return null
-        return sortedNotes.find((note) => note.id === noteId) ?? sortedNotes[0]
-    }, [noteId, notes, sortedNotes])
+        return sortedNotes.find((note) => note.id === noteId) ?? (isMobile ? null : sortedNotes[0])
+    }, [isMobile, noteId, notes, sortedNotes])
+    const canValidateNoteRoute = !areNotesLoading && !areSettingsLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: noteId,
+        canValidate: canValidateNoteRoute,
+        hasSelectedDetail: Boolean(selectedNote),
+        listPath: '/notes',
+    })
 
     useEffect(() => {
+        if (isMobile) return
         if (selectedNote == null) return
         navigate(`/notes/${selectedNote.id}`, { replace: true })
-    }, [selectedNote, navigate])
+    }, [isMobile, selectedNote, navigate])
 
     const selectNote = useCallback(
         (note: TNote) => {
-            navigate(`/notes/${note.id}`, { replace: true })
+            navigate(`/notes/${note.id}`, { replace: !isMobile })
             Log(`notes_select_${note.id}`)
         },
-        [sortedNotes]
+        [isMobile]
     )
 
     useItemSelectionController(sortedNotes, selectNote)
@@ -80,10 +90,12 @@ const NoteListView = () => {
                     )}
                 </ScrollableListTemplate>
             </Flex>
-            {calendarType === 'day' && (
+            {calendarType === 'day' && (!isMobile || noteId) && (
                 <>
                     {selectedNote ? (
                         <NoteDetails note={selectedNote} link={`/notes/${selectedNote.id}`} />
+                    ) : shouldShowMobileDetailSpinner ? (
+                        <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.note} text="You have no notes" />
                     )}

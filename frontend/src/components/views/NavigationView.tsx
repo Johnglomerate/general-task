@@ -1,9 +1,9 @@
 import { useCallback } from 'react'
 import { useDrop } from 'react-dnd'
 import styled from 'styled-components'
-import { useGlobalKeyboardShortcuts, useKeyboardShortcut, usePreviewMode } from '../../hooks'
+import { useKeyboardShortcut, usePreviewMode } from '../../hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
-import { Colors, Shadows, Spacing } from '../../styles'
+import { Colors, Dimensions, Shadows, Spacing } from '../../styles'
 import { NAVIGATION_BAR_WIDTH } from '../../styles/dimensions'
 import { icons, logos } from '../../styles/images'
 import { DropType } from '../../utils/types'
@@ -27,11 +27,16 @@ const NavigationViewContainer = styled.div<{ showDropShadow: boolean; isCollapse
     flex-direction: column;
     min-width: 0px;
     min-height: 0px;
+    height: 100%;
     background-color: ${Colors.background.sub};
     box-sizing: border-box;
     z-index: 1;
     ${(props) => props.showDropShadow && `box-shadow: ${Shadows.deprecated_button.hover};`}
     width: ${({ isCollapsed }) => (isCollapsed ? 'fit-content' : NAVIGATION_BAR_WIDTH)};
+
+    ${Dimensions.mediaQuery.phone} {
+        width: 100%;
+    }
 `
 const NavigationViewHeader = styled.div`
     display: flex;
@@ -73,9 +78,15 @@ export const GTBetaLogo = styled.img`
 interface NavigationViewProps {
     isCollapsed: boolean
     setIsCollapsed: (isCollapsed: boolean) => void
+    hideCollapseControl?: boolean
+    hideCommandPalette?: boolean
 }
-const NavigationView = ({ isCollapsed, setIsCollapsed }: NavigationViewProps) => {
-    useGlobalKeyboardShortcuts()
+const NavigationView = ({
+    isCollapsed,
+    setIsCollapsed,
+    hideCollapseControl = false,
+    hideCommandPalette = false,
+}: NavigationViewProps) => {
     const { data: userInfo } = useGetUserInfo()
     const { isPreviewMode, toggle: togglePreviewMode } = usePreviewMode()
 
@@ -103,14 +114,16 @@ const NavigationView = ({ isCollapsed, setIsCollapsed }: NavigationViewProps) =>
                         <GTBetaLogo src={isPreviewMode ? logos.generaltask_beta_blue : logos.generaltask_beta_yellow} />
                         <Flex gap={Spacing._4}>
                             {isPreviewMode && <StreakPopover />}
-                            <GTButton
-                                styleType="icon"
-                                icon={icons.sidebar}
-                                onClick={() => setIsCollapsed(!isCollapsed)}
-                                shortcutName="navigationView"
-                            />
+                            {!hideCollapseControl && (
+                                <GTButton
+                                    styleType="icon"
+                                    icon={icons.sidebar}
+                                    onClick={() => setIsCollapsed(!isCollapsed)}
+                                    shortcutName="navigationView"
+                                />
+                            )}
                             <NoteCreateButton type="icon" />
-                            <CommandPalette />
+                            {!hideCommandPalette && <CommandPalette />}
                         </Flex>
                     </NavigationViewHeader>
                     <OverflowContainer>

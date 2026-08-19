@@ -8,7 +8,7 @@ import PullRequestDetails from '../details/PullRequestDetails'
 import TaskDetails from '../details/TaskDetails'
 import useOverviewLists from './useOverviewLists'
 
-const OverviewDetails = () => {
+export const useOverviewDetailState = () => {
     const { lists, isLoading, flattenedLists } = useOverviewLists()
     const { overviewViewId, overviewItemId, subtaskId } = useParams()
     const selectedList = lists?.find((list) => list.id === overviewViewId)
@@ -16,27 +16,43 @@ const OverviewDetails = () => {
     const { data: allTasks, isLoading: isGetAllTasksLoading } = useGetTasksV4()
     const { data: meetingPreparationTasks, isLoading: isMeetingPreparationTasksLoading } =
         useGetMeetingPreparationTasks()
+    const selectedTaskId = subtaskId || overviewItemId
+    const selectedPullRequest =
+        selectedList?.type === 'github'
+            ? repositories?.flatMap((repo) => repo.pull_requests).find((item) => item.id === overviewItemId)
+            : undefined
+    const selectedTask =
+        selectedList?.type === 'meeting_preparation'
+            ? meetingPreparationTasks?.find((task) => task.id === selectedTaskId)
+            : selectedList && selectedList.type !== 'github'
+            ? allTasks?.find((task) => task.id === selectedTaskId)
+            : undefined
 
-    if (isLoading || isGetPullRequestLoading || isGetAllTasksLoading || isMeetingPreparationTasksLoading) return null
+    return {
+        lists,
+        flattenedLists,
+        selectedList,
+        selectedPullRequest,
+        selectedTask,
+        hasSelectedOverviewDetail: Boolean(selectedPullRequest || selectedTask),
+        isLoading: isLoading || isGetPullRequestLoading || isGetAllTasksLoading || isMeetingPreparationTasksLoading,
+    }
+}
+
+const OverviewDetails = () => {
+    const { lists, isLoading, flattenedLists, selectedList, selectedPullRequest, selectedTask } =
+        useOverviewDetailState()
+
+    if (isLoading) return null
     else if (lists.length > 0 && flattenedLists.length === 0)
         return <EmptyDetails icon={icons.check} text="Your lists are all empty" />
     else if (lists.length === 0) return <EmptyDetails icon={icons.list} text="You have no lists" />
     else if (!selectedList) {
         return null
     } else if (selectedList.type === 'github') {
-        const selectedPullRequest = repositories
-            ?.flatMap((repo) => repo.pull_requests)
-            .find((item) => item.id === overviewItemId)
         if (!selectedPullRequest) return null
         return <PullRequestDetails pullRequest={selectedPullRequest} />
-    } else if (selectedList.type === 'meeting_preparation') {
-        const selectedTaskId = subtaskId || overviewItemId
-        const selectedTask = meetingPreparationTasks?.find((task) => task.id === selectedTaskId)
-        if (!selectedTask) return null
-        return <TaskDetails task={selectedTask} />
     } else {
-        const selectedTaskId = subtaskId || overviewItemId
-        const selectedTask = allTasks?.find((task) => task.id === selectedTaskId)
         if (!selectedTask) return null
         return <TaskDetails task={selectedTask} />
     }
