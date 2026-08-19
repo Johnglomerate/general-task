@@ -54,7 +54,7 @@ interface ScheduleTaskModalProps {
  * is the only other path and it never fires on touch, so this is the only way in on a phone.
  */
 const ScheduleTaskModal = ({ task, pullRequest, view, onClose }: ScheduleTaskModalProps) => {
-    const { scheduleOnCalendar } = useScheduleTask()
+    const { scheduleOnCalendar, isLoadingCalendars } = useScheduleTask()
     const oldToast = useToast()
     const { isPreviewMode } = usePreviewMode()
 
@@ -135,6 +135,9 @@ const ScheduleTaskModal = ({ task, pullRequest, view, onClose }: ScheduleTaskMod
                                 styleType="primary"
                                 icon={icons.calendar_star}
                                 value="Schedule"
+                                /* until the calendar list resolves, "no calendars" and "not loaded yet"
+                                   look identical and would show a false connect-account prompt */
+                                disabled={isLoadingCalendars}
                                 onClick={onSchedule}
                             />
                         </Flex>

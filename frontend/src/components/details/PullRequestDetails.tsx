@@ -1,15 +1,18 @@
+import { useState } from 'react'
 import { DateTime } from 'luxon'
 import styled from 'styled-components'
 import { useGetPullRequests } from '../../services/api/pull-request.hooks'
 import { Colors, Spacing, Typography } from '../../styles'
-import { logos } from '../../styles/images'
+import { icons, logos } from '../../styles/images'
 import { PULL_REQUEST_ACTIONS } from '../../utils/sortAndFilter/pull-requests.config'
 import { TPullRequest } from '../../utils/types'
 import { getHumanTimeSinceDateTime } from '../../utils/utils'
 import { Icon } from '../atoms/Icon'
 import { Divider } from '../atoms/SectionDivider'
 import ExternalLinkButton from '../atoms/buttons/ExternalLinkButton'
+import GTButton from '../atoms/buttons/GTButton'
 import { BodySmall, BodySmallUpper } from '../atoms/typography/Typography'
+import ScheduleTaskModal from '../molecules/ScheduleTaskModal'
 import BranchName from '../pull-requests/BranchName'
 import Status from '../pull-requests/Status'
 import DetailsViewTemplate from '../templates/DetailsViewTemplate'
@@ -88,6 +91,7 @@ const PullRequestDetails = ({ pullRequest }: PullRequestDetailsProps) => {
     } = pullRequest
     const formattedTimeSince = getHumanTimeSinceDateTime(DateTime.fromISO(last_updated_at))
     const statusDescription = PULL_REQUEST_ACTIONS.find((action) => action.text === status.text)?.description
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
 
     return (
         <DetailsViewTemplate>
@@ -95,6 +99,12 @@ const PullRequestDetails = ({ pullRequest }: PullRequestDetailsProps) => {
                 <Icon icon={logos.github} color="black" />
                 <BodySmall color="light">{repository?.name}</BodySmall>
                 <MarginLeftAuto>
+                    <GTButton
+                        styleType="icon"
+                        icon={icons.calendar_star}
+                        tooltipText="Schedule on calendar"
+                        onClick={() => setIsScheduleModalOpen(true)}
+                    />
                     <ExternalLinkButton link={deeplink} />
                 </MarginLeftAuto>
             </DetailsTopContainer>
@@ -136,6 +146,9 @@ const PullRequestDetails = ({ pullRequest }: PullRequestDetailsProps) => {
                             />
                         ))}
                 </>
+            )}
+            {isScheduleModalOpen && (
+                <ScheduleTaskModal pullRequest={pullRequest} onClose={() => setIsScheduleModalOpen(false)} />
             )}
         </DetailsViewTemplate>
     )

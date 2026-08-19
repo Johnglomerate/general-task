@@ -50,7 +50,7 @@ interface ScheduleOnCalendarArgs {
  */
 const useScheduleTask = () => {
     const { mutate: createEvent } = useCreateEvent()
-    const { data: calendars } = useGetCalendars()
+    const { data: calendars, isLoading: isLoadingCalendars } = useGetCalendars()
     const { field_value: taskToCalAccount } = useSetting('calendar_account_id_for_new_tasks')
     const { field_value: taskToCalCalendar } = useSetting('calendar_calendar_id_for_new_tasks')
     const showConnectToast = useConnectGoogleAccountToast()
@@ -64,6 +64,8 @@ const useScheduleTask = () => {
             view,
             date,
         }: ScheduleOnCalendarArgs) => {
+            // Callers must not invoke this while calendars are still loading: an undefined list is
+            // indistinguishable from a disconnected account here, and would show a false connect prompt.
             if (!calendars?.length) {
                 showConnectToast()
                 return false
@@ -110,7 +112,7 @@ const useScheduleTask = () => {
         [calendars, taskToCalAccount, taskToCalCalendar]
     )
 
-    return { scheduleOnCalendar, hasCalendars: !!calendars?.length }
+    return { scheduleOnCalendar, hasCalendars: !!calendars?.length, isLoadingCalendars }
 }
 
 export default useScheduleTask
