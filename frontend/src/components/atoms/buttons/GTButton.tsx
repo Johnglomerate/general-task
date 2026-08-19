@@ -1,7 +1,7 @@
 import React from 'react'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import styled, { css } from 'styled-components'
-import { TShortcutName } from '../../../constants/shortcuts'
+import KEYBOARD_SHORTCUTS, { TShortcutName } from '../../../constants/shortcuts'
 import { Border, Colors, Spacing, Typography } from '../../../styles'
 import { TIconColor, TTextColor } from '../../../styles/colors'
 import Tip, { TTooltipSide } from '../../radix/Tip'
@@ -148,10 +148,19 @@ export interface GTButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButto
     fitContent?: boolean
     overrideDisabledStyle?: boolean
 }
+// An icon-only button carries no text, so its tooltip is the only thing naming it — and a tooltip is
+// a hover affordance that touch devices never show and screen readers only announce once it opens.
+// Reuse whichever label the tooltip would have shown as the button's accessible name.
+const getIconLabel = ({ styleType, tooltipText, overrideShortcutLabel, shortcutName }: GTButtonProps) => {
+    if (styleType !== 'icon') return undefined
+    if (tooltipText) return tooltipText
+    return overrideShortcutLabel ?? (shortcutName ? KEYBOARD_SHORTCUTS[shortcutName].label : undefined)
+}
+
 const GTButton = React.forwardRef((props: GTButtonProps, ref: React.Ref<HTMLButtonElement>) => {
     const { value, fitContent, ...rest } = props
     const button = (
-        <Button fitContent={fitContent ?? true} ref={ref} {...rest}>
+        <Button fitContent={fitContent ?? true} aria-label={getIconLabel(props)} ref={ref} {...rest}>
             {props.icon && <Icon icon={props.icon} color={props.iconColor} colorHex={props.iconColorHex} />}
             {props.styleType !== 'icon' ? value : ''}
             {props.rightIcon && props.styleType !== 'icon' && (
