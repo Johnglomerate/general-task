@@ -1,16 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useEffect } from 'react'
 import { DropTargetMonitor, useDrop } from 'react-dnd'
-import { renderToString } from 'react-dom/server'
 import { DateTime } from 'luxon'
-import showdown from 'showdown'
-import { v4 as uuidv4 } from 'uuid'
-import { useSetting } from '../../../hooks'
-import { useCreateEvent, useGetCalendars, useModifyEvent } from '../../../services/api/events.hooks'
+import { useGetCalendars, useModifyEvent } from '../../../services/api/events.hooks'
 import { getDiffBetweenISOTimes } from '../../../utils/time'
 import { DropItem, DropType, TEvent } from '../../../utils/types'
-import adf2md from '../../atoms/GTTextField/AtlassianEditor/adfToMd'
-import { NuxTaskBodyStatic } from '../../details/NUXTaskBody'
 import {
     CELL_HEIGHT_VALUE,
     EVENT_CREATION_INTERVAL_HEIGHT,
@@ -18,6 +12,7 @@ import {
     EVENT_CREATION_INTERVAL_PER_HOUR,
 } from '../CalendarEvents-styles'
 import useConnectGoogleAccountToast from './useConnectGoogleAccountToast'
+import useScheduleTask from './useScheduleTask'
 
 interface CalendarDropArgs {
     date: DateTime
@@ -25,13 +20,11 @@ interface CalendarDropArgs {
 }
 
 const useCalendarDrop = ({ date, eventsContainerRef }: CalendarDropArgs) => {
-    const { mutate: createEvent } = useCreateEvent()
     const { mutate: modifyEvent } = useModifyEvent()
     const [dropPreviewPosition, setDropPreviewPosition] = useState(0)
     const [eventPreview, setEventPreview] = useState<TEvent>()
     const { data: calendars } = useGetCalendars()
-    const { field_value: taskToCalAccount } = useSetting('calendar_account_id_for_new_tasks')
-    const { field_value: taskToCalCalendar } = useSetting('calendar_calendar_id_for_new_tasks')
+    const { scheduleOnCalendar } = useScheduleTask()
     const showConnectToast = useConnectGoogleAccountToast()
 
     const getTimeFromDropPosition = useCallback(
@@ -105,48 +98,11 @@ const useCalendarDrop = ({ date, eventsContainerRef }: CalendarDropArgs) => {
                 case DropType.DUE_TASK:
                 case DropType.TASK:
                 case DropType.PULL_REQUEST: {
-                    const droppableItem = item.task ?? item.pullRequest
-                    if (!droppableItem) return
-                    const end = dropTime.plus({ minutes: 30 })
-                    const converter = new showdown.Converter()
-                    let description = droppableItem.body
-
-                    if (item.task?.id_nux_number) {
-                        // if this is a nux task, override body
-                        description = renderToString(
-                            <NuxTaskBodyStatic nux_number_id={item.task.id_nux_number} renderSettingsModal={false} />
-                        )
-                    } else {
-                        // convert ADF to markdown (if originally ADF)
-                        if (item.task?.source.name === 'Jira' && description !== '') {
-                            const json = JSON.parse(description)
-                            description = adf2md.convert(json).result
-                        }
-                        // then convert markdown to HTML
-                        description = converter.makeHtml(description)
-                        if (description !== '') {
-                            description += '\n'
-                        }
-                        description = description.replaceAll('\n', '<br>')
-                        description +=
-                            '<a href="https://generaltask.com/" __is_owner="true">created by General Task</a>'
-                    }
-
-                    createEvent({
-                        createEventPayload: {
-                            account_id: taskToCalAccount,
-                            calendar_id: taskToCalCalendar,
-                            datetime_start: dropTime.toISO(),
-                            datetime_end: end.toISO(),
-                            summary: droppableItem.title,
-                            description,
-                            task_id: item.task?.id ?? '',
-                            pr_id: item.pullRequest?.id ?? '',
-                        },
+                    scheduleOnCalendar({
+                        start: dropTime,
+                        task: item.task,
+                        pullRequest: item.pullRequest,
                         date,
-                        linkedTask: item.task,
-                        linkedPullRequest: item.pullRequest,
-                        optimisticId: uuidv4(),
                     })
                     break
                 }
@@ -195,26 +151,12 @@ const useCalendarDrop = ({ date, eventsContainerRef }: CalendarDropArgs) => {
                     break
                 }
                 case DropType.OVERVIEW_VIEW_HEADER: {
-                    if (!item.view) return
-                    const end = dropTime.plus({ minutes: 30 })
-                    createEvent({
-                        createEventPayload: {
-                            summary: item.view.name,
-                            account_id: taskToCalAccount,
-                            calendar_id: taskToCalCalendar,
-                            datetime_start: dropTime.toISO(),
-                            datetime_end: end.toISO(),
-                            view_id: item.view.id,
-                        },
-                        date,
-                        linkedView: item.view,
-                        optimisticId: uuidv4(),
-                    })
+                    scheduleOnCalendar({ start: dropTime, view: item.view, date })
                     break
                 }
             }
         },
-        [date, calendars]
+        [date, calendars, scheduleOnCalendar]
     )
 
     const [isOver, drop] = useDrop(

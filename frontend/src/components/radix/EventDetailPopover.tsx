@@ -6,17 +6,19 @@ import sanitizeHtml from 'sanitize-html'
 import { v4 as uuidv4 } from 'uuid'
 import { EVENT_UNDO_TIMEOUT, NO_TITLE } from '../../constants'
 import { useKeyboardShortcut, useNavigateToPullRequest, useNavigateToTask, usePreviewMode, useToast } from '../../hooks'
-import { useDeleteEvent, useGetCalendars } from '../../services/api/events.hooks'
+import { useDeleteEvent, useGetCalendars, useModifyEvent } from '../../services/api/events.hooks'
 import { useCreateNote, useGetNotes } from '../../services/api/notes.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Spacing } from '../../styles'
 import { icons, logos } from '../../styles/images'
 import { TEvent } from '../../utils/types'
 import Flex from '../atoms/Flex'
+import GTTimeInput, { TIME_INPUT_FORMAT, parseTimeInput } from '../atoms/GTTimeInput'
 import { Icon } from '../atoms/Icon'
 import GTButton from '../atoms/buttons/GTButton'
 import { BodySmall } from '../atoms/typography/Typography'
 import { useCalendarContext } from '../calendar/CalendarContext'
+import { EVENT_CREATION_INTERVAL_IN_MINUTES } from '../calendar/CalendarEvents-styles'
 import { Description, EventBoxStyle, EventHeader, EventTitle, FlexAnchor } from '../molecules/EventDetailPopover-styles'
 import { toast } from '../molecules/toast'
 import GTPopover from './GTPopover'
@@ -33,8 +35,11 @@ const EventDetailPopover = ({ event, date, hidePopover = false, children }: Even
     const [isOpen, setIsOpen] = useState(false)
     const { selectedEvent, setSelectedEvent } = useCalendarContext()
     const { mutate: deleteEvent, deleteEventInCache, undoDeleteEventInCache } = useDeleteEvent()
-    const startTimeString = DateTime.fromISO(event.datetime_start).toFormat('h:mm')
-    const endTimeString = DateTime.fromISO(event.datetime_end).toFormat('h:mm a')
+    const { mutate: modifyEvent } = useModifyEvent()
+    const eventStart = DateTime.fromISO(event.datetime_start)
+    const eventEnd = DateTime.fromISO(event.datetime_end)
+    const startTimeString = eventStart.toFormat('h:mm')
+    const endTimeString = eventEnd.toFormat('h:mm a')
     const navigateToTask = useNavigateToTask()
     const navigateToPullRequest = useNavigateToPullRequest()
     const { data: notes } = useGetNotes()
@@ -47,6 +52,57 @@ const EventDetailPopover = ({ event, date, hidePopover = false, children }: Even
         if (isOpen || hidePopover) return
         setSelectedEvent(null)
     }, [isOpen])
+
+    /*
+     * Moving and resizing an event are otherwise drag-only, so the times are editable here.
+     * Editing the start moves the event and keeps its duration; editing the end resizes it —
+     * the same two operations dragging the body and the resize handle perform. Edits are held
+     * locally and committed on blur so scrubbing through a time doesn't fire a request per keystroke.
+     */
+    const [startInput, setStartInput] = useState(eventStart.toFormat(TIME_INPUT_FORMAT))
+    const [endInput, setEndInput] = useState(eventEnd.toFormat(TIME_INPUT_FORMAT))
+    useEffect(() => {
+        setStartInput(DateTime.fromISO(event.datetime_start).toFormat(TIME_INPUT_FORMAT))
+        setEndInput(DateTime.fromISO(event.datetime_end).toFormat(TIME_INPUT_FORMAT))
+    }, [event.datetime_start, event.datetime_end])
+
+    const commitTimes = (newStart: DateTime, newEnd: DateTime) => {
+        modifyEvent(
+            {
+                id: event.id,
+                event,
+                payload: {
+                    account_id: event.account_id,
+                    calendar_id: event.calendar_id,
+                    datetime_start: newStart.toISO(),
+                    datetime_end: newEnd.toISO(),
+                },
+                date,
+            },
+            event.optimisticId
+        )
+    }
+
+    const onStartBlur = () => {
+        const newStart = parseTimeInput(startInput, eventStart)
+        if (!newStart || startInput === eventStart.toFormat(TIME_INPUT_FORMAT)) {
+            setStartInput(eventStart.toFormat(TIME_INPUT_FORMAT))
+            return
+        }
+        commitTimes(newStart, newStart.plus(eventEnd.diff(eventStart)))
+    }
+
+    const onEndBlur = () => {
+        // parsed onto the end's own day so events that cross midnight keep the crossing
+        const parsed = parseTimeInput(endInput, eventEnd)
+        if (!parsed || endInput === eventEnd.toFormat(TIME_INPUT_FORMAT)) {
+            setEndInput(eventEnd.toFormat(TIME_INPUT_FORMAT))
+            return
+        }
+        // an end at or before the start has no valid length — clamp it the way the resize handle does
+        const newEnd = parsed > eventStart ? parsed : eventStart.plus({ minutes: EVENT_CREATION_INTERVAL_IN_MINUTES })
+        commitTimes(eventStart, newEnd)
+    }
 
     const onDelete = useCallback(() => {
         deleteEventInCache({
@@ -184,11 +240,31 @@ const EventDetailPopover = ({ event, date, hidePopover = false, children }: Even
                     </BodySmall>
                 </Flex>
             )}
-            <Flex gap={Spacing._8}>
+            <Flex gap={Spacing._8} alignItems="center">
                 <Icon icon={icons.calendar_blank} />
-                <BodySmall>
-                    {`${date.toFormat('cccc, LLLL d')}`} · {`${startTimeString} - ${endTimeString}`}
-                </BodySmall>
+                <BodySmall>{date.toFormat('cccc, LLLL d')}</BodySmall>
+            </Flex>
+            <Flex gap={Spacing._8} alignItems="center">
+                <Icon icon={icons.clock} />
+                {event.can_modify ? (
+                    <>
+                        <GTTimeInput
+                            value={startInput}
+                            onChange={setStartInput}
+                            onBlur={onStartBlur}
+                            ariaLabel="Event start time"
+                        />
+                        <BodySmall color="light">to</BodySmall>
+                        <GTTimeInput
+                            value={endInput}
+                            onChange={setEndInput}
+                            onBlur={onEndBlur}
+                            ariaLabel="Event end time"
+                        />
+                    </>
+                ) : (
+                    <BodySmall>{`${startTimeString} - ${endTimeString}`}</BodySmall>
+                )}
             </Flex>
             <Description dangerouslySetInnerHTML={{ __html: sanitizeHtml(event.body) }} />
             <Flex flex="1" gap={Spacing._8}>

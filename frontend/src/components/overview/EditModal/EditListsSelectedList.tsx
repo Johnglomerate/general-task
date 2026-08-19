@@ -8,6 +8,7 @@ import Domino from '../../atoms/Domino'
 import { Icon } from '../../atoms/Icon'
 import ReorderDropContainer from '../../atoms/ReorderDropContainer'
 import { TemplateContainer } from '../../atoms/TaskTemplate'
+import GTButton from '../../atoms/buttons/GTButton'
 import { Truncated } from '../../atoms/typography/Typography'
 import ItemContainer from '../../molecules/ItemContainer'
 import { getOverviewAccordionHeaderIcon } from '../AccordionItem'
@@ -30,9 +31,11 @@ const TextContainer = styled.div`
 interface EditViewsSelectedViewProps {
     view: TOverviewView
     viewIndex: number
+    isLast: boolean
     onReorder: (item: DropItem, dropIndex: number) => void
+    onMove: (id: string, dropIndex: number) => void
 }
-const EditViewsSelectedView = ({ view, viewIndex, onReorder }: EditViewsSelectedViewProps) => {
+const EditViewsSelectedView = ({ view, viewIndex, isLast, onReorder, onMove }: EditViewsSelectedViewProps) => {
     const [, drag, dragPreview] = useDrag(
         () => ({
             type: DropType.OVERVIEW_VIEW,
@@ -58,6 +61,20 @@ const EditViewsSelectedView = ({ view, viewIndex, onReorder }: EditViewsSelected
                         <Icon icon={getOverviewAccordionHeaderIcon(view.logo, view.task_section_id)} />
                         <Truncated>{view.name}</Truncated>
                     </TextContainer>
+                    <GTButton
+                        styleType="icon"
+                        icon={icons.arrow_up}
+                        tooltipText="Move up"
+                        disabled={viewIndex === 0}
+                        onClick={() => onMove(view.id, viewIndex)}
+                    />
+                    <GTButton
+                        styleType="icon"
+                        icon={icons.arrow_down}
+                        tooltipText="Move down"
+                        disabled={isLast}
+                        onClick={() => onMove(view.id, viewIndex + 3)}
+                    />
                     <EditViewsDeleteButton onClick={() => removeView({ id: view.id }, view.optimisticId)}>
                         <Icon icon={icons.trash} />
                     </EditViewsDeleteButton>
