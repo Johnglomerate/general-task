@@ -297,7 +297,7 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
                 <TasksandDetails $showMobileDetail={mobileRouteState.isDetailRoute}>{children}</TasksandDetails>
             )}
             {!isMobile && <CalendarView initialType="day" />}
-            <Dialog.Root open={isMobile && isMobileDrawerOpen} onOpenChange={setIsMobileDrawerOpen}>
+            <Dialog.Root modal={false} open={isMobile && isMobileDrawerOpen} onOpenChange={setIsMobileDrawerOpen}>
                 <Dialog.Portal>
                     <MobileDrawerOverlay />
                     <MobileDrawerContent onPointerDownOutside={handleMobileDrawerPointerDownOutside}>
