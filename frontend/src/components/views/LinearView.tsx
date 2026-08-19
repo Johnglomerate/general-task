@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useIsMobile, useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -65,16 +65,18 @@ const LinearView = () => {
         }
         return { task: isMobile ? null : linearTasks[0] }
     }, [isMobile, linearIssueId, linearTasks])
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: linearIssueId,
+        canValidate: canValidateLinearRoute,
+        hasSelectedDetail: Boolean(task),
+        listPath: '/linear',
+    })
 
     useEffect(() => {
-        if (isMobile) {
-            if (linearIssueId && canValidateLinearRoute && !task) {
-                navigate('/linear', { replace: true })
-            }
-            return
-        }
+        if (isMobile) return
         if (task) navigate(`/linear/${task.id}`)
-    }, [canValidateLinearRoute, isMobile, linearIssueId, navigate, task])
+    }, [isMobile, navigate, task])
 
     const { data: linkedAccounts, isLoading: isLinkedAccountsLoading } = useGetLinkedAccounts()
     const isLinearIntegrationLinked = isLinearLinked(linkedAccounts || [])
@@ -105,7 +107,7 @@ const LinearView = () => {
                 <>
                     {task ? (
                         <TaskDetails task={task} />
-                    ) : isMobile && linearIssueId && (!canValidateLinearRoute || !task) ? (
+                    ) : shouldShowMobileDetailSpinner ? (
                         <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Linear tasks" />

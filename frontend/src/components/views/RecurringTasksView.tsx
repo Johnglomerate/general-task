@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useIsMobile, useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import Log from '../../services/api/log'
 import { useBackfillRecurringTasks, useRecurringTaskTemplates } from '../../services/api/recurring-tasks.hooks'
 import { icons } from '../../styles/images'
@@ -51,17 +51,19 @@ const RecurringTasksView = () => {
         )
     }, [isMobile, recurringTaskId, filteredRecurringTasks])
     const canValidateRecurringTaskRoute = !areRecurringTaskTemplatesLoading && !areSettingsLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: recurringTaskId,
+        canValidate: canValidateRecurringTaskRoute,
+        hasSelectedDetail: Boolean(selectedRecurringTask),
+        listPath: '/recurring-tasks',
+    })
 
     useEffect(() => {
-        if (isMobile) {
-            if (recurringTaskId && canValidateRecurringTaskRoute && !selectedRecurringTask) {
-                navigate('/recurring-tasks', { replace: true })
-            }
-            return
-        }
+        if (isMobile) return
         if (selectedRecurringTask == null) return
         navigate(`/recurring-tasks/${selectedRecurringTask.id}`, { replace: true })
-    }, [canValidateRecurringTaskRoute, isMobile, navigate, recurringTaskId, selectedRecurringTask])
+    }, [isMobile, navigate, selectedRecurringTask])
 
     const selectRecurringTask = useCallback((recurringTask: TRecurringTaskTemplate) => {
         navigate(`/recurring-tasks/${recurringTask.id}`)
@@ -99,7 +101,7 @@ const RecurringTasksView = () => {
                 <>
                     {selectedRecurringTask ? (
                         <TaskDetails task={selectedRecurringTask} isRecurringTaskTemplate />
-                    ) : isMobile && recurringTaskId && (!canValidateRecurringTaskRoute || !selectedRecurringTask) ? (
+                    ) : shouldShowMobileDetailSpinner ? (
                         <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.arrows_repeat} text="You have no recurring tasks" />

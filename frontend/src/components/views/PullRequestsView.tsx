@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styled from 'styled-components'
-import { useIsMobile, useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import Log from '../../services/api/log'
 import { useFetchPullRequests, useGetPullRequests } from '../../services/api/pull-request.hooks'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -78,20 +78,22 @@ const PullRequestsView = () => {
         )
     }, [isMobile, params.pullRequest, sortedAndFilteredRepositories])
     const canValidatePullRequestRoute = !isLoading && !areSettingsLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: params.pullRequest,
+        canValidate: canValidatePullRequestRoute,
+        hasSelectedDetail: Boolean(selectedPullRequest),
+        listPath: '/pull-requests',
+    })
 
     const isGithubIntegrationLinked = isGithubLinked(linkedAccounts ?? [])
     const doesNeedRelinking = doesAccountNeedRelinking(linkedAccounts || [], 'GitHub')
     useEffect(() => {
-        if (isMobile) {
-            if (params.pullRequest && canValidatePullRequestRoute && !selectedPullRequest) {
-                navigate('/pull-requests', { replace: true })
-            }
-            return
-        }
+        if (isMobile) return
         if (selectedPullRequest) {
             navigate(`/pull-requests/${selectedPullRequest.id}`, { replace: true })
         }
-    }, [canValidatePullRequestRoute, isMobile, navigate, params.pullRequest, selectedPullRequest])
+    }, [isMobile, navigate, selectedPullRequest])
 
     if (!repositories || isLoading || areSettingsLoading) {
         return <Spinner />
@@ -134,7 +136,7 @@ const PullRequestsView = () => {
                 <>
                     {selectedPullRequest ? (
                         <PullRequestDetails pullRequest={selectedPullRequest} />
-                    ) : isMobile && params.pullRequest && !selectedPullRequest ? (
+                    ) : shouldShowMobileDetailSpinner ? (
                         <Spinner />
                     ) : (
                         <EmptyDetails icon={logos.github} text="You have no pull requests" />

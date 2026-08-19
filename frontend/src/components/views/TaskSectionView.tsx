@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 import styled from 'styled-components'
 import { v4 as uuidv4 } from 'uuid'
 import { DONE_FOLDER_ID, TRASH_FOLDER_ID } from '../../constants'
-import { useIsMobile, useKeyboardShortcut, useNavigateToTask } from '../../hooks'
+import { useIsMobile, useKeyboardShortcut, useMobileDetailRouteFallback, useNavigateToTask } from '../../hooks'
 import useItemSelectionController from '../../hooks/useItemSelectionController'
 import { useGetFolders } from '../../services/api/folders.hooks'
 import Log from '../../services/api/log'
@@ -95,6 +95,13 @@ const TaskSectionView = () => {
         const meetingTask = meetingPreparationTasks?.find(({ id }) => id === params.task)
         return meetingTask
     }, [allTasks, meetingPreparationTasks, params.task, params.subtaskId])
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: params.task,
+        canValidate: canValidateTaskRoute && Boolean(folder),
+        hasSelectedDetail: Boolean(task && folder),
+        listPath: folder ? `/tasks/${folder.id}/` : '/tasks',
+    })
 
     const [taskIndex, setTaskIndex] = useState(0)
 
@@ -264,7 +271,7 @@ const TaskSectionView = () => {
                 <>
                     {task && folder ? (
                         <TaskDetails task={task} />
-                    ) : isMobile && params.task && (!canValidateTaskRoute || !folder || !task) ? (
+                    ) : shouldShowMobileDetailSpinner ? (
                         <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no tasks" />

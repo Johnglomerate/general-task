@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useIsMobile, useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import Log from '../../services/api/log'
 import { useGetNotes } from '../../services/api/notes.hooks'
 import { icons } from '../../styles/images'
@@ -46,17 +46,19 @@ const NoteListView = () => {
         return sortedNotes.find((note) => note.id === noteId) ?? (isMobile ? null : sortedNotes[0])
     }, [isMobile, noteId, notes, sortedNotes])
     const canValidateNoteRoute = !areNotesLoading && !areSettingsLoading
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: noteId,
+        canValidate: canValidateNoteRoute,
+        hasSelectedDetail: Boolean(selectedNote),
+        listPath: '/notes',
+    })
 
     useEffect(() => {
-        if (isMobile) {
-            if (noteId && canValidateNoteRoute && !selectedNote) {
-                navigate('/notes', { replace: true })
-            }
-            return
-        }
+        if (isMobile) return
         if (selectedNote == null) return
         navigate(`/notes/${selectedNote.id}`, { replace: true })
-    }, [canValidateNoteRoute, isMobile, noteId, selectedNote, navigate])
+    }, [isMobile, selectedNote, navigate])
 
     const selectNote = useCallback(
         (note: TNote) => {
@@ -92,7 +94,7 @@ const NoteListView = () => {
                 <>
                     {selectedNote ? (
                         <NoteDetails note={selectedNote} link={`/notes/${selectedNote.id}`} />
-                    ) : isMobile && noteId && (!canValidateNoteRoute || !selectedNote) ? (
+                    ) : shouldShowMobileDetailSpinner ? (
                         <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.note} text="You have no notes" />

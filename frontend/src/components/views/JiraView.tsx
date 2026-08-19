@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Flex } from '@mantine/core'
 import styled from 'styled-components'
-import { useIsMobile, useItemSelectionController } from '../../hooks'
+import { useIsMobile, useItemSelectionController, useMobileDetailRouteFallback } from '../../hooks'
 import useGetActiveTasks from '../../hooks/useGetActiveTasks'
 import Log from '../../services/api/log'
 import { useGetLinkedAccounts } from '../../services/api/settings.hooks'
@@ -54,12 +54,13 @@ const JiraView = () => {
         return { task: isMobile ? null : jiraTasks[0] }
     }, [isMobile, jiraTasks, jiraTaskId])
     const canValidateJiraRoute = !areTasksLoading
-
-    useEffect(() => {
-        if (isMobile && jiraTaskId && canValidateJiraRoute && !selectedTask) {
-            navigate('/jira', { replace: true })
-        }
-    }, [canValidateJiraRoute, isMobile, jiraTaskId, navigate, selectedTask])
+    const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
+        isMobile,
+        detailId: jiraTaskId,
+        canValidate: canValidateJiraRoute,
+        hasSelectedDetail: Boolean(selectedTask),
+        listPath: '/jira',
+    })
 
     const { data: linkedAccounts } = useGetLinkedAccounts()
     const isJiraIntegrationLinked = isJiraLinked(linkedAccounts || [])
@@ -92,7 +93,7 @@ const JiraView = () => {
                 <>
                     {selectedTask ? (
                         <TaskDetails task={selectedTask} />
-                    ) : isMobile && jiraTaskId && (!canValidateJiraRoute || !selectedTask) ? (
+                    ) : shouldShowMobileDetailSpinner ? (
                         <Spinner />
                     ) : (
                         <EmptyDetails icon={icons.check} text="You have no Jira issues" />

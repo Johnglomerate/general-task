@@ -11,6 +11,7 @@ import useItemSelectionController from './useItemSelectionController'
 import useKeyboardShortcut from './useKeyboardShortcut'
 import useNavigateToPullRequest from './useNavigateToPullRequest'
 import useNavigateToTask from './useNavigateToTask'
+import useMobileDetailRouteFallback from './useMobileDetailRouteFallback'
 import usePageFocus from './usePageFocus'
 import usePreviewMode from './usePreviewMode'
 import useSetting from './useSetting'
@@ -29,6 +30,7 @@ export {
     useIsMobile,
     useItemSelectionController,
     useKeyboardShortcut,
+    useMobileDetailRouteFallback,
     useNavigateToPullRequest,
     useNavigateToTask,
     usePreviewMode,
