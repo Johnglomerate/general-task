@@ -20,13 +20,20 @@ const Calendar = styled(Flex)`
     border-radius: ${Border.radius.small};
     padding: ${Spacing._8} ${Spacing._4};
     box-sizing: border-box;
-    :hover {
-        border: ${Border.stroke.small} solid ${Colors.background.border};
-        background-color: ${Colors.background.base};
+    /* See ItemContainer: a stuck :hover after a tap reads as a selected row, and these rows carry a
+       real selection. Hover is also the only thing marking them as selectable, so without it show
+       the border at rest and move the background to the press state. */
+    ${pointerQuery.canHover} {
+        :hover {
+            border: ${Border.stroke.small} solid ${Colors.background.border};
+            background-color: ${Colors.background.base};
+        }
     }
-    /* Hover is the only thing marking these rows as selectable. */
     ${pointerQuery.noHover} {
         border: ${Border.stroke.small} solid ${Colors.background.border};
+        :active {
+            background-color: ${Colors.background.base};
+        }
     }
 `
 
