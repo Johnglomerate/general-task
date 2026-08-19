@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import * as Select from '@radix-ui/react-select'
 import styled from 'styled-components'
 import { Border, Colors, Spacing, Typography } from '../../styles'
+import { OVERLAY_MAX_WIDTH } from '../../styles/dimensions'
 import { TIconImage, icons } from '../../styles/images'
 import { stopKeydownPropogation } from '../../utils/utils'
 import Flex from '../atoms/Flex'
@@ -26,7 +27,8 @@ const SelectTrigger = styled(Select.Trigger)`
 const SelectContent = styled(Select.Content)<{ $useTriggerWidth?: boolean }>`
     ${MenuContentShared};
     ${Typography.body.medium};
-    ${({ $useTriggerWidth }) => ($useTriggerWidth ? `width: 100%;` : `max-width: ${DEFAULT_MAX_WIDTH};`)};
+    ${({ $useTriggerWidth }) =>
+        $useTriggerWidth ? `width: 100%;` : `max-width: min(${DEFAULT_MAX_WIDTH}, ${OVERLAY_MAX_WIDTH});`};
 `
 const SelectItem = styled(Select.Item)`
     ${MenuItemShared};

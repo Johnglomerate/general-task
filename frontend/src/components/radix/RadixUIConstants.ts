@@ -1,6 +1,7 @@
 import styled, { css } from 'styled-components'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
 import { TIconColor, TTextColor } from '../../styles/colors'
+import { OVERLAY_MAX_WIDTH } from '../../styles/dimensions'
 import { TIconType } from '../atoms/Icon'
 
 export const MENU_WIDTH = '192px'
@@ -52,6 +53,10 @@ export const MenuContentShared = css`
     background-color: ${Colors.background.white};
     border-radius: ${Border.radius.small};
     box-shadow: ${Shadows.deprecated_light};
+    /* Baseline so no anchored surface can be wider than the screen. Radix's collision handling
+       only shifts content back on screen; it never shrinks it. Left as content-box to keep desktop
+       sizing identical, so surfaces with roomy padding subtract it from the clamp themselves. */
+    max-width: ${OVERLAY_MAX_WIDTH};
 `
 export const MarginLeftIcon = styled.div`
     margin-left: auto;

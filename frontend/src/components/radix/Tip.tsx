@@ -3,6 +3,7 @@ import * as Tooltip from '@radix-ui/react-tooltip'
 import styled, { css } from 'styled-components'
 import KEYBOARD_SHORTCUTS, { TShortcutName } from '../../constants/shortcuts'
 import { Colors, Spacing, Typography } from '../../styles'
+import { OVERLAY_COLLISION_PADDING, OVERLAY_MAX_WIDTH, TOOLTIP_MAX_WIDTH } from '../../styles/dimensions'
 import Flex from '../atoms/Flex'
 import { KeyboardShortcutContainer } from '../atoms/KeyboardShortcut'
 import { MenuContentShared } from './RadixUIConstants'
@@ -16,6 +17,10 @@ const TooltipContent = styled(Tooltip.Content)`
     ${MenuContentShared};
     padding: ${Spacing._8} ${Spacing._12};
     ${Typography.body.medium};
+    /* Without a cap a long tip renders as one unbroken line, which on a phone is wider than the
+       screen and gets pushed off by collision handling instead of wrapping. */
+    max-width: min(${TOOLTIP_MAX_WIDTH}, calc(${OVERLAY_MAX_WIDTH} - ${Spacing._12} * 2));
+    overflow-wrap: break-word;
 `
 const TriggerSpan = styled.span<{ fitContent?: boolean }>`
     ${(props) =>
@@ -73,7 +78,13 @@ const Tip = ({
                     <TriggerSpan fitContent={fitContent}>{children}</TriggerSpan>
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                    <TooltipContent side={side} sideOffset={5} align={align} arrowPadding={10}>
+                    <TooltipContent
+                        side={side}
+                        sideOffset={5}
+                        align={align}
+                        arrowPadding={10}
+                        collisionPadding={OVERLAY_COLLISION_PADDING}
+                    >
                         {tooltipContent}
                         <TooltipArrow />
                     </TooltipContent>

@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { DEFAULT_FOLDER_ID } from '../../../../constants'
 import { useCreateRecurringTask, useModifyRecurringTask } from '../../../../services/api/recurring-tasks.hooks'
 import { Border, Colors, Spacing } from '../../../../styles'
+import { mediaQuery } from '../../../../styles/dimensions'
 import { RecurrenceRate } from '../../../../utils/enums'
 import { TRecurringTaskTemplate, TTaskV4 } from '../../../../utils/types'
 import { stopKeydownPropogation } from '../../../../utils/utils'
@@ -18,6 +19,15 @@ import DatePicker from './DatePicker'
 import RecurrenceRateSelector from './RecurrenceRateSelector'
 import TemplateFolderSelector from './TemplateFolderSelector'
 
+// The form and the date picker sit side by side on desktop and stack on a phone.
+const SettingsRow = styled.div`
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
+    ${mediaQuery.phone} {
+        flex-direction: column;
+    }
+`
 const SettingsForm = styled.div`
     flex: 1;
     min-width: 0;
@@ -26,6 +36,12 @@ const SettingsForm = styled.div`
     gap: 20px;
     border-right: ${Border.stroke.medium} solid ${Colors.background.border};
     padding-right: ${Spacing._24};
+    ${mediaQuery.phone} {
+        border-right: none;
+        border-bottom: ${Border.stroke.medium} solid ${Colors.background.border};
+        padding-right: 0;
+        padding-bottom: ${Spacing._16};
+    }
 `
 const Footer = styled.div`
     display: flex;
@@ -116,7 +132,7 @@ const RecurringTaskTemplateModal = ({
                 title: `${initialRecurringTaskTemplate ? 'Edit' : 'Create'} a recurring task`,
                 body: (
                     <>
-                        <Flex flex="1" onKeyDown={handleKeyDown} justifyContent="space-between">
+                        <SettingsRow onKeyDown={handleKeyDown}>
                             <SettingsForm>
                                 <CreateNewItemInput
                                     placeholder="Recurring task title"
@@ -137,7 +153,7 @@ const RecurringTaskTemplateModal = ({
                                 />
                             </SettingsForm>
                             <DatePicker date={selectedDate} setDate={setSelectedDate} recurrenceRate={recurrenceRate} />
-                        </Flex>
+                        </SettingsRow>
                         <Footer>
                             <GTButton styleType="primary" value="Save" onClick={handleSave} disabled={!isValid} />
                         </Footer>

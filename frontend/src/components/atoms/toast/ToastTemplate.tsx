@@ -28,8 +28,10 @@ const TitleText = styled.div`
     height: fit-content;
 `
 const MessageText = styled.div`
-    min-width: fit-content;
+    /* fit-content here refused to shrink, so a long message pushed the row past the toast. */
+    min-width: 0;
     height: fit-content;
+    overflow-wrap: anywhere;
 `
 const ButtonsContainer = styled.div`
     display: flex;

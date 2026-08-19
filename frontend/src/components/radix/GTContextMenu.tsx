@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import styled from 'styled-components'
+import { OVERLAY_COLLISION_PADDING } from '../../styles/dimensions'
 import { icons } from '../../styles/images'
 import { stopKeydownPropogation } from '../../utils/utils'
 import { Icon } from '../atoms/Icon'
@@ -17,11 +18,18 @@ import Tip from './Tip'
 const ContextMenuTrigger = styled(ContextMenu.Trigger)`
     all: unset;
 `
+// Submenus hold folder lists and a whole date picker, so both levels need to scroll rather than
+// run off the bottom of a phone screen.
+const CONTEXT_MENU_MAX_HEIGHT = '75vh'
 const ContextMenuContent = styled(ContextMenu.Content)`
     ${MenuContentShared};
+    max-height: ${CONTEXT_MENU_MAX_HEIGHT};
+    overflow: auto;
 `
 const ContextMenuSubContent = styled(ContextMenu.SubContent)`
     ${MenuContentShared};
+    max-height: ${CONTEXT_MENU_MAX_HEIGHT};
+    overflow: auto;
 `
 const ContextMenuItem = styled(ContextMenu.Item)`
     ${MenuItemShared};
@@ -44,7 +52,10 @@ const GTContextMenu = ({ items, trigger, onOpenChange }: GTContextMenuProps) => 
             <ContextMenu.Root onOpenChange={onOpenChange} modal={false}>
                 <ContextMenuTrigger>{trigger}</ContextMenuTrigger>
                 <ContextMenu.Portal>
-                    <ContextMenuContent onKeyDown={(e) => stopKeydownPropogation(e, ['Escape'], true)}>
+                    <ContextMenuContent
+                        onKeyDown={(e) => stopKeydownPropogation(e, ['Escape'], true)}
+                        collisionPadding={OVERLAY_COLLISION_PADDING}
+                    >
                         {items.map((item) => (
                             <Fragment key={item.label}>
                                 {item.subItems ? (
@@ -64,7 +75,7 @@ const GTContextMenu = ({ items, trigger, onOpenChange }: GTContextMenuProps) => 
                                             </ContextMenuSubTrigger>
                                         </Tip>
                                         <ContextMenu.Portal>
-                                            <ContextMenuSubContent>
+                                            <ContextMenuSubContent collisionPadding={OVERLAY_COLLISION_PADDING}>
                                                 {item.subItems.map((subItem) =>
                                                     subItem.renderer ? (
                                                         <Fragment key={subItem.label}>{subItem.renderer()}</Fragment>

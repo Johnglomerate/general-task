@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { Border, Colors, Spacing } from '../../styles'
+import { mediaQuery } from '../../styles/dimensions'
 import { icons } from '../../styles/images'
 import BaseModal, { BaseModalProps } from '../atoms/BaseModal'
 import Flex from '../atoms/Flex'
@@ -15,6 +16,12 @@ const MODAL_HEIGHT = '642px'
 const ModalOuter = styled.div<{ fixedHeight: boolean }>`
     display: flex;
     height: ${({ fixedHeight }) => (fixedHeight ? MODAL_HEIGHT : '100%')};
+    /* The sheet is already the height of the screen, and the sidebar becomes a tab strip above the
+       content rather than a column beside it. */
+    ${mediaQuery.phone} {
+        flex-direction: column;
+        height: 100%;
+    }
 `
 const ModalContent = styled.div<{ smallGap: boolean }>`
     display: flex;
@@ -23,6 +30,12 @@ const ModalContent = styled.div<{ smallGap: boolean }>`
     gap: ${({ smallGap }) => (smallGap ? Spacing._16 : Spacing._24)};
     padding: ${Spacing._24} ${Spacing._32};
     overflow-y: auto;
+    ${mediaQuery.phone} {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: ${Spacing._16};
+        padding-bottom: calc(${Spacing._16} + env(safe-area-inset-bottom));
+    }
 `
 const ModalSidebar = styled.div`
     display: flex;
@@ -33,6 +46,14 @@ const ModalSidebar = styled.div`
     border-radius: ${Border.radius.medium} 0 0 ${Border.radius.medium};
     flex-basis: ${SIDEBAR_WIDTH};
     box-sizing: border-box;
+    ${mediaQuery.phone} {
+        flex-direction: row;
+        flex: 0 0 auto;
+        gap: ${Spacing._8};
+        padding: ${Spacing._8};
+        border-radius: 0;
+        overflow-x: auto;
+    }
 `
 const Link = styled.button<{ isSelected: boolean }>`
     display: flex;
@@ -46,9 +67,19 @@ const Link = styled.button<{ isSelected: boolean }>`
     color: ${Colors.text.black};
     gap: ${Spacing._12};
     cursor: pointer;
+    ${mediaQuery.phone} {
+        width: auto;
+        flex: 0 0 auto;
+        padding: ${Spacing._8} ${Spacing._12};
+        white-space: nowrap;
+    }
 `
 const MarginBottom8 = styled.div`
     margin-bottom: ${Spacing._8};
+    /* ModalContent already shows the active tab's title on a phone. */
+    ${mediaQuery.phone} {
+        display: none;
+    }
 `
 
 interface GTModalTab {
