@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import useOverviewContext from '../../context/OverviewContextProvider'
 import { useIsMobile, useMobileDetailRouteFallback } from '../../hooks'
-import { useGetMeetingPreparationTasks } from '../../services/api/meeting-preparation-tasks.hooks'
-import { useGetPullRequests } from '../../services/api/pull-request.hooks'
-import { useGetTasksV4 } from '../../services/api/tasks.hooks'
 import { icons } from '../../styles/images'
 import ActionsContainer from '../atoms/ActionsContainer'
 import Flex from '../atoms/Flex'
@@ -14,7 +11,7 @@ import { useCalendarContext } from '../calendar/CalendarContext'
 import { Header } from '../molecules/Header'
 import AccordionItem from '../overview/AccordionItem'
 import EditModal from '../overview/EditModal'
-import OverviewDetails from '../overview/OverviewDetails'
+import OverviewDetails, { useOverviewDetailState } from '../overview/OverviewDetails'
 import SmartPrioritizationBanner from '../overview/SmartPrioritizationBanner'
 import useOverviewLists from '../overview/useOverviewLists'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
@@ -58,44 +55,17 @@ const DailyOverviewView = () => {
     useSelectFirstItemOnFirstLoad(isMobile, overviewItemId)
     const { expandAll, collapseAll } = useOverviewContext()
 
-    const { lists, isLoading: isOverviewListsLoading } = useOverviewLists()
-    const { data: repositories, isLoading: isPullRequestsLoading } = useGetPullRequests()
-    const { data: allTasks, isLoading: isTasksLoading } = useGetTasksV4()
-    const { data: meetingPreparationTasks, isLoading: isMeetingTasksLoading } = useGetMeetingPreparationTasks()
+    const { lists, isLoading: isOverviewDetailLoading, hasSelectedOverviewDetail } = useOverviewDetailState()
     const selectedOverviewItemId = subtaskId || overviewItemId
-    const selectedOverviewList = useMemo(
-        () => lists.find((list) => list.id === overviewViewId),
-        [lists, overviewViewId]
-    )
-    const hasSelectedOverviewDetail = useMemo(() => {
-        if (!overviewViewId || !overviewItemId || !selectedOverviewList || !selectedOverviewItemId) return false
-        if (selectedOverviewList.type === 'github') {
-            return Boolean(repositories?.flatMap((repo) => repo.pull_requests).find((pr) => pr.id === overviewItemId))
-        }
-        if (selectedOverviewList.type === 'meeting_preparation') {
-            return Boolean(meetingPreparationTasks?.find((task) => task.id === selectedOverviewItemId))
-        }
-        return Boolean(allTasks?.find((task) => task.id === selectedOverviewItemId))
-    }, [
-        allTasks,
-        meetingPreparationTasks,
-        overviewItemId,
-        overviewViewId,
-        repositories,
-        selectedOverviewItemId,
-        selectedOverviewList,
-    ])
-    const canValidateOverviewRoute =
-        !isOverviewListsLoading && !isPullRequestsLoading && !isTasksLoading && !isMeetingTasksLoading
     const shouldShowMobileDetailSpinner = useMobileDetailRouteFallback({
         isMobile,
         detailId: overviewViewId && overviewItemId ? selectedOverviewItemId : undefined,
-        canValidate: canValidateOverviewRoute,
+        canValidate: !isOverviewDetailLoading,
         hasSelectedDetail: hasSelectedOverviewDetail,
         listPath: '/overview',
     })
 
-    if (isOverviewListsLoading || isPullRequestsLoading || isTasksLoading || isMeetingTasksLoading) return <Spinner />
+    if (isOverviewDetailLoading) return <Spinner />
     return (
         <>
             <Flex>

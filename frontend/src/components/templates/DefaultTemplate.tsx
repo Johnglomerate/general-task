@@ -195,11 +195,12 @@ const MobileLogo = styled.img`
     pointer-events: none;
 `
 
-const MobileDrawerOverlay = styled(Dialog.Overlay)`
+const MobileDrawerOverlay = styled.div`
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.28);
     z-index: 20;
+    touch-action: none;
 `
 
 const MobileDrawerContent = styled(Dialog.Content)`
@@ -262,6 +263,17 @@ const DefaultTemplate = ({ children }: DefaultTemplateProps) => {
     useEffect(() => {
         setIsMobileDrawerOpen(false)
     }, [location.pathname])
+
+    useEffect(() => {
+        if (!isMobile || !isMobileDrawerOpen) return
+
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+
+        return () => {
+            document.body.style.overflow = previousOverflow
+        }
+    }, [isMobile, isMobileDrawerOpen])
 
     const handleMobileDrawerPointerDownOutside: NonNullable<DialogContentProps['onPointerDownOutside']> = (event) => {
         const target = event.detail.originalEvent.target
