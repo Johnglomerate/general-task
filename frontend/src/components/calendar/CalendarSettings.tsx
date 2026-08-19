@@ -4,6 +4,7 @@ import { useAuthWindow, usePreviewMode, useSetting } from '../../hooks'
 import { useGetCalendars } from '../../services/api/events.hooks'
 import { useDeleteLinkedAccount, useGetLinkedAccounts, useGetSupportedTypes } from '../../services/api/settings.hooks'
 import { Border, Colors, Spacing } from '../../styles'
+import { pointerQuery } from '../../styles/dimensions'
 import { icons, logos } from '../../styles/images'
 import { TCalendar, TCalendarAccount } from '../../utils/types'
 import Flex from '../atoms/Flex'
@@ -19,9 +20,20 @@ const Calendar = styled(Flex)`
     border-radius: ${Border.radius.small};
     padding: ${Spacing._8} ${Spacing._4};
     box-sizing: border-box;
-    :hover {
+    /* See ItemContainer: a stuck :hover after a tap reads as a selected row, and these rows carry a
+       real selection. Hover is also the only thing marking them as selectable, so without it show
+       the border at rest and move the background to the press state. */
+    ${pointerQuery.canHover} {
+        :hover {
+            border: ${Border.stroke.small} solid ${Colors.background.border};
+            background-color: ${Colors.background.base};
+        }
+    }
+    ${pointerQuery.noHover} {
         border: ${Border.stroke.small} solid ${Colors.background.border};
-        background-color: ${Colors.background.base};
+        :active {
+            background-color: ${Colors.background.base};
+        }
     }
 `
 

@@ -5,6 +5,7 @@ import { useKeyboardShortcut } from '../../../hooks'
 import { useCreateTask, useReorderTask } from '../../../services/api/tasks.hooks'
 import { useGetTasksV4 } from '../../../services/api/tasks.hooks'
 import { Border, Colors, Spacing, Typography } from '../../../styles'
+import { pointerQuery } from '../../../styles/dimensions'
 import { icons } from '../../../styles/images'
 import { DropItem, DropType, TParentTask, TSubtask } from '../../../utils/types'
 import Flex from '../../atoms/Flex'
@@ -28,6 +29,11 @@ const AddTaskbutton = styled.div`
     border: ${Border.stroke.small} solid transparent;
     box-sizing: border-box;
     :hover {
+        border-color: ${Colors.background.border};
+        border-radius: ${Border.radius.medium};
+    }
+    /* Its only other trigger is a keyboard shortcut, so keep the button chrome without hover. */
+    ${pointerQuery.noHover} {
         border-color: ${Colors.background.border};
         border-radius: ${Border.radius.medium};
     }

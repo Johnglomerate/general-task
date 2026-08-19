@@ -268,15 +268,17 @@ const Task = ({
                     ref={drag}
                     forceHoverStyle={contextMenuOpen}
                 >
-                    <MarginRight>
-                        {isPreviewMode && task.meeting_preparation_params?.event_moved_or_deleted ? (
+                    {isPreviewMode && task.meeting_preparation_params?.event_moved_or_deleted ? (
+                        <MarginRight>
                             <Tip content="Event has been moved or deleted">
                                 <Icon icon={icons.warning} color="red" />
                             </Tip>
-                        ) : (
-                            <Domino isVisible={isHovered && !dragDisabled} />
-                        )}
-                    </MarginRight>
+                        </MarginRight>
+                    ) : (
+                        // Carries its own spacing so it collapses completely when hidden on touch,
+                        // rather than leaving an empty wrapper holding the gutter open.
+                        <PositionedDomino isVisible={isHovered && !dragDisabled} />
+                    )}
                     {task.external_status && task.all_statuses ? (
                         <StatusDropdown task={task} condensedTrigger />
                     ) : (

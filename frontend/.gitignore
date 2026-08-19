@@ -16,3 +16,6 @@ cypress/fixtures/
 
 # macOS
 .DS_Store
+
+# TypeScript incremental build cache
+*.tsbuildinfo
