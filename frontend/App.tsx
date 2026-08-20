@@ -13,6 +13,8 @@ import {
     NOTE_ROUTE,
     PRIVACY_POLICY_ROUTE,
     SHAREABLE_TASK_ROUTE,
+    SUBSCRIPTION_PRICE,
+    SUBSCRIPTION_TRIAL_DAYS,
     TERMS_OF_SERVICE_ROUTE,
 } from './src/constants'
 import { GlobalStyle } from './src/styles'
@@ -38,28 +40,23 @@ const queryClient = new QueryClient({
 })
 
 const App = () => {
+    const metaTitle = `General Task — Personal productivity for ${SUBSCRIPTION_PRICE}`
+    const metaDescription = `Plan tasks, calendar, pull requests, and integrations with General Task. Start with a ${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}.`
+    const socialDescription = `Plan tasks, calendar, pull requests, and integrations with a ${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}.`
+
     return (
         <QueryClientProvider client={queryClient}>
             <Helmet>
                 <meta charSet="utf-8" />
-                <title>General Task — Personal productivity for $2/month</title>
+                <title>{metaTitle}</title>
                 <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
-                <meta
-                    content="Plan tasks, calendar, pull requests, and integrations with General Task. Start with a 67-day free trial, then $2/month."
-                    name="description"
-                />
-                <meta content="General Task — Personal productivity for $2/month" property="og:title" />
-                <meta
-                    content="Plan tasks, calendar, pull requests, and integrations with a 67-day free trial, then $2/month."
-                    property="og:description"
-                />
-                <meta content="General Task — Personal productivity for $2/month" property="twitter:title" />
-                <meta
-                    content="Plan tasks, calendar, pull requests, and integrations with a 67-day free trial, then $2/month."
-                    property="twitter:description"
-                />
+                <meta content={metaDescription} name="description" />
+                <meta content={metaTitle} property="og:title" />
+                <meta content={socialDescription} property="og:description" />
+                <meta content={metaTitle} property="twitter:title" />
+                <meta content={socialDescription} property="twitter:description" />
                 <meta property="og:type" content="website" />
                 <meta property="og:image" content="/images/futureman.png" />
                 <meta content="summary_large_image" name="twitter:card" />

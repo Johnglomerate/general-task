@@ -1,15 +1,17 @@
 import { Navigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import styled from 'styled-components'
-import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../constants'
+import {
+    AUTHORIZATION_COOKE,
+    LOGIN_URL,
+    SUBSCRIPTION_PRICE,
+    SUBSCRIPTION_TRIAL_DAYS,
+} from '../../constants'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
 import { icons, logos } from '../../styles/images'
 import { Icon } from '../atoms/Icon'
 import NoStyleAnchor from '../atoms/NoStyleAnchor'
 import GTButton from '../atoms/buttons/GTButton'
-
-const TRIAL_DAYS = 67
-const PRODUCT_PRICE = '$2/month'
 
 const Page = styled.main`
     min-height: 100vh;
@@ -309,8 +311,8 @@ const LandingScreen = ({ isSignUp = false }: LandingScreenProps) => {
                         <Eyebrow>Personal productivity app</Eyebrow>
                         <Title>General Task</Title>
                         <Subtitle>
-                            Plan tasks, meetings, and focus time in one place. Start with a {TRIAL_DAYS}-day free trial,
-                            then keep going for {PRODUCT_PRICE}.
+                            Plan tasks, meetings, and focus time in one place. Start with a{' '}
+                            {`${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then keep going for ${SUBSCRIPTION_PRICE}.`}
                         </Subtitle>
                         <ButtonRow>
                             <NoStyleAnchor href={LOGIN_URL} target="_self">
@@ -380,7 +382,9 @@ const LandingScreen = ({ isSignUp = false }: LandingScreenProps) => {
             <PricingBand id="pricing">
                 <PricingInner>
                     <PricingCopy>
-                        <PricingTitle>{TRIAL_DAYS}-day free trial, then {PRODUCT_PRICE}</PricingTitle>
+                        <PricingTitle>
+                            {SUBSCRIPTION_TRIAL_DAYS}-day free trial, then {SUBSCRIPTION_PRICE}
+                        </PricingTitle>
                         <PricingText>
                             General Task is a paid consumer productivity app for people planning real work.
                         </PricingText>

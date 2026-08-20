@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { GITHUB_SUPPORTED_TYPE_NAME, GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME } from '../../constants'
+import {
+    GITHUB_SUPPORTED_TYPE_NAME,
+    GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME,
+    SUBSCRIPTION_PRICE,
+    SUBSCRIPTION_TRIAL_DAYS,
+} from '../../constants'
 import { useGetSupportedTypes } from '../../services/api/settings.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
@@ -129,8 +134,8 @@ const JohnsLetterStaticContent = () => (
         </p>
         <p>
             We have spent the last year building a focused productivity workspace for people planning real work. General
-            Task brings your tasks, calendar, pull requests, and integrations into one place, starts with a 67-day free
-            trial, and is $2/month after that.
+            Task brings your tasks, calendar, pull requests, and integrations into one place, starts with a{' '}
+            {SUBSCRIPTION_TRIAL_DAYS}-day free trial, and is {SUBSCRIPTION_PRICE} after that.
         </p>
         <p>
             Productivity is close to our hearts. Our team has worked at some of the most successful companies in the
