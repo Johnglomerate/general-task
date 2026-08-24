@@ -12,7 +12,6 @@ import { Header } from '../molecules/Header'
 import AccordionItem from '../overview/AccordionItem'
 import EditModal from '../overview/EditModal'
 import OverviewDetails, { useOverviewDetailState } from '../overview/OverviewDetails'
-import SmartPrioritizationBanner from '../overview/SmartPrioritizationBanner'
 import useOverviewLists from '../overview/useOverviewLists'
 import ScrollableListTemplate from '../templates/ScrollableListTemplate'
 
@@ -47,7 +46,6 @@ const useSelectFirstItemOnFirstLoad = (isMobile: boolean, overviewItemId?: strin
 
 const DailyOverviewView = () => {
     const [isEditListsModalOpen, setIsEditListsModalOpen] = useState(false)
-    const [editListTabIndex, setEditListTabIndex] = useState(0) // 0 - add, 1 - reorder
     const isMobile = useIsMobile()
     const { overviewViewId, overviewItemId, subtaskId } = useParams()
 
@@ -72,21 +70,6 @@ const DailyOverviewView = () => {
                 <ScrollableListTemplate>
                     <Header folderName="Daily Overview" />
                     <ActionsContainer
-                        leftActions={
-                            <GTButton
-                                styleType="control"
-                                onClick={() => {
-                                    setEditListTabIndex(1)
-                                    setIsEditListsModalOpen(true)
-                                }}
-                                icon={icons.bolt}
-                                value={
-                                    <span>
-                                        Smart Prioritize<sup>AI</sup>
-                                    </span>
-                                }
-                            />
-                        }
                         rightActions={
                             <>
                                 <GTButton
@@ -103,17 +86,13 @@ const DailyOverviewView = () => {
                                 />
                                 <GTButton
                                     styleType="control"
-                                    onClick={() => {
-                                        setEditListTabIndex(0)
-                                        setIsEditListsModalOpen(true)
-                                    }}
+                                    onClick={() => setIsEditListsModalOpen(true)}
                                     icon={icons.gear}
                                     value="Edit lists"
                                 />
                             </>
                         }
                     />
-                    <SmartPrioritizationBanner />
                     {lists.map((list) => (
                         <AccordionItem key={list.id} list={list} />
                     ))}
@@ -122,11 +101,7 @@ const DailyOverviewView = () => {
             {calendarType === 'day' &&
                 (!isMobile || overviewItemId) &&
                 (shouldShowMobileDetailSpinner ? <Spinner /> : <OverviewDetails />)}
-            <EditModal
-                isOpen={isEditListsModalOpen}
-                setisOpen={setIsEditListsModalOpen}
-                defaultTabIndex={editListTabIndex}
-            />
+            <EditModal isOpen={isEditListsModalOpen} setisOpen={setIsEditListsModalOpen} />
         </>
     )
 }
