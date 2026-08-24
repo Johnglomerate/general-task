@@ -62,9 +62,16 @@ export const mediaQuery = {
 //
 // Use `canHover` to fence off styling that only reveals itself on hover, and `noHover` to give the
 // same affordance a permanent form (or to remove it, when what it advertises cannot work on touch).
+//
+// `pointerFeature` holds the bare media features so a `matchMedia` check in JS (see `useCanHover`)
+// and the CSS rules below stay one definition of what "can hover" means.
+export const pointerFeature = {
+    canHover: '(hover: hover)',
+    noHover: '(hover: none)',
+}
 export const pointerQuery = {
-    canHover: '@media (hover: hover)',
-    noHover: '@media (hover: none)',
+    canHover: `@media ${pointerFeature.canHover}`,
+    noHover: `@media ${pointerFeature.noHover}`,
 }
 
 // Clear space an overlay (popover, menu, tooltip, toast) keeps on each side so it never sits flush
