@@ -10,7 +10,6 @@ type TLocalStorageKeys =
     | 'dueTodayCollapsed'
     | 'taskToCalendarSidebar'
     | 'overviewAutomaticEmptySort'
-    | 'isUsingSmartPrioritization'
     | 'selectedCalendars'
 
 // based on https://usehooks.com/useLocalStorage/

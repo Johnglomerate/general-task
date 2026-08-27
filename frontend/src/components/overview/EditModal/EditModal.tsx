@@ -7,16 +7,14 @@ import ListOrderTab from './ListOrderTab'
 interface OverviewListsModalProps {
     isOpen: boolean
     setisOpen: Dispatch<React.SetStateAction<boolean>>
-    defaultTabIndex?: number
 }
-const EditModal = ({ isOpen, setisOpen, defaultTabIndex }: OverviewListsModalProps) => {
+const EditModal = ({ isOpen, setisOpen }: OverviewListsModalProps) => {
     return (
         <>
             <GTModal
                 open={isOpen}
                 setIsModalOpen={setisOpen}
                 size="lg"
-                defaultTabIndex={defaultTabIndex}
                 tabs={[
                     {
                         title: 'Add lists',

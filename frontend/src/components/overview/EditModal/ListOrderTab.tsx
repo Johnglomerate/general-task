@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import styled from 'styled-components'
 import { useGTLocalStorage } from '../../../hooks'
 import { useGetOverviewViews, useReorderViews } from '../../../services/api/overview.hooks'
@@ -10,7 +10,6 @@ import { Divider } from '../../atoms/SectionDivider'
 import { BodyLarge } from '../../atoms/typography/Typography'
 import EditListsSelectedList from './EditListsSelectedList'
 import ListModalPreference from './ListModalPreference'
-import SmartPrioritize, { SmartPrioritizeState } from './SmartPrioritize'
 
 const PositionedDivider = styled(Divider)`
     margin-top: ${Spacing._24};
@@ -24,7 +23,6 @@ const PreferencesTitle = styled(BodyLarge)`
 `
 
 const ListOrderTab = () => {
-    const [smartPrioritizeState, setSmartPrioritizeState] = useState<SmartPrioritizeState>(SmartPrioritizeState.MANUAL)
     const { data: lists } = useGetOverviewViews()
     const [automaticSortEmpty, setAutomaticSortEmpty] = useGTLocalStorage('overviewAutomaticEmptySort', false, true)
     const { mutate: reorderViews } = useReorderViews()
@@ -43,18 +41,16 @@ const ListOrderTab = () => {
     const preferenceSubtext = `Once a list that was previously empty or completed is filled with items again, it${'\n'}will return to its original position.`
     return (
         <Flex column flex="1">
-            <SmartPrioritize state={smartPrioritizeState} setState={setSmartPrioritizeState} />
-            {!smartPrioritizeState &&
-                lists?.map((view, index) => (
-                    <EditListsSelectedList
-                        key={view.id}
-                        view={view}
-                        viewIndex={index}
-                        isLast={index === lists.length - 1}
-                        onReorder={handleReorder}
-                        onMove={handleMove}
-                    />
-                ))}
+            {lists?.map((view, index) => (
+                <EditListsSelectedList
+                    key={view.id}
+                    view={view}
+                    viewIndex={index}
+                    isLast={index === lists.length - 1}
+                    onReorder={handleReorder}
+                    onMove={handleMove}
+                />
+            ))}
             <ReorderDropContainer
                 index={lists?.length ?? 0}
                 acceptDropType={DropType.OVERVIEW_VIEW}
