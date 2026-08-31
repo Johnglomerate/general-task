@@ -1,8 +1,8 @@
 import { ComponentProps, useEffect, useLayoutEffect, useMemo, useState } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
 import { useLocation, useNavigate } from 'react-router-dom'
+import * as Dialog from '@radix-ui/react-dialog'
 import styled from 'styled-components'
-import { useGlobalKeyboardShortcuts, useGTLocalStorage, useIsMobile, useWindowSize } from '../../hooks'
+import { useGTLocalStorage, useGlobalKeyboardShortcuts, useIsMobile, useWindowSize } from '../../hooks'
 import { Border, Colors, Dimensions, Shadows, Spacing, Typography } from '../../styles'
 import { TOOLTIP_MAX_WIDTH } from '../../styles/dimensions'
 import { icons, logos } from '../../styles/images'
@@ -162,7 +162,10 @@ const TasksandDetails = styled.div<{ $showMobileDetail: boolean }>`
     }
 `
 
-const MobileAppBar = styled.div`
+// `data-mobile-app-bar` is the handle the mobile acceptance spec asserts the bar on; the bar is a
+// bare div with no text of its own, so there is nothing else stable to select. Same idea as
+// `data-mobile-pane` below.
+const MobileAppBar = styled.div.attrs({ 'data-mobile-app-bar': '' })`
     display: none;
 
     ${Dimensions.mediaQuery.phone} {

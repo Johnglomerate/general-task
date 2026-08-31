@@ -8,106 +8,52 @@ on:
       - "**"
 
 jobs:
-  build:
+  mobile:
+    name: Mobile shell acceptance (390x844)
     runs-on: ubuntu-latest
-    outputs:
-      has_cypress: ${{ steps.cypress_check.outputs.has_cypress }}
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'yarn'
+          cache-dependency-path: 'frontend/yarn.lock'
 
       - name: Configure FontAwesome registry
-        working-directory: frontend
         run: |
           npm config set "@fortawesome:registry" https://npm.fontawesome.com/
           npm config set "//npm.fontawesome.com/:_authToken" "${{ secrets.FONTAWESOME_NPM_AUTH_TOKEN }}"
 
-      - name: Check for Cypress config
-        id: cypress_check
-        working-directory: frontend
+      # `build:test` uses webpack.dev.js, which bakes in the *development* API base URL
+      # (http://localhost:8080 — see src/environment.ts). The spec stubs that origin, so the suite
+      # needs no backend or database, and cannot reach api.generaltask.com.
+      - name: Install and build
         run: |
-          if [ -f "cypress.json" ] || [ -f "cypress.config.js" ] || [ -f "cypress.config.ts" ] || [ -d "cypress" ]; then
-            echo "has_cypress=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_cypress=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Cypress config/directory not found — skipping E2E tests"
-          fi
-
-      - name: Cypress install
-        if: steps.cypress_check.outputs.has_cypress == 'true'
-        uses: cypress-io/github-action@v6
-        with:
-          install: yarn install --frozen-lockfile
-          working-directory: frontend
-          runTests: false
-          build: yarn build:test
-
-      - name: Save build folder
-        if: steps.cypress_check.outputs.has_cypress == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          if-no-files-found: error
-          path: frontend/dist
-
-  test:
-    needs: build
-    if: needs.build.outputs.has_cypress == 'true'
-    runs-on: ubuntu-latest
-    env:
-      REACT_APP_API_BASE_URL: http://localhost:8080
-      DB_NAME: test
-    strategy:
-      fail-fast: false
-      matrix:
-        # run copies of the current job in parallel
-        containers: [1, 2, 3, 4, 5]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.18'
-      
-      - name: Download the build folders
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: frontend/dist
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Spin up db
-        working-directory: backend
-        run: docker compose up -d
-
-      - name: Start backend server
-        working-directory: backend
-        run: go run . &
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm i cypress@9.5.3 serve typescript @testing-library/cypress chance
+          yarn install --frozen-lockfile
+          yarn build:test
 
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
           working-directory: frontend
           install: false
-          start: npx serve -s dist
+          start: npx serve -s dist -l 3000
           wait-on: 'http://localhost:3000'
-          wait-on-timeout: 60
-          command: npx cypress run --parallel --record --config supportFile=cypress/support,integrationFolder=cypress/integration
-        env: 
-          CYPRESS_RECORD_KEY: 65dc874e-0eec-40c2-92a6-6353992fbbc7
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          api_url: http://localhost:8080
+          wait-on-timeout: 90
+          # Chrome rather than the bundled Electron: the spec emulates a touch pointer over CDP and
+          # asserts the emulation took effect, so the browser needs to be the one CI intends.
+          browser: chrome
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: frontend/cypress/screenshots
+          if-no-files-found: ignore

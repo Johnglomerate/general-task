@@ -54,9 +54,29 @@ There is no platform abstraction layer — this is a plain browser app. Write st
 - `yarn build` — production bundle into `dist/` (`webpack.prod.js`)
 - `yarn build:test` — build using the dev config
 - `yarn test` — Jest unit tests
-- `yarn cy:run` — Cypress end-to-end tests
+- `yarn cy:run` / `yarn cy:open` — Cypress end-to-end tests (see below)
 - `yarn lint` — ESLint (`--fix`)
 - `yarn prettier:check` / `yarn prettier:write` — Prettier
+
+## End-to-end tests
+
+`cypress/e2e/mobile-shell.cy.ts` is the acceptance gate for the phone browser experience. It runs at
+a 390x844 viewport with touch and `(hover: none)` emulated over CDP, and stubs every API call
+(`cypress/support/commands.ts`, fixtures in `cypress/support/stubData.ts`), so it needs no backend,
+no database and no account.
+
+It runs against a **static dev build**, because `webpack.dev.js` is what points the API base URL at
+`http://localhost:8080` — the origin the spec stubs. A production build would point at
+`api.generaltask.com`.
+
+```
+yarn build:test
+npx serve -s dist -l 3000   # in another shell
+yarn cy:run --browser chrome
+```
+
+Use `yarn cy:open` for the interactive runner. CI runs the same sequence in
+`.github/workflows/frontend_e2e.yml`.
 
 ## Deploy to Cloudflare
 
