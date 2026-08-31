@@ -11,8 +11,8 @@ export default defineConfig({
         // A phone, not a narrow desktop window: 390x844 is the iPhone 12/13/14 logical viewport, and
         // sits under BREAKPOINTS.phone (768) so `useIsMobile` reports true. Touch and `hover: none`
         // are layered on top per-test by `cy.emulatePhoneInput()`.
-        viewportWidth: 1280,
-        viewportHeight: 800,
+        viewportWidth: 390,
+        viewportHeight: 844,
         video: false,
         // The suite is a small acceptance gate, not a broad regression suite; one retry absorbs the
         // occasional slow first paint of a 4MB dev bundle without hiding a real failure.
