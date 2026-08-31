@@ -11,8 +11,8 @@ const API = 'http://localhost:8080'
  *
  * Two behaviours here are load-bearing rather than convenience:
  *  - A catch-all is registered FIRST. Cypress matches the most recently defined intercept, so the
- *    specific handlers below still win; the catch-all only picks up calls nobody listed. It answers
- *    404 rather than passing through, because a real request would leak to whatever is listening on
+ *    specific handlers below still win; the catch-all only picks up calls nobody listed. It fails
+ *    rather than passing through, because a real request would leak to whatever is listening on
  *    :8080 on the developer's machine.
  *  - Nothing may answer 401. utils/api.ts's response interceptor clears the auth cookie and
  *    `window.location.replace`s out of the SPA on any 401, which reads as a mystery blank page.
@@ -28,7 +28,13 @@ const stubGeneralTaskApi = () => {
         )
     })
 
-    cy.intercept({ url: `${API}/**` }, { statusCode: 404, body: {} }).as('unstubbedApiCall')
+    // Registered FIRST, so every specific handler below wins and only calls nobody listed land here.
+    // It fails rather than answering 404: most query hooks swallow a 404 into React Query error
+    // state, so a new boot-time request could go unstubbed while the visible assertions still pass,
+    // and the gate would quietly stop proving that the run is fully offline.
+    cy.intercept({ url: `${API}/**` }, (req) => {
+        throw new Error(`Unstubbed API call: ${req.method} ${req.url}. Add it to cy.stubGeneralTaskApi().`)
+    })
 
     // Third parties the app reaches for on its own: the FontAwesome kit script in index.html and
     // react-ga4's analytics beacons. Stubbing them keeps the spec off the network entirely and keeps
@@ -53,12 +59,14 @@ const stubGeneralTaskApi = () => {
     cy.intercept('GET', `${API}/events/*`, [])
     cy.intercept('GET', `${API}/notes/`, [])
     cy.intercept('GET', `${API}/linked_accounts/`, [])
+    // Pulled in by the drawer's service list, not just the settings modal.
+    cy.intercept('GET', `${API}/linked_accounts/supported_types/`, [])
     cy.intercept('GET', `${API}/recurring_task_templates/v2/`, [])
     cy.intercept('GET', `${API}/recurring_task_templates/backfill_tasks/`, [])
     cy.intercept('POST', `${API}/log_events/`, {})
 
-    // Not exercised here, but present so a stray write cannot fall through to the 404 catch-all and
-    // surface as an error toast mid-assertion.
+    // Not exercised here, but present so a stray write cannot fall through to the catch-all and fail
+    // a run over something the spec never asserted on.
     cy.intercept('POST', `${API}/events/create/gcal/`, { statusCode: 201, body: {} })
     cy.intercept('PATCH', `${API}/**`, {})
 
