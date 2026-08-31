@@ -22,3 +22,8 @@ jobs:
         with:
           version: v1.50.1
           working-directory: backend
+          # golangci-lint defaults to a 1m budget covering package loading as well as the linters.
+          # Loading this backend takes most of that on a cold runner, so the job fails intermittently
+          # with "timed out to load packages" on code that lints clean — it is a stopwatch, not a
+          # finding. Give the load room; a real lint failure still returns long before this.
+          args: --timeout=5m
