@@ -65,11 +65,6 @@ const stubGeneralTaskApi = () => {
     cy.intercept('GET', `${API}/recurring_task_templates/backfill_tasks/`, [])
     cy.intercept('POST', `${API}/log_events/`, {})
 
-    // Not exercised here, but present so a stray write cannot fall through to the catch-all and fail
-    // a run over something the spec never asserted on.
-    cy.intercept('POST', `${API}/events/create/gcal/`, { statusCode: 201, body: {} })
-    cy.intercept('PATCH', `${API}/**`, {})
-
     cy.setCookie(AUTHORIZATION_COOKE, 'mobile-acceptance-token')
 }
 
