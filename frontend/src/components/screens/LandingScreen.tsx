@@ -5,8 +5,7 @@ import {
     AUTHORIZATION_COOKE,
     LOGIN_URL,
     PRIVACY_POLICY_ROUTE,
-    SUBSCRIPTION_PRICE,
-    SUBSCRIPTION_TRIAL_DAYS,
+    SUBSCRIPTION_TRIAL_OFFER,
     TERMS_OF_SERVICE_ROUTE,
 } from '../../constants'
 import { logos } from '../../styles/images'
@@ -39,8 +38,6 @@ const customerLogos = [
         src: `${ASSET_BASE}/63c462b47204b6d5115a6054_philsa-banner%201%20(1).png`,
     },
 ]
-
-const trialOffer = `${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}`
 
 const Page = styled.main`
     min-width: 100%;
@@ -542,7 +539,7 @@ const LandingScreen = () => {
                                 <HeroTitle>Effortless time blocking.</HeroTitle>
                                 <LargeText>
                                     Take control of your time with powerful daily planning software. Start with a{' '}
-                                    {trialOffer}.
+                                    {SUBSCRIPTION_TRIAL_OFFER}.
                                 </LargeText>
                                 <ButtonStack>
                                     <LargeCTA href={LOGIN_URL} target="_self">
@@ -644,7 +641,9 @@ const LandingScreen = () => {
                     <EndSection id="pricing">
                         <BottomCard>
                             <BottomHeading>Get started below.</BottomHeading>
-                            <BottomText>General Task is a paid consumer productivity app. Start with a {trialOffer}.</BottomText>
+                            <BottomText>
+                                General Task is a paid consumer productivity app. Start with a {SUBSCRIPTION_TRIAL_OFFER}.
+                            </BottomText>
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
                             </LargeCTA>

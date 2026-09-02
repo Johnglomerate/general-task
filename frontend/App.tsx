@@ -10,11 +10,12 @@ import LandingScreen from './src/components/screens/LandingScreen'
 import SharedTaskView from './src/components/views/SharedTaskView'
 import {
     GOOGLE_AUTH_ROUTE,
+    MARKETING_META_DESCRIPTION,
+    MARKETING_META_TITLE,
+    MARKETING_SOCIAL_DESCRIPTION,
     NOTE_ROUTE,
     PRIVACY_POLICY_ROUTE,
     SHAREABLE_TASK_ROUTE,
-    SUBSCRIPTION_PRICE,
-    SUBSCRIPTION_TRIAL_DAYS,
     TERMS_OF_SERVICE_ROUTE,
 } from './src/constants'
 import { GlobalStyle } from './src/styles'
@@ -40,15 +41,11 @@ const queryClient = new QueryClient({
 })
 
 const App = () => {
-    const metaTitle = `General Task - Personal productivity for ${SUBSCRIPTION_PRICE}`
-    const metaDescription = `Plan tasks, calendar, pull requests, and integrations with General Task. Start with a ${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}.`
-    const socialDescription = `Plan tasks, calendar, pull requests, and integrations with a ${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}.`
-
     return (
         <QueryClientProvider client={queryClient}>
             <Helmet>
                 <meta charSet="utf-8" />
-                <title>{metaTitle}</title>
+                <title>{MARKETING_META_TITLE}</title>
                 <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
@@ -58,11 +55,11 @@ const App = () => {
                     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
                     rel="stylesheet"
                 />
-                <meta content={metaDescription} name="description" />
-                <meta content={metaTitle} property="og:title" />
-                <meta content={socialDescription} property="og:description" />
-                <meta content={metaTitle} property="twitter:title" />
-                <meta content={socialDescription} property="twitter:description" />
+                <meta content={MARKETING_META_DESCRIPTION} name="description" />
+                <meta content={MARKETING_META_TITLE} property="og:title" />
+                <meta content={MARKETING_SOCIAL_DESCRIPTION} property="og:description" />
+                <meta content={MARKETING_META_TITLE} property="twitter:title" />
+                <meta content={MARKETING_SOCIAL_DESCRIPTION} property="twitter:description" />
                 <meta property="og:type" content="website" />
                 <meta property="og:image" content="/images/futureman.png" />
                 <meta content="summary_large_image" name="twitter:card" />

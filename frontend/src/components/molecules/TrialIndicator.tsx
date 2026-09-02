@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { SUBSCRIPTION_PRICE } from '../../constants'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Border, Colors, Spacing } from '../../styles'
 import { icons } from '../../styles/images'
@@ -29,7 +30,7 @@ const TrialIndicator = ({ isCollapsed = false }: TrialIndicatorProps) => {
     if (!userInfo?.is_in_trial || userInfo.is_subscribed) return null
 
     const daysRemaining = userInfo.trial_days_remaining ?? 0
-    const tipContent = `${daysLeftText(daysRemaining)} in your free trial — $2/month after that`
+    const tipContent = `${daysLeftText(daysRemaining)} in your free trial - ${SUBSCRIPTION_PRICE} after that`
 
     if (isCollapsed) {
         return (
@@ -45,7 +46,7 @@ const TrialIndicator = ({ isCollapsed = false }: TrialIndicatorProps) => {
         <Tip content={tipContent} side="right">
             <TrialContainer>
                 <Icon icon={icons.timer} size="small" color="gray" />
-                <LabelSmall color="muted">{`Free trial — ${daysLeftText(daysRemaining)}`}</LabelSmall>
+                <LabelSmall color="muted">{`Free trial - ${daysLeftText(daysRemaining)}`}</LabelSmall>
             </TrialContainer>
         </Tip>
     )
