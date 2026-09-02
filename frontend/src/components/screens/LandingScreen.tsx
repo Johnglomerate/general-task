@@ -112,7 +112,7 @@ const CTA = styled.a`
     color: #222721;
     font-family: inherit;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 400;
     line-height: 20px;
     text-align: center;
     text-decoration: none;
@@ -284,7 +284,8 @@ const ProductVideo = styled.video`
     z-index: 500000;
     width: 955px;
     max-width: 100%;
-    height: 540px;
+    height: auto;
+    aspect-ratio: 955 / 540;
     display: block;
     object-fit: cover;
     border-radius: 9px;
@@ -297,7 +298,7 @@ const ProductVideo = styled.video`
         0 12px 29px rgba(0, 0, 0, 0.11);
 
     @media (max-width: 767px) {
-        height: 250px;
+        width: 100%;
     }
 `
 
@@ -325,8 +326,11 @@ const LogoGrid = styled.div`
 `
 
 const CustomerLogo = styled.img`
+    width: 100%;
     max-width: 100%;
+    max-height: 52px;
     padding: 0 20px;
+    object-fit: contain;
 `
 
 const Heading = styled.h2`
@@ -389,7 +393,9 @@ const FeatureText = styled.div`
 
 const FeatureImage = styled.img`
     width: 100%;
+    height: auto;
     display: block;
+    object-fit: contain;
 `
 
 const IntegrationsImage = styled(FeatureImage)`
@@ -404,7 +410,9 @@ const FocusSection = styled(Section)`
 
 const FocusImage = styled.img`
     width: 100%;
+    height: auto;
     display: block;
+    object-fit: contain;
     margin: 100px 0 40px;
     border-radius: 8px;
     box-shadow: 0 4px 10px -2px gray;
