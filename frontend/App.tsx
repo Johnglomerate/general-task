@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
 })
 
 const App = () => {
-    const metaTitle = `General Task — Personal productivity for ${SUBSCRIPTION_PRICE}`
+    const metaTitle = `General Task - Personal productivity for ${SUBSCRIPTION_PRICE}`
     const metaDescription = `Plan tasks, calendar, pull requests, and integrations with General Task. Start with a ${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}.`
     const socialDescription = `Plan tasks, calendar, pull requests, and integrations with a ${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}.`
 
@@ -52,6 +52,12 @@ const App = () => {
                 <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
+                <link href="https://fonts.googleapis.com" rel="preconnect" />
+                <link href="https://fonts.gstatic.com" rel="preconnect" crossOrigin="anonymous" />
+                <link
+                    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
+                    rel="stylesheet"
+                />
                 <meta content={metaDescription} name="description" />
                 <meta content={metaTitle} property="og:title" />
                 <meta content={socialDescription} property="og:description" />
@@ -66,7 +72,7 @@ const App = () => {
 
                 <Routes>
                     <Route index element={<LandingScreen />} />
-                    <Route path="sign-up" element={<LandingScreen isSignUp />} />
+                    <Route path="sign-up" element={<LandingScreen />} />
                     <Route
                         path={TERMS_OF_SERVICE_ROUTE}
                         element={<CompanyPolicyView page={CompanyPolicyPages.TermsOfService} />}
