@@ -39,6 +39,8 @@ const customerLogos = [
     },
 ]
 
+const signupFinePrint = 'No card at signup'
+
 const Page = styled.main`
     min-width: 100%;
     min-height: 100vh;
@@ -46,6 +48,7 @@ const Page = styled.main`
     background: #f0f3f7;
     color: #222721;
     font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 500;
     -webkit-font-smoothing: antialiased;
 `
 
@@ -94,8 +97,9 @@ const CTA = styled.a`
     border-radius: 100px;
     background: #fbdd40;
     color: #222721;
+    font-family: inherit;
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 500;
     line-height: 20px;
     text-align: center;
     text-decoration: none;
@@ -248,10 +252,10 @@ const ButtonStack = styled.div`
 const FinePrint = styled.p`
     max-width: 600px;
     margin: 18px auto 0;
-    color: #515852;
-    font-size: 16px;
+    color: rgba(34, 39, 33, 0.45);
+    font-size: 14px;
     font-weight: 400;
-    line-height: 24px;
+    line-height: 22px;
     text-align: center;
 `
 
@@ -546,7 +550,7 @@ const LandingScreen = () => {
                                         Start free trial
                                     </LargeCTA>
                                 </ButtonStack>
-                                <FinePrint>No card at signup. Stripe checkout appears after your trial if you continue.</FinePrint>
+                                <FinePrint>{signupFinePrint}</FinePrint>
                             </HeroCopy>
                         </HeroContainer>
                         <VideoContainer>
@@ -647,7 +651,7 @@ const LandingScreen = () => {
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
                             </LargeCTA>
-                            <FinePrint>No card at signup. Stripe checkout appears after your trial if you continue.</FinePrint>
+                            <FinePrint>{signupFinePrint}</FinePrint>
                         </BottomCard>
                     </EndSection>
                 </InnerBlock>
