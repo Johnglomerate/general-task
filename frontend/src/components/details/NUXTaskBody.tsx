@@ -150,11 +150,6 @@ const JohnsLetterStaticContent = () => (
             feels great. We hope you enjoy the tool as much as we do!
         </p>
         <p>
-            General Task, as it is currently available, is in beta. This means that it is an imperfect work in progress,
-            but will improve rapidly to help you be more and more productive over time. We are just getting started, and
-            we can’t wait to have you along for the ride.
-        </p>
-        <p>
             <strong>But we can’t do this alone!</strong>
         </p>
         <p>

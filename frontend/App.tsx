@@ -10,9 +10,6 @@ import LandingScreen from './src/components/screens/LandingScreen'
 import SharedTaskView from './src/components/views/SharedTaskView'
 import {
     GOOGLE_AUTH_ROUTE,
-    MARKETING_META_DESCRIPTION,
-    MARKETING_META_TITLE,
-    MARKETING_SOCIAL_DESCRIPTION,
     NOTE_ROUTE,
     PRIVACY_POLICY_ROUTE,
     SHAREABLE_TASK_ROUTE,
@@ -44,25 +41,8 @@ const App = () => {
     return (
         <QueryClientProvider client={queryClient}>
             <Helmet>
-                <meta charSet="utf-8" />
-                <title>{MARKETING_META_TITLE}</title>
-                <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
-                <link href="https://fonts.googleapis.com" rel="preconnect" />
-                <link href="https://fonts.gstatic.com" rel="preconnect" crossOrigin="anonymous" />
-                <link
-                    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap"
-                    rel="stylesheet"
-                />
-                <meta content={MARKETING_META_DESCRIPTION} name="description" />
-                <meta content={MARKETING_META_TITLE} property="og:title" />
-                <meta content={MARKETING_SOCIAL_DESCRIPTION} property="og:description" />
-                <meta content={MARKETING_META_TITLE} property="twitter:title" />
-                <meta content={MARKETING_SOCIAL_DESCRIPTION} property="twitter:description" />
-                <meta property="og:type" content="website" />
-                <meta property="og:image" content="/images/futureman.png" />
-                <meta content="summary_large_image" name="twitter:card" />
             </Helmet>
             <BrowserRouter>
                 <GlobalStyle />

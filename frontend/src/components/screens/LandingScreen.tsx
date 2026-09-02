@@ -10,32 +10,32 @@ import {
 } from '../../constants'
 import { logos } from '../../styles/images'
 
-const ASSET_BASE = 'https://cdn.prod.website-files.com/63409b717d871ecb319db373'
+const ASSET_BASE = '/images/landing'
 const assets = {
-    background: `${ASSET_BASE}/636af9bbbe698027558a1947_general-task-background.png`,
-    hero: `${ASSET_BASE}/636afd8e514fce06043f4d79_general-task-front-illustration.png`,
-    videoPoster: `${ASSET_BASE}/636c1ffdc38dd14be4d02d4c_frontpage-edited-poster-00001.jpg`,
-    videoMp4: `${ASSET_BASE}/636c1ffdc38dd14be4d02d4c_frontpage-edited-transcode.mp4`,
-    videoWebm: `${ASSET_BASE}/636c1ffdc38dd14be4d02d4c_frontpage-edited-transcode.webm`,
-    taskToCalendar: `${ASSET_BASE}/636c46a4bfd4d8882564e934_Group%20619.png`,
-    integrations: `${ASSET_BASE}/63409b717d871e76fd9db413_Group%20569.png`,
-    focusMode: `${ASSET_BASE}/636c5c117d4307fa7039347d_fm-recolor2.png`,
+    background: `${ASSET_BASE}/general-task-background.png`,
+    hero: `${ASSET_BASE}/general-task-front-illustration.png`,
+    videoPoster: `${ASSET_BASE}/frontpage-poster.jpg`,
+    videoMp4: `${ASSET_BASE}/frontpage.mp4`,
+    videoWebm: `${ASSET_BASE}/frontpage.webm`,
+    taskToCalendar: `${ASSET_BASE}/task-to-calendar.png`,
+    integrations: `${ASSET_BASE}/integrations.png`,
+    focusMode: `${ASSET_BASE}/focus-mode.png`,
 }
 
 const customerLogos = [
     {
         alt: 'Nvidia',
-        src: `${ASSET_BASE}/63c4616694eb3965f10157b9_-UIB2q__nvidia-wordmark%201%20(1).png`,
+        src: `${ASSET_BASE}/logo-nvidia.png`,
     },
-    { alt: 'HubSpot', src: `${ASSET_BASE}/63c461809bcbb4b9038ca350_hubspot-ar21%201.png` },
-    { alt: 'Salesforce', src: `${ASSET_BASE}/63c461a41c2178afe6ca8dd2_salesforce-ar21%201.png` },
-    { alt: 'Qantas', src: `${ASSET_BASE}/63c461c7ce5aa246e3df521f_qantas-vector-logo%201.png` },
-    { alt: 'Square', src: `${ASSET_BASE}/63c461e53b2b760509b1b928_Square_LogoLockup_Black%201.png` },
-    { alt: 'Grammarly', src: `${ASSET_BASE}/63c46200ee0d0fa18fbca8a3_Grammarly_logo%201.png` },
-    { alt: 'Zendesk', src: `${ASSET_BASE}/63c46229a9b6a013df778250_5cac62bcf8d44d3bf418da1a_wordmark%201.png` },
+    { alt: 'HubSpot', src: `${ASSET_BASE}/logo-hubspot.png` },
+    { alt: 'Salesforce', src: `${ASSET_BASE}/logo-salesforce.png` },
+    { alt: 'Qantas', src: `${ASSET_BASE}/logo-qantas.png` },
+    { alt: 'Square', src: `${ASSET_BASE}/logo-square.png` },
+    { alt: 'Grammarly', src: `${ASSET_BASE}/logo-grammarly.png` },
+    { alt: 'Zendesk', src: `${ASSET_BASE}/logo-zendesk.png` },
     {
         alt: 'Philippine Space Agency',
-        src: `${ASSET_BASE}/63c462b47204b6d5115a6054_philsa-banner%201%20(1).png`,
+        src: `${ASSET_BASE}/logo-philsa.png`,
     },
 ]
 
@@ -82,9 +82,22 @@ const Nav = styled.div`
 `
 
 const Logo = styled.img`
-    width: 150px;
-    max-width: 38vw;
+    width: 32px;
+    height: 32px;
     display: block;
+`
+
+const Brand = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`
+
+const BrandName = styled.div`
+    color: #222721;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 32px;
 `
 
 const CTA = styled.a`
@@ -526,7 +539,10 @@ const LandingScreen = () => {
         <Page>
             <Header>
                 <Nav>
-                    <Logo src={logos.generaltask_beta_blue} alt="General Task" />
+                    <Brand>
+                        <Logo src={logos.generaltask_blue_circle} alt="" />
+                        <BrandName>General Task</BrandName>
+                    </Brand>
                     <CTA href={LOGIN_URL} target="_self">
                         Start free trial
                     </CTA>
