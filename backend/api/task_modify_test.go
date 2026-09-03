@@ -10,10 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GeneralTask/task-manager/backend/testutils"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
-
 	"github.com/GeneralTask/task-manager/backend/constants"
 	"github.com/GeneralTask/task-manager/backend/database"
 	"github.com/GeneralTask/task-manager/backend/external"
