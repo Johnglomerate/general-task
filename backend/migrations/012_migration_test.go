@@ -90,7 +90,17 @@ func TestMigrate012(t *testing.T) {
 			"_id":                    prEventID,
 			"user_id":                userID,
 			"linked_task_source_id":  "github_pr",
+			"linked_task_id":         primitive.NewObjectID(),
 			"linked_pull_request_id": primitive.NewObjectID(),
+		})
+		assert.NoError(t, err)
+
+		slackEventID := primitive.NewObjectID()
+		_, err = eventCollection.InsertOne(context.Background(), bson.M{
+			"_id":                   slackEventID,
+			"user_id":               userID,
+			"linked_task_source_id": "slack",
+			"linked_task_id":        slackTaskID,
 		})
 		assert.NoError(t, err)
 
@@ -134,14 +144,22 @@ func TestMigrate012(t *testing.T) {
 		assert.Equal(t, external.TASK_SERVICE_ID_GOOGLE, tokens[0].ServiceID)
 
 		// The calendar event itself is a real Google event, so it stays; only
-		// its link to the removed pull request is cleared.
-		var event bson.M
-		err = eventCollection.FindOne(context.Background(), bson.M{"_id": prEventID}).Decode(&event)
+		// its links to the removed pull request and its deleted task are cleared.
+		var prEvent bson.M
+		err = eventCollection.FindOne(context.Background(), bson.M{"_id": prEventID}).Decode(&prEvent)
 		assert.NoError(t, err)
-		_, hasPRLink := event["linked_pull_request_id"]
-		assert.False(t, hasPRLink)
-		_, hasSourceLink := event["linked_task_source_id"]
-		assert.False(t, hasSourceLink)
+		for _, key := range []string{"linked_pull_request_id", "linked_task_source_id", "linked_task_id"} {
+			_, present := prEvent[key]
+			assert.False(t, present, key)
+		}
+
+		// The Slack task survives the migration, so the event scheduled for it
+		// keeps pointing at that task rather than being orphaned alongside it.
+		var slackEvent bson.M
+		err = eventCollection.FindOne(context.Background(), bson.M{"_id": slackEventID}).Decode(&slackEvent)
+		assert.NoError(t, err)
+		assert.Equal(t, slackTaskID, slackEvent["linked_task_id"])
+		assert.Equal(t, external.TASK_SOURCE_ID_GT_TASK, slackEvent["linked_task_source_id"])
 	})
 	t.Run("MigrateDown", func(t *testing.T) {
 		err = migrate.Steps(-1)
