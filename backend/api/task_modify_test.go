@@ -354,7 +354,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:        userID,
 				IDOrdering:    2,
 				IDTaskSection: originalTaskSectionID,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -366,7 +366,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:        primitive.NewObjectID(),
 				IDOrdering:    3,
 				IDTaskSection: originalTaskSectionID,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -379,7 +379,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:           userID,
 				IDOrdering:       1,
 				IDTaskSection:    customTaskSectionID,
-				SourceID:         external.TASK_SOURCE_ID_LINEAR,
+				SourceID:         external.TASK_SOURCE_ID_GT_TASK,
 				HasBeenReordered: false,
 			},
 		)
@@ -392,7 +392,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:        userID,
 				IDOrdering:    2,
 				IDTaskSection: customTaskSectionID,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -404,7 +404,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:        userID,
 				IDOrdering:    1,
 				IDTaskSection: originalTaskSectionID,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -461,7 +461,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:       newUserID,
 				IDOrdering:   2,
 				ParentTaskID: parentTaskID,
-				SourceID:     external.TASK_SOURCE_ID_LINEAR,
+				SourceID:     external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -473,7 +473,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:       primitive.NewObjectID(),
 				IDOrdering:   3,
 				ParentTaskID: parentTaskID,
-				SourceID:     external.TASK_SOURCE_ID_LINEAR,
+				SourceID:     external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -485,7 +485,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:           newUserID,
 				IDOrdering:       1,
 				ParentTaskID:     newParentTaskID,
-				SourceID:         external.TASK_SOURCE_ID_LINEAR,
+				SourceID:         external.TASK_SOURCE_ID_GT_TASK,
 				HasBeenReordered: false,
 			},
 		)
@@ -498,7 +498,7 @@ func TestTaskReorder(t *testing.T) {
 				UserID:       newUserID,
 				IDOrdering:   2,
 				ParentTaskID: newParentTaskID,
-				SourceID:     external.TASK_SOURCE_ID_LINEAR,
+				SourceID:     external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -509,7 +509,7 @@ func TestTaskReorder(t *testing.T) {
 			database.Task{
 				UserID:       newUserID,
 				ParentTaskID: parentTaskID,
-				SourceID:     external.TASK_SOURCE_ID_LINEAR,
+				SourceID:     external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -646,7 +646,7 @@ func TestTaskReorder(t *testing.T) {
 			database.Task{
 				UserID:        userID,
 				IDTaskSection: constants.IDTaskSectionDefault,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -681,7 +681,7 @@ func TestTaskReorder(t *testing.T) {
 			database.Task{
 				UserID:        userID,
 				IDTaskSection: newTaskSectionID,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			},
 		)
 		assert.NoError(t, err)
@@ -726,7 +726,6 @@ func TestEditFields(t *testing.T) {
 	taskBody := "Initial Body"
 	taskTime := int64(60 * 60 * 1000 * 1000)
 	taskPriorityNormalized := 5.0
-	taskNumber := 3
 
 	timeNow := primitive.NewDateTimeFromTime(time.Now())
 
@@ -746,7 +745,6 @@ func TestEditFields(t *testing.T) {
 		TimeAllocation:     &taskTime,
 		CreatedAtExternal:  primitive.NewDateTimeFromTime(time.Now()),
 		PriorityNormalized: &taskPriorityNormalized,
-		TaskNumber:         &taskNumber,
 	}
 
 	t.Run("Edit Title Success", func(t *testing.T) {
@@ -1041,57 +1039,9 @@ func TestEditFields(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "{\"detail\":\"time duration cannot be negative\"}", string(body))
 	})
-	t.Run("Edit priority not in all priorities", func(t *testing.T) {
-		expectedTask := sampleTask
-		expectedTask.UserID = userID
-		insertResult, err := taskCollection.InsertOne(
-			context.Background(),
-			expectedTask,
-		)
-		assert.NoError(t, err)
-		insertedTaskID := insertResult.InsertedID.(primitive.ObjectID)
-		api, dbCleanup := GetAPIWithDBCleanup()
-		defer dbCleanup()
-		router := GetRouter(api)
-		request, _ := http.NewRequest(
-			"PATCH",
-			"/tasks/modify/"+insertedTaskID.Hex()+"/",
-			bytes.NewBuffer([]byte(`{"task": {"external_priority": {"external_id":"1"}}}`)))
-		request.Header.Add("Authorization", "Bearer "+authToken)
-		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, request)
-		assert.Equal(t, http.StatusBadRequest, recorder.Code)
-
-		body, err := io.ReadAll(recorder.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, "{\"detail\":\"priority value not valid for task\"}", string(body))
-	})
 	t.Run("Edit multiple fields success", func(t *testing.T) {
 		expectedTask := sampleTask
 		expectedTask.UserID = userID
-		expectedTask.ExternalPriority = &database.ExternalTaskPriority{
-			ExternalID:         "1",
-			Name:               "high",
-			PriorityNormalized: 2.0,
-			Color:              "#ffffff",
-			IconURL:            "https://example.com",
-		}
-		expectedTask.AllExternalPriorities = []*database.ExternalTaskPriority{
-			{
-				ExternalID:         "1",
-				Name:               "high",
-				PriorityNormalized: 2.0,
-				Color:              "#ffffff",
-				IconURL:            "https://example.com",
-			},
-			{
-				ExternalID:         "2",
-				Name:               "low",
-				PriorityNormalized: 4.0,
-				Color:              "#ffffff",
-				IconURL:            "https://example.com",
-			},
-		}
 		insertResult, err := taskCollection.InsertOne(
 			context.Background(),
 			expectedTask,
@@ -1113,7 +1063,7 @@ func TestEditFields(t *testing.T) {
 				"due_date": "`+dueDate.Format(time.RFC3339)+`",
 				"title": "New Title",
 				"body": "New Body",
-				"task": {"external_priority": {"external_id":"1"}}
+				"task": {"priority_normalized": 2}
 				}`)))
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -1139,7 +1089,6 @@ func TestEditFields(t *testing.T) {
 		expectedTask.TimeAllocation = &newTimeAllocation
 
 		assert.Equal(t, 2.0, *task.PriorityNormalized)
-		assert.Equal(t, "1", *&task.ExternalPriority.ExternalID)
 
 		utils.AssertTasksEqual(t, &expectedTask, &task)
 	})
