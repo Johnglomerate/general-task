@@ -275,37 +275,60 @@ func (Google GoogleService) HandleSignupCallback(db *mongo.Database, params Call
 	}
 
 	userCollection := database.GetUserCollection(db)
-
-	count, err := userCollection.CountDocuments(
-		context.Background(),
-		bson.M{"google_id": userInfo.SUB},
-	)
-	if err != nil {
-		logger.Error().Err(err).Send()
-	}
-	userIsNew := count == int64(0)
-
-	var user database.User
-
-	userNew := &database.User{GoogleID: userInfo.SUB, Email: userInfo.EMAIL, Name: userInfo.Name, CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC())}
 	userChangeable := &database.UserChangeable{Email: userInfo.EMAIL, Name: userInfo.Name}
 
-	log.Debug().Msgf("userNew: %+v", userNew)
-	userCollection.FindOneAndUpdate(context.Background(),
-		bson.M{"google_id": userInfo.SUB},
-		bson.M{"$setOnInsert": userNew},
-		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After))
-
-	log.Debug().Msgf("userChangeable: %+v", userChangeable)
-	err = userCollection.FindOneAndUpdate(
+	var user database.User
+	err = userCollection.FindOne(
 		context.Background(),
 		bson.M{"google_id": userInfo.SUB},
-		bson.M{"$set": userChangeable},
-		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
 	).Decode(&user)
-	if err != nil {
-		logger.Error().Err(err).Msg("error decoding user object")
+
+	userIsNew := false
+	if err == mongo.ErrNoDocuments {
+		attached, attachErr := database.AttachGoogleIDToEmailUser(db, userInfo.EMAIL, userInfo.SUB, userInfo.Name)
+		if attachErr != nil {
+			logger.Error().Err(attachErr).Msg("error attaching google id to email user")
+			return primitive.NilObjectID, nil, nil, attachErr
+		}
+		if attached != nil {
+			user = *attached
+		} else {
+			userIsNew = true
+			userNew := &database.User{GoogleID: userInfo.SUB, Email: userInfo.EMAIL, Name: userInfo.Name, CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC())}
+
+			log.Debug().Msgf("userNew: %+v", userNew)
+			userCollection.FindOneAndUpdate(context.Background(),
+				bson.M{"google_id": userInfo.SUB},
+				bson.M{"$setOnInsert": userNew},
+				options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After))
+
+			log.Debug().Msgf("userChangeable: %+v", userChangeable)
+			err = userCollection.FindOneAndUpdate(
+				context.Background(),
+				bson.M{"google_id": userInfo.SUB},
+				bson.M{"$set": userChangeable},
+				options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+			).Decode(&user)
+			if err != nil {
+				logger.Error().Err(err).Msg("error decoding user object")
+				return primitive.NilObjectID, nil, nil, err
+			}
+		}
+	} else if err != nil {
+		logger.Error().Err(err).Send()
 		return primitive.NilObjectID, nil, nil, err
+	} else {
+		log.Debug().Msgf("userChangeable: %+v", userChangeable)
+		err = userCollection.FindOneAndUpdate(
+			context.Background(),
+			bson.M{"google_id": userInfo.SUB},
+			bson.M{"$set": userChangeable},
+			options.FindOneAndUpdate().SetReturnDocument(options.After),
+		).Decode(&user)
+		if err != nil {
+			logger.Error().Err(err).Msg("error decoding user object")
+			return primitive.NilObjectID, nil, nil, err
+		}
 	}
 
 	if user.ID == primitive.NilObjectID {

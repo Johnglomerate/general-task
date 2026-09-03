@@ -4,6 +4,7 @@ import {
     AUTHORIZATION_COOKE,
     COOKIE_DOMAIN,
     GOOGLE_AUTH_ROUTE,
+    LOGIN_ROUTE,
     NOTE_ROUTE,
     PRIVACY_POLICY_ROUTE,
     TERMS_OF_SERVICE_ROUTE,
@@ -14,7 +15,7 @@ const { REACT_APP_FRONTEND_BASE_URL, REACT_APP_API_BASE_URL } = getEnvVars()
 
 // slightly hacky way of checking if a page should be accessible if the user is not logged in
 export const isPublicPage = () => {
-    return [TERMS_OF_SERVICE_ROUTE, PRIVACY_POLICY_ROUTE, NOTE_ROUTE, GOOGLE_AUTH_ROUTE].includes(
+    return [TERMS_OF_SERVICE_ROUTE, PRIVACY_POLICY_ROUTE, NOTE_ROUTE, GOOGLE_AUTH_ROUTE, LOGIN_ROUTE].includes(
         window.location.pathname.split('/')[1] // removes leading slash from url
     )
 }

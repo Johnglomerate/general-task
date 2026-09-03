@@ -131,8 +131,13 @@ func (api *API) LoginCallback(c *gin.Context) {
 		return
 	}
 
-	if userIsNew != nil && *userIsNew {
-		err = createNewUserTasks(userID, api.DB)
+	isNew := userIsNew != nil && *userIsNew
+	api.completeLogin(c, userID, isNew, useDeeplinkRedirect)
+}
+
+func (api *API) completeLogin(c *gin.Context, userID primitive.ObjectID, userIsNew bool, useDeeplink bool) {
+	if userIsNew {
+		err := createNewUserTasks(userID, api.DB)
 		if err != nil {
 			api.Logger.Error().Err(err).Msg("failed to create starter tasks")
 		}
@@ -144,7 +149,7 @@ func (api *API) LoginCallback(c *gin.Context) {
 
 	internalToken := guuid.New().String()
 	internalAPITokenCollection := database.GetInternalTokenCollection(api.DB)
-	_, err = internalAPITokenCollection.InsertOne(
+	_, err := internalAPITokenCollection.InsertOne(
 		context.Background(),
 		&database.InternalAPIToken{UserID: userID, Token: internalToken},
 	)
@@ -154,18 +159,16 @@ func (api *API) LoginCallback(c *gin.Context) {
 		return
 	}
 
-	if useDeeplinkRedirect {
+	if useDeeplink {
 		c.Redirect(302, fmt.Sprintf(constants.DeeplinkAuthentication, internalToken))
-	} else {
-		c.SetCookie("authToken", internalToken, constants.MONTH, "/", config.GetConfigValue("COOKIE_DOMAIN"), false, false)
-		if userIsNew != nil && *userIsNew {
-			c.Redirect(302, config.GetConfigValue("HOME_URL")+"tos-summary")
-		} else {
-			// Redirect to Stripe Checkout only once the free trial has run out
-			redirectURL := getPostLoginRedirectURL(api, userID)
-			c.Redirect(302, redirectURL)
-		}
+		return
 	}
+	c.SetCookie("authToken", internalToken, constants.MONTH, "/", config.GetConfigValue("COOKIE_DOMAIN"), false, false)
+	if userIsNew {
+		c.Redirect(302, config.GetConfigValue("HOME_URL")+"tos-summary")
+		return
+	}
+	c.Redirect(302, getPostLoginRedirectURL(api, userID))
 }
 
 func getPostLoginRedirectURL(api *API, userID primitive.ObjectID) string {

@@ -2,12 +2,10 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import styled from 'styled-components'
-import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../../constants'
-import { useAuthWindow } from '../../../hooks'
+import { AUTHORIZATION_COOKE, LOGIN_ROUTE } from '../../../constants'
 import useAnalyticsEventTracker from '../../../hooks/useAnalyticsEventTracker'
 import { Spacing } from '../../../styles'
 import { SHARED_ITEM_WIDTH, mediaQuery } from '../../../styles/dimensions'
-import { buttons } from '../../../styles/images'
 import GTButton from '../../atoms/buttons/GTButton'
 import NoStyleButton from '../../atoms/buttons/NoStyleButton'
 
@@ -31,16 +29,6 @@ export const HeaderContainer = styled.div`
         padding: ${Spacing._16};
     }
 `
-const SignInButton = styled(NoStyleButton)`
-    width: 200px;
-    ${mediaQuery.phone} {
-        width: 160px;
-    }
-`
-const GoogleImage = styled.img`
-    width: 100%;
-`
-
 interface SharedItemHeaderProps {
     sharedType: 'Notes' | 'Tasks'
 }
@@ -54,7 +42,6 @@ const SharedItemHeader = ({ sharedType }: SharedItemHeaderProps) => {
         }
     }, [])
 
-    const { openAuthWindow } = useAuthWindow()
     const navigate = useNavigate()
     const isLoggedIn = !!Cookies.get(AUTHORIZATION_COOKE)
 
@@ -78,14 +65,14 @@ const SharedItemHeader = ({ sharedType }: SharedItemHeaderProps) => {
                     }}
                 />
             ) : (
-                <SignInButton
+                <GTButton
+                    styleType="secondary"
+                    value="Sign in"
                     onClick={() => {
-                        GALog('Button click', 'Sign in with Google')
-                        openAuthWindow({ url: LOGIN_URL, logEvent: false, closeOnCookieSet: true })
+                        GALog('Button click', 'Sign in')
+                        navigate(`/${LOGIN_ROUTE}`)
                     }}
-                >
-                    <GoogleImage src={buttons.google_sign_in} />
-                </SignInButton>
+                />
             )}
         </HeaderContainer>
     )
