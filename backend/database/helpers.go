@@ -89,30 +89,6 @@ func UpdateOrCreateCalendarEvent(
 	return &event, nil
 }
 
-func UpdateOrCreatePullRequest(
-	db *mongo.Database,
-	userID primitive.ObjectID,
-	IDExternal string,
-	sourceID string,
-	fields interface{},
-	additionalFilters *[]bson.M,
-) (*PullRequest, error) {
-	pullRequestCollection := GetPullRequestCollection(db)
-	mongoResult, err := FindOneAndUpdateWithCollection(pullRequestCollection, userID, IDExternal, sourceID, nil, fields, additionalFilters)
-	if err != nil {
-		return nil, err
-	}
-
-	var pullRequest PullRequest
-	err = mongoResult.Decode(&pullRequest)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to update or create pull request")
-		return nil, err
-	}
-	return &pullRequest, nil
-}
-
 func FindOneAndUpdateWithCollection(
 	collection *mongo.Collection,
 	userID primitive.ObjectID,
@@ -161,21 +137,6 @@ func GetTask(db *mongo.Database, itemID primitive.ObjectID, userID primitive.Obj
 		return nil, err
 	}
 	return &task, nil
-}
-
-func GetPullRequest(db *mongo.Database, itemID primitive.ObjectID, userID primitive.ObjectID) (*PullRequest, error) {
-	logger := logging.GetSentryLogger()
-	pullRequestCollection := GetPullRequestCollection(db)
-	mongoResult := FindOneWithCollection(pullRequestCollection, userID, itemID)
-
-	var pullRequest PullRequest
-	err := mongoResult.Decode(&pullRequest)
-
-	if err != nil {
-		logger.Error().Err(err).Msgf("failed to get task: %+v", itemID)
-		return nil, err
-	}
-	return &pullRequest, nil
 }
 
 func GetNote(db *mongo.Database, itemID primitive.ObjectID, userID primitive.ObjectID) (*Note, error) {
@@ -455,24 +416,6 @@ func GetCalendarEventByExternalId(db *mongo.Database, externalID string, userID 
 	return &event, nil
 }
 
-func GetPullRequestByExternalID(db *mongo.Database, externalID string, userID primitive.ObjectID) (*PullRequest, error) {
-	logger := logging.GetSentryLogger()
-	var pullRequest PullRequest
-
-	err := FindOneExternalWithCollection(
-		GetPullRequestCollection(db),
-		userID,
-		externalID,
-	).Decode(&pullRequest)
-	if err != nil {
-		if err != mongo.ErrNoDocuments {
-			logger.Error().Err(err).Msgf("failed to get pull request: %+v", externalID)
-		}
-		return nil, err
-	}
-	return &pullRequest, nil
-}
-
 func FindOneExternalWithCollection(
 	collection *mongo.Collection,
 	userID primitive.ObjectID,
@@ -548,26 +491,6 @@ func GetOrCreateCalendarEvent(db *mongo.Database, userID primitive.ObjectID, IDE
 	}
 
 	return &event, nil
-}
-
-func GetOrCreatePullRequest(db *mongo.Database, userID primitive.ObjectID, IDExternal string, sourceID string, fieldsToInsertIfMissing interface{}) (*PullRequest, error) {
-	pullRequestCollection := GetPullRequestCollection(db)
-	mongoResult := GetOrCreateWithCollection(pullRequestCollection, userID, IDExternal, sourceID, fieldsToInsertIfMissing)
-	logger := logging.GetSentryLogger()
-
-	if mongoResult == nil {
-		logger.Error().Msg("unable to create pull request")
-		return nil, errors.New("unable to create pull request")
-	}
-
-	var pullRequest PullRequest
-	err := mongoResult.Decode(&pullRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to get pull request")
-		return nil, err
-	}
-
-	return &pullRequest, nil
 }
 
 func GetOrCreateWithCollection(
@@ -653,23 +576,6 @@ func GetNotes(db *mongo.Database, userID primitive.ObjectID) (*[]Note, error) {
 	return &notes, nil
 }
 
-func GetActivePRs(db *mongo.Database, userID primitive.ObjectID) (*[]PullRequest, error) {
-	pullRequestCollection := GetPullRequestCollection(db)
-	cursor, err := GetActiveItemsWithCollection(pullRequestCollection, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	var pullRequests []PullRequest
-	err = cursor.All(context.Background(), &pullRequests)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to fetch PRs for user")
-		return nil, err
-	}
-	return &pullRequests, nil
-}
-
 func GetActiveItemsWithCollection(collection *mongo.Collection, userID primitive.ObjectID) (*mongo.Cursor, error) {
 	cursor, err := collection.Find(
 		context.Background(),
@@ -698,18 +604,6 @@ func GetTasks(db *mongo.Database, userID primitive.ObjectID, additionalFilters *
 		return nil, err
 	}
 	return &tasks, nil
-}
-
-// will add helpers once we refactor tasks collection
-func GetPullRequests(db *mongo.Database, userID primitive.ObjectID, additionalFilters *[]bson.M) (*[]PullRequest, error) {
-	var pullRequests []PullRequest
-	err := FindWithCollection(GetPullRequestCollection(db), userID, additionalFilters, &pullRequests, nil)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to fetch pull requests for user")
-		return nil, err
-	}
-	return &pullRequests, nil
 }
 
 func FindWithCollection(collection *mongo.Collection, userID primitive.ObjectID, additionalFilters *[]bson.M, result interface{}, findOptions *options.FindOptions) error {
@@ -923,7 +817,6 @@ func GetEventsUntilEndOfDay(db *mongo.Database, userID primitive.ObjectID, curre
 		{"datetime_start": bson.M{"$lte": timeEndOfDay}},
 		{"linked_task_id": bson.M{"$exists": false}},
 		{"linked_view_id": bson.M{"$exists": false}},
-		{"linked_pull_request_id": bson.M{"$exists": false}},
 	})
 }
 
@@ -1264,76 +1157,6 @@ func UpdateUserSetting(db *mongo.Database, userID primitive.ObjectID, fieldKey s
 	return nil
 }
 
-func GetOrCreateDashboardTeam(db *mongo.Database, userID primitive.ObjectID) (*DashboardTeam, error) {
-	teamCollection := GetDashboardTeamCollection(db)
-
-	var dashboardTeam DashboardTeam
-	err := teamCollection.FindOneAndUpdate(
-		context.Background(),
-		bson.M{"user_id": userID},
-		bson.M{"$setOnInsert": DashboardTeam{
-			UserID:    userID,
-			CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
-		}},
-		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
-	).Decode(&dashboardTeam)
-	if err != nil {
-		logging.GetSentryLogger().Error().Err(err).Msg("failed to find and update dashboard team")
-		return nil, err
-	}
-	return &dashboardTeam, nil
-}
-
-func GetDashboardTeamMembers(db *mongo.Database, teamID primitive.ObjectID) (*[]DashboardTeamMember, error) {
-	teamMemberCollection := GetDashboardTeamMemberCollection(db)
-	cursor, err := teamMemberCollection.Find(
-		context.Background(),
-		bson.M{"team_id": teamID},
-	)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to fetch team members")
-		return nil, err
-	}
-
-	var teamMembers []DashboardTeamMember
-	err = cursor.All(context.Background(), &teamMembers)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to load team members")
-		return nil, err
-	}
-	return &teamMembers, nil
-}
-
-func GetDashboardDataPoints(db *mongo.Database, teamID primitive.ObjectID, now time.Time, lookbackDays int) (*[]DashboardDataPoint, error) {
-	dataPointCollection := GetDashboardDataPointCollection(db)
-	cursor, err := dataPointCollection.Find(
-		context.Background(),
-		bson.M{"$and": []bson.M{
-			// this timestamp is approximate for now, will refine as needed
-			{"date": bson.M{"$gte": now.Add(-time.Hour * 24 * time.Duration(lookbackDays))}},
-			{"$or": []bson.M{
-				{"team_id": teamID},
-				{"team_id": bson.M{"$exists": false}},
-			}}}},
-	)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to fetch data points")
-		return nil, err
-	}
-
-	var dataPoints []DashboardDataPoint
-	err = cursor.All(context.Background(), &dataPoints)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to load data points")
-		return nil, err
-	}
-	return &dataPoints, nil
-}
-
 func GetServerRequestCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("server_requests")
 }
@@ -1362,10 +1185,6 @@ func GetViewCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("views")
 }
 
-func GetRepositoryCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("repositories")
-}
-
 func GetDefaultSectionSettingsCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("default_section_settings")
 }
@@ -1378,10 +1197,6 @@ func GetExternalTokenCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("external_api_tokens")
 }
 
-func GetPullRequestCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("pull_requests")
-}
-
 func GetUserSettingsCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("user_settings")
 }
@@ -1392,14 +1207,6 @@ func GetInternalTokenCollection(db *mongo.Database) *mongo.Collection {
 
 func GetWaitlistCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("waitlist")
-}
-
-func GetJiraSitesCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("jira_sites")
-}
-
-func GetJiraPrioritiesCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("jira_priorities")
 }
 
 func GetOauth1RequestsSecretsCollection(db *mongo.Database) *mongo.Collection {
@@ -1422,20 +1229,8 @@ func GetRecurringTaskTemplateCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("recurring_task_templates")
 }
 
-func GetDashboardDataPointCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("dashboard_data_points")
-}
-
 func GetJobLocksCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("job_locks")
-}
-
-func GetDashboardTeamCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("dashboard_teams")
-}
-
-func GetDashboardTeamMemberCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("dashboard_team_members")
 }
 
 func HasUserGrantedMultiCalendarScope(scopes []string) bool {

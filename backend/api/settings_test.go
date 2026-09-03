@@ -25,8 +25,8 @@ func TestSettingsGet(t *testing.T) {
 		// Random userID; should be ignored
 		_, err := settingCollection.InsertOne(context.Background(), &database.UserSetting{
 			UserID:     primitive.NewObjectID(),
-			FieldKey:   constants.SettingFieldGithubFilteringPreference,
-			FieldValue: constants.ChoiceKeyActionableOnly,
+			FieldKey:   constants.SettingFieldNoteFilteringPreference,
+			FieldValue: constants.ChoiceKeyShowDeleted,
 		})
 		assert.NoError(t, err)
 
@@ -41,7 +41,7 @@ func TestSettingsGet(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Contains(t, string(body), "{\"field_key\":\"github_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"actionable_only\",\"choice_name\":\"\"},{\"choice_key\":\"all_prs\",\"choice_name\":\"\"}],\"field_value\":\"actionable_only\"}")
+		assert.Contains(t, string(body), "{\"field_key\":\"note_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"no_deleted\",\"choice_name\":\"\"},{\"choice_key\":\"show_deleted\",\"choice_name\":\"\"}],\"field_value\":\"show_deleted\"}")
 	})
 	t.Run("Success", func(t *testing.T) {
 		authToken := login("approved@generaltask.com", "")
@@ -49,8 +49,8 @@ func TestSettingsGet(t *testing.T) {
 
 		_, err := settingCollection.InsertOne(context.Background(), &database.UserSetting{
 			UserID:     userID,
-			FieldKey:   constants.SettingFieldGithubFilteringPreference,
-			FieldValue: constants.ChoiceKeyActionableOnly,
+			FieldKey:   constants.SettingFieldNoteFilteringPreference,
+			FieldValue: constants.ChoiceKeyShowDeleted,
 		})
 		assert.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestSettingsGet(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Contains(t, string(body), "{\"field_key\":\"github_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"actionable_only\",\"choice_name\":\"\"},{\"choice_key\":\"all_prs\",\"choice_name\":\"\"}],\"field_value\":\"actionable_only\"}")
+		assert.Contains(t, string(body), "{\"field_key\":\"note_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"no_deleted\",\"choice_name\":\"\"},{\"choice_key\":\"show_deleted\",\"choice_name\":\"\"}],\"field_value\":\"show_deleted\"}")
 	})
 	UnauthorizedTest(t, "GET", "/settings/", nil)
 	t.Run("Unauthorized", func(t *testing.T) {
@@ -139,7 +139,7 @@ func TestSettingsModify(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
 			"/settings/",
-			bytes.NewBuffer([]byte(`{"github_filtering_preference": "tothemoon"}`)),
+			bytes.NewBuffer([]byte(`{"note_filtering_preference": "tothemoon"}`)),
 		)
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -157,7 +157,7 @@ func TestSettingsModify(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
 			"/settings/",
-			bytes.NewBuffer([]byte(`{"github_filtering_preference": "all_prs"}`)),
+			bytes.NewBuffer([]byte(`{"note_filtering_preference": "show_deleted"}`)),
 		)
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -174,12 +174,12 @@ func TestSettingsModify(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err = io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Contains(t, string(body), "{\"field_key\":\"github_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"actionable_only\",\"choice_name\":\"\"},{\"choice_key\":\"all_prs\",\"choice_name\":\"\"}],\"field_value\":\"all_prs\"}")
+		assert.Contains(t, string(body), "{\"field_key\":\"note_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"no_deleted\",\"choice_name\":\"\"},{\"choice_key\":\"show_deleted\",\"choice_name\":\"\"}],\"field_value\":\"show_deleted\"}")
 	})
 	t.Run("SuccessAlreadyExists", func(t *testing.T) {
 		authToken := login("approved2@generaltask.com", "")
 		userID := getUserIDFromAuthToken(t, db, authToken)
-		settings.UpdateUserSetting(db, userID, constants.SettingFieldGithubFilteringPreference, constants.ChoiceKeyActionableOnly)
+		settings.UpdateUserSetting(db, userID, constants.SettingFieldNoteFilteringPreference, constants.ChoiceKeyShowDeleted)
 
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
@@ -187,7 +187,7 @@ func TestSettingsModify(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
 			"/settings/",
-			bytes.NewBuffer([]byte(`{"github_filtering_preference": "all_prs"}`)),
+			bytes.NewBuffer([]byte(`{"note_filtering_preference": "no_deleted"}`)),
 		)
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -204,6 +204,6 @@ func TestSettingsModify(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err = io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Contains(t, string(body), "{\"field_key\":\"github_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"actionable_only\",\"choice_name\":\"\"},{\"choice_key\":\"all_prs\",\"choice_name\":\"\"}],\"field_value\":\"all_prs\"}")
+		assert.Contains(t, string(body), "{\"field_key\":\"note_filtering_preference\",\"field_name\":\"\",\"choices\":[{\"choice_key\":\"no_deleted\",\"choice_name\":\"\"},{\"choice_key\":\"show_deleted\",\"choice_name\":\"\"}],\"field_value\":\"no_deleted\"}")
 	})
 }

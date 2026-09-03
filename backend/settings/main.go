@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/GeneralTask/task-manager/backend/external"
-	"github.com/GeneralTask/task-manager/backend/logging"
-
 	"github.com/GeneralTask/task-manager/backend/constants"
 	"github.com/GeneralTask/task-manager/backend/database"
+	"github.com/GeneralTask/task-manager/backend/external"
+	"github.com/GeneralTask/task-manager/backend/logging"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,72 +29,6 @@ type UserSetting struct {
 type SettingChoice struct {
 	Key  string `json:"choice_key"`
 	Name string `json:"choice_name"`
-}
-
-var SidebarLinearSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldSidebarLinearPreference,
-	DefaultChoice: "true",
-	Choices: []SettingChoice{
-		{Key: "true"},
-		{Key: "false"},
-	},
-}
-
-var SidebarJiraSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldSidebarJiraPreference,
-	DefaultChoice: "true",
-	Choices: []SettingChoice{
-		{Key: "true"},
-		{Key: "false"},
-	},
-}
-
-var SidebarGithubSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldSidebarGithubPreference,
-	DefaultChoice: "true",
-	Choices: []SettingChoice{
-		{Key: "true"},
-		{Key: "false"},
-	},
-}
-
-var SidebarSlackSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldSidebarSlackPreference,
-	DefaultChoice: "true",
-	Choices: []SettingChoice{
-		{Key: "true"},
-		{Key: "false"},
-	},
-}
-
-// human readable names aren't defined here because they are not used
-var GithubFilteringSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldGithubFilteringPreference,
-	DefaultChoice: constants.ChoiceKeyActionableOnly,
-	Choices: []SettingChoice{
-		{Key: constants.ChoiceKeyActionableOnly},
-		{Key: constants.ChoiceKeyAllPRs},
-	},
-}
-
-var GithubSortingPreferenceSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldGithubSortingPreference,
-	DefaultChoice: constants.ChoiceKeyRequiredAction,
-	Choices: []SettingChoice{
-		{Key: constants.ChoiceKeyRequiredAction},
-		{Key: constants.ChoiceKeyPRNumber},
-		{Key: constants.ChoiceKeyCreatedAt},
-		{Key: constants.ChoiceKeyUpdatedAt},
-	},
-}
-
-var GithubSortingDirectionSetting = SettingDefinition{
-	FieldKey:      constants.SettingFieldGithubSortingDirection,
-	DefaultChoice: constants.ChoiceKeyDescending,
-	Choices: []SettingChoice{
-		{Key: constants.ChoiceKeyDescending},
-		{Key: constants.ChoiceKeyAscending},
-	},
 }
 
 var TaskSortingPreferenceSetting = SettingDefinition{
@@ -191,29 +124,9 @@ var HasDismissedMulticalPromptSetting = SettingDefinition{
 	},
 }
 
-var LinearTaskFilteringSetting = SettingDefinition{
-	DefaultChoice: "all_cycles",
-	Choices: []SettingChoice{
-		{Key: "all_cycles"},
-		{Key: "current_cycle"},
-		{Key: "next_cycle"},
-		{Key: "no_cycle"},
-		{Key: "previous_cycle"},
-	},
-}
-
 var TaskSectionSettingTypes = []string{"main", "overview"}
 
 var hardcodedSettings = []SettingDefinition{
-	// Github PR page settings
-	GithubFilteringSetting,
-	GithubSortingPreferenceSetting,
-	GithubSortingDirectionSetting,
-	// sidebar settings
-	SidebarLinearSetting,
-	SidebarJiraSetting,
-	SidebarGithubSetting,
-	SidebarSlackSetting,
 	// notes page settings
 	NoteSortingPreferenceSetting,
 	NoteSortingDirectionSetting,
@@ -231,32 +144,6 @@ var hardcodedSettings = []SettingDefinition{
 
 func GetSettingsOptions(db *mongo.Database, userID primitive.ObjectID) (*[]SettingDefinition, error) {
 	settingsOptions := hardcodedSettings
-
-	githubViews, err := getGithubViews(db, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, githubView := range *githubViews {
-		settingsOptions = append(
-			settingsOptions,
-			SettingDefinition{
-				FieldKey:      getGithubFieldKey(githubView, constants.SettingFieldGithubFilteringPreference),
-				DefaultChoice: GithubFilteringSetting.DefaultChoice,
-				Choices:       GithubFilteringSetting.Choices,
-			},
-			SettingDefinition{
-				FieldKey:      getGithubFieldKey(githubView, constants.SettingFieldGithubSortingPreference),
-				DefaultChoice: GithubSortingPreferenceSetting.DefaultChoice,
-				Choices:       GithubSortingPreferenceSetting.Choices,
-			},
-			SettingDefinition{
-				FieldKey:      getGithubFieldKey(githubView, constants.SettingFieldGithubSortingDirection),
-				DefaultChoice: GithubSortingDirectionSetting.DefaultChoice,
-				Choices:       GithubSortingDirectionSetting.Choices,
-			},
-		)
-	}
 
 	taskSections, err := database.GetTaskSections(db, userID)
 	if err != nil {
@@ -325,15 +212,6 @@ func GetSettingsOptions(db *mongo.Database, userID primitive.ObjectID) (*[]Setti
 		Choices:       calendarIDChoices,
 	})
 
-	// linear task filtering
-	lineartaskFilterSettingLinearPage := LinearTaskFilteringSetting
-	lineartaskFilterSettingLinearPage.FieldKey = constants.SettingFieldLinearTaskFilteringPreference + "_linear_page"
-	settingsOptions = append(settingsOptions, lineartaskFilterSettingLinearPage)
-
-	lineartaskFilterSettingOverviewPage := LinearTaskFilteringSetting
-	lineartaskFilterSettingOverviewPage.FieldKey = constants.SettingFieldLinearTaskFilteringPreference + "_overview"
-	settingsOptions = append(settingsOptions, lineartaskFilterSettingOverviewPage)
-
 	return &settingsOptions, nil
 }
 
@@ -341,21 +219,6 @@ func GetSettingsOptions(db *mongo.Database, userID primitive.ObjectID) (*[]Setti
 func getCalendarTokens(db *mongo.Database, userID primitive.ObjectID) (*[]database.ExternalAPIToken, error) {
 	// in the future, make sure we add other services here with calendars
 	return database.GetExternalTokens(db, userID, external.TASK_SERVICE_ID_GOOGLE)
-}
-
-func getGithubViews(db *mongo.Database, userID primitive.ObjectID) (*[]database.View, error) {
-	var views []database.View
-	err := database.FindWithCollection(database.GetViewCollection(db), userID, &[]bson.M{{"user_id": userID}, {"type": constants.ViewGithub}}, &views, nil)
-	logger := logging.GetSentryLogger()
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to load github views")
-		return nil, err
-	}
-	return &views, nil
-}
-
-func getGithubFieldKey(githubView database.View, suffix string) string {
-	return githubView.ID.Hex() + "_" + suffix
 }
 
 func getTaskSectionFieldKey(taskSection database.TaskSection, suffix string, settingType string) string {

@@ -69,14 +69,6 @@ func (api *API) revokeExternalGrants(userID primitive.ObjectID) {
 func (api *API) purgeUserData(userID primitive.ObjectID) error {
 	ctx := context.Background()
 
-	// Runs before the collection loop so that the loop's credentials-last ordering
-	// holds for the purge as a whole: if this fails, the user still has a session
-	// to retry from.
-	err := api.purgeDashboardData(userID)
-	if err != nil {
-		return err
-	}
-
 	for _, collection := range api.userScopedCollections() {
 		_, err := collection.DeleteMany(ctx, bson.M{"user_id": userID})
 		if err != nil {
@@ -84,7 +76,7 @@ func (api *API) purgeUserData(userID primitive.ObjectID) error {
 		}
 	}
 
-	_, err = database.GetUserCollection(api.DB).DeleteOne(ctx, bson.M{"_id": userID})
+	_, err := database.GetUserCollection(api.DB).DeleteOne(ctx, bson.M{"_id": userID})
 	return err
 }
 
@@ -101,13 +93,9 @@ func (api *API) userScopedCollections() []*mongo.Collection {
 		database.GetTaskSectionCollection(api.DB),
 		database.GetRecurringTaskTemplateCollection(api.DB),
 		database.GetViewCollection(api.DB),
-		database.GetPullRequestCollection(api.DB),
-		database.GetRepositoryCollection(api.DB),
 		// Settings
 		database.GetUserSettingsCollection(api.DB),
 		database.GetDefaultSectionSettingsCollection(api.DB),
-		database.GetJiraSitesCollection(api.DB),
-		database.GetJiraPrioritiesCollection(api.DB),
 		// Logs and support records
 		database.GetFeedbackItemCollection(api.DB),
 		database.GetLogEventsCollection(api.DB),
@@ -119,60 +107,4 @@ func (api *API) userScopedCollections() []*mongo.Collection {
 		database.GetExternalTokenCollection(api.DB),
 		database.GetInternalTokenCollection(api.DB),
 	}
-}
-
-// purgeDashboardData removes the user's dashboard teams and everything hanging
-// off them. Team members and data points are keyed by team_id rather than
-// user_id, so they need the team lookup to be reachable.
-func (api *API) purgeDashboardData(userID primitive.ObjectID) error {
-	ctx := context.Background()
-
-	var teams []database.DashboardTeam
-	cursor, err := database.GetDashboardTeamCollection(api.DB).Find(ctx, bson.M{"user_id": userID})
-	if err != nil {
-		return err
-	}
-	err = cursor.All(ctx, &teams)
-	if err != nil {
-		return err
-	}
-	if len(teams) == 0 {
-		return nil
-	}
-
-	teamIDs := []primitive.ObjectID{}
-	for _, team := range teams {
-		teamIDs = append(teamIDs, team.ID)
-	}
-
-	var members []database.DashboardTeamMember
-	cursor, err = database.GetDashboardTeamMemberCollection(api.DB).Find(ctx, bson.M{"team_id": bson.M{"$in": teamIDs}})
-	if err != nil {
-		return err
-	}
-	err = cursor.All(ctx, &members)
-	if err != nil {
-		return err
-	}
-	memberIDs := []primitive.ObjectID{}
-	for _, member := range members {
-		memberIDs = append(memberIDs, member.ID)
-	}
-
-	// Data points are attributed to either a team or an individual member.
-	_, err = database.GetDashboardDataPointCollection(api.DB).DeleteMany(ctx, bson.M{"$or": []bson.M{
-		{"team_id": bson.M{"$in": teamIDs}},
-		{"individual_id": bson.M{"$in": memberIDs}},
-	}})
-	if err != nil {
-		return err
-	}
-
-	_, err = database.GetDashboardTeamMemberCollection(api.DB).DeleteMany(ctx, bson.M{"team_id": bson.M{"$in": teamIDs}})
-	if err != nil {
-		return err
-	}
-
-	_, err = database.GetDashboardTeamCollection(api.DB).DeleteMany(ctx, bson.M{"user_id": userID})
-	return err
 }

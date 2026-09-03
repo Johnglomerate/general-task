@@ -62,22 +62,6 @@ const AuthenticatedRoutes = () => {
                                     </Route>
                                 </Route>
                             </Route>
-                            <Route path="pull-requests" element={<Outlet />}>
-                                <Route index element={<MainScreen />} />
-                                <Route path=":pullRequest" element={<MainScreen />} />
-                            </Route>
-                            <Route path="linear" element={<Outlet />}>
-                                <Route index element={<MainScreen />} />
-                                <Route path=":linearIssueId" element={<MainScreen />} />
-                            </Route>
-                            <Route path="slack" element={<Outlet />}>
-                                <Route index element={<MainScreen />} />
-                                <Route path=":slackTaskId" element={<MainScreen />} />
-                            </Route>
-                            <Route path="jira" element={<Outlet />}>
-                                <Route index element={<MainScreen />} />
-                                <Route path=":jiraTaskId" element={<MainScreen />} />
-                            </Route>
                             <Route path={FOCUS_MODE_ROUTE} element={<Outlet />}>
                                 <Route
                                     index

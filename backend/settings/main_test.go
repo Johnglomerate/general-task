@@ -4,13 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/GeneralTask/task-manager/backend/external"
-
 	"github.com/GeneralTask/task-manager/backend/constants"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"github.com/GeneralTask/task-manager/backend/database"
+	"github.com/GeneralTask/task-manager/backend/external"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestGetSettingsOptions(t *testing.T) {
@@ -22,21 +20,20 @@ func TestGetSettingsOptions(t *testing.T) {
 	viewCollection := database.GetViewCollection(db)
 	view := database.View{
 		UserID: userID,
-		Type:   string(constants.ViewGithub),
+		Type:   string(constants.ViewTaskSection),
 	}
-	res, err := viewCollection.InsertOne(context.Background(), view)
+	_, err = viewCollection.InsertOne(context.Background(), view)
 	assert.NoError(t, err)
-	insertedViewID := res.InsertedID.(primitive.ObjectID).Hex()
 	// wrong user ID
 	_, err = viewCollection.InsertOne(context.Background(), database.View{
 		UserID: primitive.NewObjectID(),
-		Type:   string(constants.ViewGithub),
+		Type:   string(constants.ViewTaskSection),
 	})
 	assert.NoError(t, err)
 	// wrong view type
 	_, err = viewCollection.InsertOne(context.Background(), database.View{
 		UserID: userID,
-		Type:   string(constants.ViewLinear),
+		Type:   string(constants.ViewMeetingPreparation),
 	})
 	assert.NoError(t, err)
 
@@ -102,31 +99,24 @@ func TestGetSettingsOptions(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		settings, err := GetSettingsOptions(db, userID)
 		assert.NoError(t, err)
-		assert.Equal(t, 30, len(*settings))
-		assert.Equal(t, "sidebar_linear_preference", (*settings)[3].FieldKey)
-		assert.Equal(t, "sidebar_jira_preference", (*settings)[4].FieldKey)
-		assert.Equal(t, "sidebar_github_preference", (*settings)[5].FieldKey)
-		assert.Equal(t, "sidebar_slack_preference", (*settings)[6].FieldKey)
-		assert.Equal(t, "note_sorting_preference", (*settings)[7].FieldKey)
-		assert.Equal(t, "note_sorting_direction", (*settings)[8].FieldKey)
-		assert.Equal(t, "note_filtering_preference", (*settings)[9].FieldKey)
-		assert.Equal(t, "recurring_task_filtering_preference", (*settings)[10].FieldKey)
-		assert.Equal(t, "collapse_empty_lists", (*settings)[11].FieldKey)
-		assert.Equal(t, "move_empty_lists_to_bottom", (*settings)[12].FieldKey)
-		assert.Equal(t, "lab_smart_prioritize_enabled", (*settings)[13].FieldKey)
-		assert.Equal(t, "has_dismissed_multical_prompt", (*settings)[14].FieldKey)
-		assert.Equal(t, insertedViewID+"_github_filtering_preference", (*settings)[15].FieldKey)
-		assert.Equal(t, insertedViewID+"_github_sorting_preference", (*settings)[16].FieldKey)
-		assert.Equal(t, insertedViewID+"_github_sorting_direction", (*settings)[17].FieldKey)
-		assert.Equal(t, insertedSectionID+"_task_sorting_preference_main", (*settings)[18].FieldKey)
-		assert.Equal(t, insertedSectionID+"_task_sorting_direction_main", (*settings)[19].FieldKey)
-		assert.Equal(t, insertedSectionID+"_task_sorting_preference_overview", (*settings)[20].FieldKey)
-		assert.Equal(t, insertedSectionID+"_task_sorting_direction_overview", (*settings)[21].FieldKey)
-		assert.Equal(t, "000000000000000000000001_task_sorting_preference_main", (*settings)[22].FieldKey)
-		assert.Equal(t, "000000000000000000000001_task_sorting_direction_main", (*settings)[23].FieldKey)
-		assert.Equal(t, "000000000000000000000001_task_sorting_preference_overview", (*settings)[24].FieldKey)
-		assert.Equal(t, "000000000000000000000001_task_sorting_direction_overview", (*settings)[25].FieldKey)
-		calendarSetting := (*settings)[26]
+		assert.Equal(t, 18, len(*settings))
+		assert.Equal(t, "note_sorting_preference", (*settings)[0].FieldKey)
+		assert.Equal(t, "note_sorting_direction", (*settings)[1].FieldKey)
+		assert.Equal(t, "note_filtering_preference", (*settings)[2].FieldKey)
+		assert.Equal(t, "recurring_task_filtering_preference", (*settings)[3].FieldKey)
+		assert.Equal(t, "collapse_empty_lists", (*settings)[4].FieldKey)
+		assert.Equal(t, "move_empty_lists_to_bottom", (*settings)[5].FieldKey)
+		assert.Equal(t, "lab_smart_prioritize_enabled", (*settings)[6].FieldKey)
+		assert.Equal(t, "has_dismissed_multical_prompt", (*settings)[7].FieldKey)
+		assert.Equal(t, insertedSectionID+"_task_sorting_preference_main", (*settings)[8].FieldKey)
+		assert.Equal(t, insertedSectionID+"_task_sorting_direction_main", (*settings)[9].FieldKey)
+		assert.Equal(t, insertedSectionID+"_task_sorting_preference_overview", (*settings)[10].FieldKey)
+		assert.Equal(t, insertedSectionID+"_task_sorting_direction_overview", (*settings)[11].FieldKey)
+		assert.Equal(t, "000000000000000000000001_task_sorting_preference_main", (*settings)[12].FieldKey)
+		assert.Equal(t, "000000000000000000000001_task_sorting_direction_main", (*settings)[13].FieldKey)
+		assert.Equal(t, "000000000000000000000001_task_sorting_preference_overview", (*settings)[14].FieldKey)
+		assert.Equal(t, "000000000000000000000001_task_sorting_direction_overview", (*settings)[15].FieldKey)
+		calendarSetting := (*settings)[16]
 		assert.Equal(t, constants.SettingFieldCalendarForNewTasks, calendarSetting.FieldKey)
 		assert.Equal(t, "a", calendarSetting.DefaultChoice)
 		assert.Equal(t, []SettingChoice{
@@ -134,7 +124,7 @@ func TestGetSettingsOptions(t *testing.T) {
 			{Key: "b", Name: "oof 2"},
 			{Key: "", Name: ""},
 		}, calendarSetting.Choices)
-		calendarIDSetting := (*settings)[27]
+		calendarIDSetting := (*settings)[17]
 		assert.Equal(t, constants.SettingFieldCalendarIDForNewTasks, calendarIDSetting.FieldKey)
 		assert.Equal(t, []SettingChoice{
 			{Key: "cal1", Name: "title1"},

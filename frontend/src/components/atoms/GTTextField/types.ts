@@ -1,5 +1,5 @@
 export type FontSize = 'small' | 'medium' | 'large'
-export type ContentType = 'markdown' | 'atlassian' | 'plaintext'
+export type ContentType = 'markdown' | 'plaintext'
 
 // props we support for markdown
 export interface RichTextEditorProps {
@@ -7,7 +7,7 @@ export interface RichTextEditorProps {
     onChange: (newValue: string) => void
     placeholder?: string
     fontSize: FontSize
-    type: 'markdown' | 'atlassian'
+    type: 'markdown'
     autoFocus?: boolean
     autoSelect?: boolean
     enterBehavior?: 'blur' | 'disable'

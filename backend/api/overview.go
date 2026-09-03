@@ -3,13 +3,11 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"time"
 
 	"golang.org/x/exp/slices"
 
-	"github.com/GeneralTask/task-manager/backend/config"
 	"github.com/GeneralTask/task-manager/backend/constants"
 	"github.com/GeneralTask/task-manager/backend/database"
 	"github.com/GeneralTask/task-manager/backend/external"
@@ -27,7 +25,7 @@ type SourcesResult struct {
 }
 
 type ViewItem interface {
-	TaskResult | PullRequestResult
+	TaskResult
 	GetID() string
 }
 
@@ -50,7 +48,6 @@ type SupportedViewItem struct {
 	Name          string             `json:"name"`
 	IsAdded       bool               `json:"is_added"`
 	TaskSectionID primitive.ObjectID `json:"task_section_id"`
-	GithubID      string             `json:"github_id"`
 	ViewID        primitive.ObjectID `json:"view_id"`
 }
 
@@ -76,6 +73,10 @@ func GetBooleanQueryParameter(c *gin.Context, key string) (bool, error) {
 		return false, nil
 	}
 	return false, errors.New("invalid or missing parameter")
+}
+
+func isRetiredOverviewViewType(viewType string) bool {
+	return slices.Contains(constants.RetiredViewTypes, viewType)
 }
 
 func (api *API) OverviewViewsList(c *gin.Context) {
@@ -151,19 +152,15 @@ func (api *API) GetOverviewResults(views []database.View, userID primitive.Objec
 		switch view.Type {
 		case string(constants.ViewTaskSection):
 			singleOverviewResult, err = api.GetTaskSectionOverviewResult(view, userID, timezoneOffset)
-		case string(constants.ViewJira):
-			singleOverviewResult, err = api.GetJiraOverviewResult(view, userID, timezoneOffset)
-		case string(constants.ViewLinear):
-			singleOverviewResult, err = api.GetLinearOverviewResult(view, userID, timezoneOffset)
-		case string(constants.ViewSlack):
-			singleOverviewResult, err = api.GetSlackOverviewResult(view, userID, timezoneOffset)
-		case string(constants.ViewGithub):
-			singleOverviewResult, err = api.GetGithubOverviewResult(view, userID, timezoneOffset)
 		case string(constants.ViewMeetingPreparation):
 			singleOverviewResult, err = api.GetMeetingPreparationOverviewResult(view, userID, timezoneOffset, showMovedOrDeleted, ignoreMeetingPreparation)
 		case string(constants.ViewDueToday):
 			singleOverviewResult, err = api.GetDueTodayOverviewResult(view, userID, timezoneOffset)
 		default:
+			if isRetiredOverviewViewType(view.Type) {
+				api.Logger.Info().Str("view_type", view.Type).Str("view_id", view.ID.Hex()).Msg("skipping retired overview view")
+				continue
+			}
 			err = errors.New("invalid view type")
 		}
 		if err != nil {
@@ -319,14 +316,9 @@ func (api *API) UpdateViewsLinkedStatus(views *[]database.View, userID primitive
 		var serviceID string
 		if view.Type == string(constants.ViewTaskSection) || view.Type == string(constants.ViewMeetingPreparation) || view.Type == string(constants.ViewDueToday) {
 			serviceID = external.TaskServiceGeneralTask.ID
-		} else if view.Type == string(constants.ViewJira) {
-			serviceID = external.TaskServiceAtlassian.ID
-		} else if view.Type == string(constants.ViewLinear) {
-			serviceID = external.TaskServiceLinear.ID
-		} else if view.Type == string(constants.ViewSlack) {
-			serviceID = external.TaskServiceSlack.ID
-		} else if view.Type == string(constants.ViewGithub) {
-			serviceID = external.TaskServiceGithub.ID
+		} else if isRetiredOverviewViewType(view.Type) {
+			api.Logger.Info().Str("view_type", view.Type).Str("view_id", view.ID.Hex()).Msg("skipping retired overview view linked status")
+			continue
 		} else {
 			return errors.New("invalid view type")
 		}
@@ -350,213 +342,6 @@ func (api *API) UpdateViewsLinkedStatus(views *[]database.View, userID primitive
 		}
 	}
 	return nil
-}
-
-func (api *API) GetJiraOverviewResult(view database.View, userID primitive.ObjectID, timezoneOffset time.Duration) (*OverviewResult[TaskResult], error) {
-	if view.UserID != userID {
-		return nil, errors.New("invalid user")
-	}
-	authURL := config.GetAuthorizationURL(external.TASK_SERVICE_ID_ATLASSIAN)
-	result := OverviewResult[TaskResult]{
-		ID:       view.ID,
-		Name:     constants.ViewJiraName,
-		Logo:     external.TaskServiceAtlassian.LogoV2,
-		Type:     constants.ViewJira,
-		IsLinked: view.IsLinked,
-		Sources: []SourcesResult{
-			{
-				Name:             constants.ViewJiraSourceName,
-				AuthorizationURL: &authURL,
-			},
-		},
-		TaskSectionID: view.TaskSectionID,
-		IsReorderable: view.IsReorderable,
-		IDOrdering:    view.IDOrdering,
-		ViewItems:     []*TaskResult{},
-		ViewItemIDs:   []string{},
-	}
-	if !view.IsLinked {
-		return &result, nil
-	}
-
-	jiraTasks, err := database.GetTasks(api.DB, userID, &[]bson.M{
-		{"is_completed": false},
-		{"is_deleted": bson.M{"$ne": true}},
-		{"source_id": external.TASK_SOURCE_ID_JIRA},
-	}, nil)
-	if err != nil {
-		return nil, err
-	}
-	taskResults := api.taskListToTaskResultList(jiraTasks, userID)
-
-	timeNow := api.GetCurrentLocalizedTime(timezoneOffset)
-	timeStartOfDay := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.FixedZone("", 0))
-	taskCompletedInLastDay := api.getCompletedInLastDay(database.GetTaskCollection(api.DB), userID, timeStartOfDay, &[]bson.M{{"source_id": external.TASK_SOURCE_ID_JIRA}})
-
-	result.IsLinked = view.IsLinked
-	result.ViewItems = taskResults
-	result.ViewItemIDs = GetTaskSectionViewItemIDs(taskResults)
-	result.HasTasksCompletedToday = taskCompletedInLastDay
-	return &result, nil
-}
-
-func (api *API) GetLinearOverviewResult(view database.View, userID primitive.ObjectID, timezoneOffset time.Duration) (*OverviewResult[TaskResult], error) {
-	if view.UserID != userID {
-		return nil, errors.New("invalid user")
-	}
-	authURL := config.GetAuthorizationURL(external.TASK_SERVICE_ID_LINEAR)
-	result := OverviewResult[TaskResult]{
-		ID:       view.ID,
-		Name:     constants.ViewLinearName,
-		Logo:     external.TaskServiceLinear.LogoV2,
-		Type:     constants.ViewLinear,
-		IsLinked: view.IsLinked,
-		Sources: []SourcesResult{
-			{
-				Name:             constants.ViewLinearSourceName,
-				AuthorizationURL: &authURL,
-			},
-		},
-		TaskSectionID: view.TaskSectionID,
-		IsReorderable: view.IsReorderable,
-		IDOrdering:    view.IDOrdering,
-		ViewItems:     []*TaskResult{},
-		ViewItemIDs:   []string{},
-	}
-	if !view.IsLinked {
-		return &result, nil
-	}
-
-	linearTasks, err := database.GetTasks(api.DB, userID, &[]bson.M{
-		{"is_completed": false},
-		{"is_deleted": bson.M{"$ne": true}},
-		{"source_id": external.TASK_SOURCE_ID_LINEAR},
-	}, nil)
-	if err != nil {
-		return nil, err
-	}
-	taskResults := api.taskListToTaskResultList(linearTasks, userID)
-
-	timeNow := api.GetCurrentLocalizedTime(timezoneOffset)
-	timeStartOfDay := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.FixedZone("", 0))
-	taskCompletedInLastDay := api.getCompletedInLastDay(database.GetTaskCollection(api.DB), userID, timeStartOfDay, &[]bson.M{{"source_id": external.TASK_SOURCE_ID_LINEAR}})
-
-	result.IsLinked = view.IsLinked
-	result.ViewItems = taskResults
-	result.ViewItemIDs = GetTaskSectionViewItemIDs(taskResults)
-	result.HasTasksCompletedToday = taskCompletedInLastDay
-	return &result, nil
-}
-
-func (api *API) GetSlackOverviewResult(view database.View, userID primitive.ObjectID, timezoneOffset time.Duration) (*OverviewResult[TaskResult], error) {
-	if view.UserID != userID {
-		return nil, errors.New("invalid user")
-	}
-	authURL := config.GetAuthorizationURL(external.TASK_SERVICE_ID_SLACK)
-	result := OverviewResult[TaskResult]{
-		ID:       view.ID,
-		Name:     constants.ViewSlackName,
-		Logo:     external.TaskServiceSlack.LogoV2,
-		Type:     constants.ViewSlack,
-		IsLinked: view.IsLinked,
-		Sources: []SourcesResult{
-			{
-				Name:             constants.ViewSlackSourceName,
-				AuthorizationURL: &authURL,
-			},
-		},
-		TaskSectionID: view.TaskSectionID,
-		IsReorderable: view.IsReorderable,
-		IDOrdering:    view.IDOrdering,
-		ViewItems:     []*TaskResult{},
-		ViewItemIDs:   []string{},
-	}
-	if !view.IsLinked {
-		return &result, nil
-	}
-
-	slackTasks, err := database.GetTasks(api.DB, userID, &[]bson.M{
-		{"is_completed": false},
-		{"is_deleted": bson.M{"$ne": true}},
-		{"source_id": external.TASK_SOURCE_ID_SLACK_SAVED},
-	}, nil)
-	if err != nil {
-		return nil, err
-	}
-	taskResults := api.taskListToTaskResultList(slackTasks, userID)
-
-	timeNow := api.GetCurrentLocalizedTime(timezoneOffset)
-	timeStartOfDay := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.FixedZone("", 0))
-	taskCompletedInLastDay := api.getCompletedInLastDay(database.GetTaskCollection(api.DB), userID, timeStartOfDay, &[]bson.M{{"source_id": external.TASK_SOURCE_ID_SLACK_SAVED}})
-
-	result.IsLinked = view.IsLinked
-	result.ViewItems = taskResults
-	result.ViewItemIDs = GetTaskSectionViewItemIDs(taskResults)
-	result.HasTasksCompletedToday = taskCompletedInLastDay
-	return &result, nil
-}
-
-func (api *API) GetGithubOverviewResult(view database.View, userID primitive.ObjectID, timezoneOffset time.Duration) (*OverviewResult[PullRequestResult], error) {
-	if view.UserID != userID {
-		return nil, errors.New("invalid user")
-	}
-	authURL := config.GetAuthorizationURL(external.TASK_SERVICE_ID_GITHUB)
-	result := OverviewResult[PullRequestResult]{
-		ID:       view.ID,
-		Name:     "Github PRs",
-		Logo:     external.TaskServiceGithub.LogoV2,
-		Type:     constants.ViewGithub,
-		IsLinked: view.IsLinked,
-		Sources: []SourcesResult{
-			{
-				Name:             constants.ViewGithubName,
-				AuthorizationURL: &authURL,
-			},
-		},
-		TaskSectionID: view.TaskSectionID,
-		IsReorderable: view.IsReorderable,
-		IDOrdering:    view.IDOrdering,
-		ViewItems:     []*PullRequestResult{},
-		ViewItemIDs:   []string{},
-	}
-	if !view.IsLinked {
-		return &result, nil
-	}
-
-	var repository database.Repository
-	repositoryCollection := database.GetRepositoryCollection(api.DB)
-	err := repositoryCollection.FindOne(context.Background(), bson.M{"$and": []bson.M{{"repository_id": view.GithubID, "user_id": userID}}}).Decode(&repository)
-	if err != nil {
-		return nil, err
-	}
-
-	githubPRs, err := database.GetPullRequests(api.DB, userID,
-		&[]bson.M{
-			{"is_completed": false},
-			{"repository_id": view.GithubID},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	pullResults := []*PullRequestResult{}
-	// TODO we should change our Github logic to include all a user's repos in a DB
-	// then we should split the Github into per repo (this is currently all the user's repo PRs)
-	for _, pullRequest := range *githubPRs {
-		pullRequestResult := getResultFromPullRequest(pullRequest)
-		pullResults = append(pullResults, &pullRequestResult)
-	}
-	api.sortPullRequestResults(pullResults)
-
-	timeNow := api.GetCurrentLocalizedTime(timezoneOffset)
-	timeStartOfDay := time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), 0, 0, 0, 0, time.FixedZone("", 0))
-	taskCompletedInLastDay := api.getCompletedInLastDay(database.GetPullRequestCollection(api.DB), userID, timeStartOfDay, &[]bson.M{{"repository_id": view.GithubID}})
-
-	result.Name = fmt.Sprintf("GitHub PRs from %s", repository.FullName)
-	result.ViewItems = pullResults
-	result.ViewItemIDs = GetPullRequestViewItemsIDs(pullResults)
-	result.HasTasksCompletedToday = taskCompletedInLastDay
-	return &result, nil
 }
 
 func (api *API) CreateMeetingPreparationTaskList(userID primitive.ObjectID, timezoneOffset time.Duration, showMovedOrDeleted bool) (*[]database.Task, error) {
@@ -933,7 +718,6 @@ func (api *API) GetMeetingPrepTaskResult(userID primitive.ObjectID, expirationTi
 type ViewCreateParams struct {
 	Type          string  `json:"type" binding:"required"`
 	TaskSectionID *string `json:"task_section_id"`
-	GithubID      *string `json:"github_id"`
 }
 
 func (api *API) OverviewViewAdd(c *gin.Context) {
@@ -943,11 +727,14 @@ func (api *API) OverviewViewAdd(c *gin.Context) {
 		c.JSON(400, gin.H{"detail": "invalid or missing parameter"})
 		return
 	}
+	if viewCreateParams.Type != string(constants.ViewTaskSection) &&
+		viewCreateParams.Type != string(constants.ViewMeetingPreparation) &&
+		viewCreateParams.Type != string(constants.ViewDueToday) {
+		c.JSON(400, gin.H{"detail": "unsupported 'type'"})
+		return
+	}
 	if viewCreateParams.Type == string(constants.ViewTaskSection) && viewCreateParams.TaskSectionID == nil {
 		c.JSON(400, gin.H{"detail": "'task_section_id' is required for task section type views"})
-		return
-	} else if viewCreateParams.Type == string(constants.ViewGithub) && viewCreateParams.GithubID == nil {
-		c.JSON(400, gin.H{"detail": "'id_github' is required for github type views"})
 		return
 	}
 
@@ -964,7 +751,6 @@ func (api *API) OverviewViewAdd(c *gin.Context) {
 	}
 	var serviceID string
 	taskSectionID := primitive.NilObjectID
-	var githubID string
 	if viewCreateParams.Type == string(constants.ViewTaskSection) {
 		serviceID = external.TASK_SERVICE_ID_GT
 		taskSectionID, err = getValidTaskSection(*viewCreateParams.TaskSectionID, userID, api.DB)
@@ -972,24 +758,9 @@ func (api *API) OverviewViewAdd(c *gin.Context) {
 			c.JSON(400, gin.H{"detail": "'task_section_id' is not a valid ID"})
 			return
 		}
-	} else if viewCreateParams.Type == string(constants.ViewJira) {
-		serviceID = external.TASK_SERVICE_ID_ATLASSIAN
-	} else if viewCreateParams.Type == string(constants.ViewLinear) {
-		serviceID = external.TASK_SERVICE_ID_LINEAR
-	} else if viewCreateParams.Type == string(constants.ViewGithub) {
-		serviceID = external.TASK_SERVICE_ID_GITHUB
-		isValidGithubRepository, err := isValidGithubRepository(api.DB, userID, *viewCreateParams.GithubID)
-		if err != nil {
-			api.Logger.Error().Err(err).Msg("error checking that github repository is valid")
-			Handle500(c)
-			return
-		}
-		if !isValidGithubRepository {
-			c.JSON(400, gin.H{"detail": "invalid 'id_github'"})
-			return
-		}
-		githubID = *viewCreateParams.GithubID
-	} else if viewCreateParams.Type != string(constants.ViewJira) && viewCreateParams.Type != string(constants.ViewLinear) && viewCreateParams.Type != string(constants.ViewSlack) && viewCreateParams.Type != string(constants.ViewMeetingPreparation) && viewCreateParams.Type != string(constants.ViewDueToday) {
+	} else if viewCreateParams.Type == string(constants.ViewMeetingPreparation) || viewCreateParams.Type == string(constants.ViewDueToday) {
+		serviceID = external.TASK_SERVICE_ID_GT
+	} else {
 		c.JSON(400, gin.H{"detail": "unsupported 'type'"})
 		return
 	}
@@ -1006,7 +777,6 @@ func (api *API) OverviewViewAdd(c *gin.Context) {
 		Type:          viewCreateParams.Type,
 		IsLinked:      isLinked,
 		TaskSectionID: taskSectionID,
-		GithubID:      githubID,
 	}
 
 	viewCollection := database.GetViewCollection(api.DB)
@@ -1038,12 +808,9 @@ func (api *API) ViewDoesExist(db *mongo.Database, userID primitive.ObjectID, par
 			return false, errors.New("'task_section_id' is not a valid ObjectID")
 		}
 		dbQuery["$and"] = append(dbQuery["$and"].([]bson.M), bson.M{"task_section_id": taskSectionObjectID})
-	} else if params.Type == string(constants.ViewGithub) {
-		if params.GithubID == nil {
-			return false, errors.New("'github_id' is required for github type views")
-		}
-		dbQuery["$and"] = append(dbQuery["$and"].([]bson.M), bson.M{"github_id": *params.GithubID})
-	} else if params.Type != string(constants.ViewLinear) && params.Type != string(constants.ViewSlack) && params.Type != string(constants.ViewJira) && params.Type != string(constants.ViewMeetingPreparation) && params.Type != string(constants.ViewDueToday) {
+	} else if params.Type == string(constants.ViewMeetingPreparation) || params.Type == string(constants.ViewDueToday) {
+		// No additional filters.
+	} else {
 		return false, errors.New("unsupported view type")
 	}
 	count, err := viewCollection.CountDocuments(context.Background(), dbQuery)
@@ -1184,48 +951,6 @@ func (api *API) OverviewSupportedViewsList(c *gin.Context) {
 		Handle500(c)
 		return
 	}
-	supportedGithubViews, err := api.getSupportedGithubViews(api.DB, userID)
-	if err != nil {
-		Handle500(c)
-		return
-	}
-	isGithubLinked, err := api.IsServiceLinked(api.DB, userID, external.TASK_SERVICE_ID_GITHUB)
-	if err != nil {
-		Handle500(c)
-		return
-	}
-	isJiraLinked, err := api.IsServiceLinked(api.DB, userID, external.TASK_SERVICE_ID_ATLASSIAN)
-	if err != nil {
-		Handle500(c)
-		return
-	}
-	isLinearLinked, err := api.IsServiceLinked(api.DB, userID, external.TASK_SERVICE_ID_LINEAR)
-	if err != nil {
-		Handle500(c)
-		return
-	}
-	isSlackLinked, err := api.IsServiceLinked(api.DB, userID, external.TASK_SERVICE_ID_SLACK)
-	if err != nil {
-		Handle500(c)
-		return
-	}
-
-	var githubAuthURL string
-	var jiraAuthURL string
-	var linearAuthURL string
-	var slackAuthURL string
-	if !isGithubLinked {
-		githubAuthURL = config.GetAuthorizationURL(external.TASK_SERVICE_ID_GITHUB)
-	}
-	if !isJiraLinked {
-		jiraAuthURL = config.GetAuthorizationURL(external.TASK_SERVICE_ID_ATLASSIAN)
-	}
-	if !isLinearLinked {
-		linearAuthURL = config.GetAuthorizationURL(external.TASK_SERVICE_ID_LINEAR)
-	}
-	if !isSlackLinked {
-		slackAuthURL = config.GetAuthorizationURL(external.TASK_SERVICE_ID_SLACK)
-	}
 
 	supportedViews := []SupportedView{
 		{
@@ -1261,57 +986,6 @@ func (api *API) OverviewSupportedViewsList(c *gin.Context) {
 			IsNested: true,
 			IsLinked: true,
 			Views:    supportedTaskSectionViews,
-		},
-		{
-			Type:             constants.ViewJira,
-			Name:             "Jira",
-			Logo:             "jira",
-			IsNested:         false,
-			IsLinked:         isJiraLinked,
-			AuthorizationURL: jiraAuthURL,
-			Views: []SupportedViewItem{
-				{
-					Name:    "Jira View",
-					IsAdded: true,
-				},
-			},
-		},
-		{
-			Type:             constants.ViewLinear,
-			Name:             "Linear",
-			Logo:             "linear",
-			IsNested:         false,
-			IsLinked:         isLinearLinked,
-			AuthorizationURL: linearAuthURL,
-			Views: []SupportedViewItem{
-				{
-					Name:    "Linear View",
-					IsAdded: true,
-				},
-			},
-		},
-		{
-			Type:             constants.ViewSlack,
-			Name:             "Slack",
-			Logo:             "slack",
-			IsNested:         false,
-			IsLinked:         isSlackLinked,
-			AuthorizationURL: slackAuthURL,
-			Views: []SupportedViewItem{
-				{
-					Name:    "Slack View",
-					IsAdded: true,
-				},
-			},
-		},
-		{
-			Type:             constants.ViewGithub,
-			Name:             "GitHub",
-			Logo:             "github",
-			IsNested:         true,
-			IsLinked:         isGithubLinked,
-			AuthorizationURL: githubAuthURL,
-			Views:            supportedGithubViews,
 		},
 	}
 	err = api.updateIsAddedForSupportedViews(api.DB, userID, &supportedViews)
@@ -1349,36 +1023,6 @@ func (api *API) getSupportedTaskSectionViews(db *mongo.Database, userID primitiv
 	return supportedViewItems, nil
 }
 
-func (api *API) getSupportedGithubViews(db *mongo.Database, userID primitive.ObjectID) ([]SupportedViewItem, error) {
-	repositoryCollection := database.GetRepositoryCollection(db)
-	var repositories []database.Repository
-	cursor, err := repositoryCollection.Find(context.Background(), bson.M{"user_id": userID})
-	if err != nil {
-		api.Logger.Error().Err(err).Msg("failed to fetch repositories for user")
-		return []SupportedViewItem{}, err
-	}
-
-	err = cursor.All(context.Background(), &repositories)
-	if err != nil {
-		api.Logger.Error().Err(err).Msg("failed to fetch repositories for user")
-		return []SupportedViewItem{}, err
-	}
-
-	supportedViewItems := []SupportedViewItem{}
-	for _, repo := range repositories {
-		supportedViewItems = append(supportedViewItems, SupportedViewItem{
-			Name:     repo.FullName,
-			GithubID: repo.RepositoryID,
-		})
-	}
-
-	sort.Slice(supportedViewItems, func(i, j int) bool {
-		return supportedViewItems[i].Name < supportedViewItems[j].Name
-	})
-
-	return supportedViewItems, nil
-}
-
 func (api *API) updateIsAddedForSupportedViews(db *mongo.Database, userID primitive.ObjectID, supportedViews *[]SupportedView) error {
 	if supportedViews == nil {
 		return errors.New("supportedViews must not be nil")
@@ -1403,12 +1047,8 @@ func (api *API) getViewFromSupportedView(db *mongo.Database, userID primitive.Ob
 		return api.getView(db, userID, viewType, &[]bson.M{
 			{"task_section_id": view.TaskSectionID},
 		})
-	} else if slices.Contains([]constants.ViewType{constants.ViewJira, constants.ViewLinear, constants.ViewSlack, constants.ViewMeetingPreparation, constants.ViewDueToday}, viewType) {
+	} else if slices.Contains([]constants.ViewType{constants.ViewMeetingPreparation, constants.ViewDueToday}, viewType) {
 		return api.getView(db, userID, viewType, nil)
-	} else if viewType == constants.ViewGithub {
-		return api.getView(db, userID, viewType, &[]bson.M{
-			{"github_id": view.GithubID},
-		})
 	}
 	return nil, errors.New("invalid view type")
 }
@@ -1441,10 +1081,4 @@ func (api *API) getView(db *mongo.Database, userID primitive.ObjectID, viewType 
 		}
 	}
 	return &view, nil
-}
-
-func isValidGithubRepository(db *mongo.Database, userID primitive.ObjectID, repositoryID string) (bool, error) {
-	repositoryCollection := database.GetRepositoryCollection(db)
-	count, err := repositoryCollection.CountDocuments(context.Background(), bson.M{"user_id": userID, "repository_id": repositoryID})
-	return count > 0, err
 }

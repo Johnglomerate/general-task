@@ -815,69 +815,6 @@ func TestGetSharedNoteWithAuth(t *testing.T) {
 	})
 }
 
-func TestGetPullRequests(t *testing.T) {
-	db, dbCleanup, err := GetDBConnection()
-	assert.NoError(t, err)
-	defer dbCleanup()
-	userID := primitive.NewObjectID()
-	notUserID := primitive.NewObjectID()
-	notCompleted := false
-	pr1, err := GetOrCreatePullRequest(
-		db,
-		userID,
-		"123abc",
-		"foobar_source",
-		&PullRequest{
-			IDExternal:  "123abc",
-			SourceID:    "foobar_source",
-			UserID:      userID,
-			IsCompleted: &notCompleted,
-		},
-	)
-	assert.NoError(t, err)
-	completed := true
-	pr2, err := GetOrCreatePullRequest(
-		db,
-		userID,
-		"123abcde",
-		"foobar_source",
-		&PullRequest{
-			IDExternal:  "123abcde",
-			SourceID:    "foobar_source",
-			UserID:      userID,
-			IsCompleted: &completed,
-		},
-	)
-	assert.NoError(t, err)
-	_, err = GetOrCreatePullRequest(
-		db,
-		notUserID,
-		"123abe",
-		"foobar_source",
-		&PullRequest{
-			IDExternal:  "123abe",
-			SourceID:    "foobar_source",
-			UserID:      notUserID,
-			IsCompleted: &notCompleted,
-		},
-	)
-	assert.NoError(t, err)
-
-	t.Run("GetActivePRs", func(t *testing.T) {
-		prs, err := GetActivePRs(db, userID)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(*prs))
-		assert.Equal(t, pr1.ID, (*prs)[0].ID)
-	})
-	t.Run("GetPullRequests", func(t *testing.T) {
-		prs, err := GetPullRequests(db, userID, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, 2, len(*prs))
-		assert.Equal(t, pr1.ID, (*prs)[0].ID)
-		assert.Equal(t, pr2.ID, (*prs)[1].ID)
-	})
-}
-
 func TestUpdateOrCreateTask(t *testing.T) {
 	db, dbCleanup, err := GetDBConnection()
 	assert.NoError(t, err)
@@ -925,54 +862,6 @@ func TestUpdateOrCreateTask(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, task1.ID, newTask.ID)
 		assert.True(t, *newTask.IsCompleted)
-	})
-}
-
-func TestUpdateOrCreatePullRequest(t *testing.T) {
-	db, dbCleanup, err := GetDBConnection()
-	assert.NoError(t, err)
-	defer dbCleanup()
-	userID := primitive.NewObjectID()
-	notCompleted := false
-	pr1, err := GetOrCreatePullRequest(
-		db,
-		userID,
-		"123abc",
-		"foobar_source",
-		&PullRequest{
-			IDExternal:  "123abc",
-			SourceID:    "foobar_source",
-			UserID:      userID,
-			IsCompleted: &notCompleted,
-		},
-	)
-	assert.NoError(t, err)
-
-	t.Run("CreateSuccess", func(t *testing.T) {
-		newUserID := primitive.NewObjectID()
-		newPR, err := UpdateOrCreatePullRequest(db, newUserID, "222aaa", "random_source", &PullRequest{
-			IDExternal: "222aaa",
-			SourceID:   "random_source",
-			UserID:     newUserID,
-			Title:      "new event",
-		}, nil)
-		assert.NoError(t, err)
-
-		respPR, err := GetPullRequestByExternalID(db, "222aaa", newUserID)
-		assert.NoError(t, err)
-		assert.Equal(t, newPR.ID, respPR.ID)
-		assert.Equal(t, "new event", respPR.Title)
-	})
-	t.Run("UpdateSuccess", func(t *testing.T) {
-		completed := true
-		updateTask := Task{
-			IsCompleted: &completed,
-		}
-
-		newPR, err := UpdateOrCreatePullRequest(db, userID, pr1.IDExternal, pr1.SourceID, updateTask, nil)
-		assert.NoError(t, err)
-		assert.Equal(t, pr1.ID, newPR.ID)
-		assert.True(t, *newPR.IsCompleted)
 	})
 }
 
@@ -1059,43 +948,6 @@ func TestGetTask(t *testing.T) {
 	})
 }
 
-func TestGetPullRequest(t *testing.T) {
-	db, dbCleanup, err := GetDBConnection()
-	assert.NoError(t, err)
-	defer dbCleanup()
-	userID := primitive.NewObjectID()
-	notCompleted := false
-	pullRequest1, err := GetOrCreatePullRequest(
-		db,
-		userID,
-		"123abc",
-		"foobar_source",
-		&PullRequest{
-			IDExternal:  "123abc",
-			SourceID:    "foobar_source",
-			UserID:      userID,
-			IsCompleted: &notCompleted,
-		},
-	)
-	assert.NoError(t, err)
-
-	t.Run("WrongID", func(t *testing.T) {
-		pullRequest, err := GetPullRequest(db, primitive.NewObjectID(), userID)
-		assert.Equal(t, mongo.ErrNoDocuments, err)
-		assert.Nil(t, pullRequest)
-	})
-	t.Run("WrongUserID", func(t *testing.T) {
-		pullRequest, err := GetPullRequest(db, pullRequest1.ID, primitive.NewObjectID())
-		assert.Equal(t, mongo.ErrNoDocuments, err)
-		assert.Nil(t, pullRequest)
-	})
-	t.Run("Success", func(t *testing.T) {
-		pullRequest, err := GetPullRequest(db, pullRequest1.ID, userID)
-		assert.NoError(t, err)
-		assert.Equal(t, pullRequest1.ID, pullRequest.ID)
-	})
-}
-
 func TestGetTaskByExternalIDWithoutUser(t *testing.T) {
 	db, dbCleanup, err := GetDBConnection()
 	assert.NoError(t, err)
@@ -1165,41 +1017,6 @@ func TestGetCalendarEvent(t *testing.T) {
 		respEvent, err := GetCalendarEventWithoutUserID(db, event.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, event.ID, respEvent.ID)
-	})
-}
-
-func TestGetPullRequestByExternalID(t *testing.T) {
-	db, dbCleanup, err := GetDBConnection()
-	assert.NoError(t, err)
-	defer dbCleanup()
-	userID := primitive.NewObjectID()
-	pullRequest, err := GetOrCreatePullRequest(
-		db,
-		userID,
-		"123abc",
-		"foobar_source",
-		&PullRequest{
-			IDExternal: "123abc",
-			SourceID:   "foobar_source",
-			UserID:     userID,
-		},
-	)
-	assert.NoError(t, err)
-
-	t.Run("WrongID", func(t *testing.T) {
-		respPR, err := GetPullRequestByExternalID(db, "wrong ID", userID)
-		assert.Equal(t, mongo.ErrNoDocuments, err)
-		assert.Nil(t, respPR)
-	})
-	t.Run("WrongUserID", func(t *testing.T) {
-		respPR, err := GetPullRequestByExternalID(db, pullRequest.IDExternal, primitive.NewObjectID())
-		assert.Equal(t, mongo.ErrNoDocuments, err)
-		assert.Nil(t, respPR)
-	})
-	t.Run("Success", func(t *testing.T) {
-		respPR, err := GetPullRequestByExternalID(db, pullRequest.IDExternal, userID)
-		assert.NoError(t, err)
-		assert.Equal(t, pullRequest.ID, respPR.ID)
 	})
 }
 

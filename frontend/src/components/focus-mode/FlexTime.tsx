@@ -142,7 +142,7 @@ const FlexTime = ({ nextEvent }: FlexTimeProps) => {
                 return
             }
             const allViewTaskIds = views
-                .filter((view) => view.type === 'slack' || view.type === 'task_section' || view.type === 'linear')
+                .filter((view) => view.type === 'task_section')
                 .flatMap((view) => view.view_item_ids)
             const firstTask =
                 allViewTaskIds.length > 0 ? activeTasks?.find(({ id }) => allViewTaskIds[0] === id) : undefined

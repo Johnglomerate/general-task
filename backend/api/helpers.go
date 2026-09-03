@@ -30,10 +30,6 @@ func (t TaskResult) GetID() string {
 	return t.ID.Hex()
 }
 
-func (p PullRequestResult) GetID() string {
-	return p.ID
-}
-
 type OrderingIDGetter interface {
 	GetOrderingID() int
 }
@@ -106,14 +102,6 @@ func GetTaskSectionViewItemIDs(viewItems []*TaskResult) []string {
 	ids := make([]string, len(viewItems))
 	for i, item := range viewItems {
 		ids[i] = item.ID.Hex()
-	}
-	return ids
-}
-
-func GetPullRequestViewItemsIDs(viewItems []*PullRequestResult) []string {
-	ids := make([]string, len(viewItems))
-	for i, item := range viewItems {
-		ids[i] = item.ID
 	}
 	return ids
 }

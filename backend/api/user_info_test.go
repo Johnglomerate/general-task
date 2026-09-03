@@ -28,8 +28,6 @@ func TestUserInfo(t *testing.T) {
 		user := database.UserChangeable{
 			Email:             accountID,
 			Name:              "name",
-			LinearName:        "linearName",
-			LinearDisplayName: "linearDisplayName",
 		}
 		database.GetUserCollection(api.DB).FindOneAndUpdate(
 			context.Background(),
@@ -46,7 +44,7 @@ func TestUserInfo(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, `{"agreed_to_terms":false,"opted_into_marketing":false,"name":"name","is_employee":true,"email":"userinfo@generaltask.com","is_company_email":true,"linear_name":"linearName","linear_display_name":"linearDisplayName","is_subscribed":false,"is_in_trial":true,"trial_days_remaining":67,"has_product_access":true}`, string(body))
+		assert.Equal(t, `{"agreed_to_terms":false,"opted_into_marketing":false,"name":"name","is_employee":true,"email":"userinfo@generaltask.com","is_company_email":true,"is_subscribed":false,"is_in_trial":true,"trial_days_remaining":67,"has_product_access":true}`, string(body))
 	})
 	authToken = login("userinfo2@generaltask.com", "")
 	t.Run("SuccessNonEmployee", func(t *testing.T) {

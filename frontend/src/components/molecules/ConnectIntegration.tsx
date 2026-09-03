@@ -40,7 +40,7 @@ const getAuthorizationUrl = (supportedTypes: TSupportedType[], name: TLinkedAcco
 }
 
 interface ConnectIntegrationProps {
-    type: 'github' | 'google_calendar' | 'slack' | 'linear' | 'jira'
+    type: 'google_calendar'
     reconnect?: boolean
     reauthorizeAccountName?: string
 }
@@ -50,35 +50,11 @@ const ConnectIntegration = ({ type, reconnect = false, reauthorizeAccountName }:
     const { openAuthWindow, isAuthWindowOpen } = useAuthWindow()
     const { icon, name, authUrl } = (() => {
         switch (type) {
-            case 'github':
-                return {
-                    icon: logos.github,
-                    name: 'GitHub',
-                    authUrl: getAuthorizationUrl(supportedTypes || [], 'GitHub'),
-                }
             case 'google_calendar':
                 return {
                     icon: logos.gcal,
                     name: 'Google Calendar',
                     authUrl: getAuthorizationUrl(supportedTypes || [], GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME),
-                }
-            case 'slack':
-                return {
-                    icon: logos.slack,
-                    name: 'Slack',
-                    authUrl: getAuthorizationUrl(supportedTypes || [], 'Slack'),
-                }
-            case 'linear':
-                return {
-                    icon: logos.linear,
-                    name: 'Linear',
-                    authUrl: getAuthorizationUrl(supportedTypes || [], 'Linear'),
-                }
-            case 'jira':
-                return {
-                    icon: logos.jira,
-                    name: 'Jira',
-                    authUrl: getAuthorizationUrl(supportedTypes || [], 'Jira'),
                 }
             default:
                 return { icon: null, name: null, authUrl: null }
