@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/GeneralTask/task-manager/backend/database"
 	"github.com/GeneralTask/task-manager/backend/external"
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,6 @@ func (api *API) EventCreate(c *gin.Context) {
 		}
 		linkedSourceID = linkedTask.SourceID
 	}
-
 	if eventCreateObject.LinkedViewID != primitive.NilObjectID {
 		// check that the view exists
 		_, err := database.GetView(api.DB, userID, eventCreateObject.LinkedViewID)
@@ -46,17 +46,6 @@ func (api *API) EventCreate(c *gin.Context) {
 			c.JSON(400, gin.H{"detail": fmt.Sprintf("linked view not found: %s", eventCreateObject.LinkedViewID.Hex())})
 			return
 		}
-	}
-
-	if eventCreateObject.LinkedPullRequestID != primitive.NilObjectID {
-		// check that the task exists
-		linkedPR, err := database.GetPullRequest(api.DB, eventCreateObject.LinkedPullRequestID, userID)
-		if err != nil {
-			api.Logger.Error().Err(err).Msgf("linked PR not found: %s, err", eventCreateObject.LinkedPullRequestID.Hex())
-			c.JSON(400, gin.H{"detail": fmt.Sprintf("linked PR not found: %s", eventCreateObject.LinkedPullRequestID.Hex())})
-			return
-		}
-		linkedSourceID = linkedPR.SourceID
 	}
 
 	// generate ID for event so we can use this when inserting into database
@@ -71,19 +60,18 @@ func (api *API) EventCreate(c *gin.Context) {
 	}
 
 	event := database.CalendarEvent{
-		UserID:              userID,
-		IDExternal:          externalEventID.Hex(),
-		SourceID:            sourceID,
-		SourceAccountID:     eventCreateObject.AccountID,
-		CalendarID:          eventCreateObject.CalendarID,
-		Title:               eventCreateObject.Summary,
-		Body:                eventCreateObject.Description,
-		DatetimeEnd:         primitive.NewDateTimeFromTime(*eventCreateObject.DatetimeEnd),
-		DatetimeStart:       primitive.NewDateTimeFromTime(*eventCreateObject.DatetimeStart),
-		LinkedTaskID:        eventCreateObject.LinkedTaskID,
-		LinkedViewID:        eventCreateObject.LinkedViewID,
-		LinkedPullRequestID: eventCreateObject.LinkedPullRequestID,
-		LinkedSourceID:      linkedSourceID,
+		UserID:          userID,
+		IDExternal:      externalEventID.Hex(),
+		SourceID:        sourceID,
+		SourceAccountID: eventCreateObject.AccountID,
+		CalendarID:      eventCreateObject.CalendarID,
+		Title:           eventCreateObject.Summary,
+		Body:            eventCreateObject.Description,
+		DatetimeEnd:     primitive.NewDateTimeFromTime(*eventCreateObject.DatetimeEnd),
+		DatetimeStart:   primitive.NewDateTimeFromTime(*eventCreateObject.DatetimeStart),
+		LinkedTaskID:    eventCreateObject.LinkedTaskID,
+		LinkedViewID:    eventCreateObject.LinkedViewID,
+		LinkedSourceID:  linkedSourceID,
 	}
 
 	insertedEvent, err := database.UpdateOrCreateCalendarEvent(

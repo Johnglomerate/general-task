@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/GeneralTask/task-manager/backend/external"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/GeneralTask/task-manager/backend/database"
@@ -28,12 +27,12 @@ func TestMigrate008(t *testing.T) {
 		taskID := primitive.NewObjectID()
 		taskCollection.InsertOne(context.Background(), database.Task{
 			ID:       taskID,
-			SourceID: external.TASK_SOURCE_ID_GITHUB_PR,
+			SourceID: "github_pr",
 		})
 		task2ID := primitive.NewObjectID()
 		taskCollection.InsertOne(context.Background(), database.Task{
 			ID:       task2ID,
-			SourceID: external.TASK_SOURCE_ID_LINEAR,
+			SourceID: "linear_task",
 		})
 
 		filter := bson.M{}
@@ -50,7 +49,7 @@ func TestMigrate008(t *testing.T) {
 		var result database.Task
 		err = taskCollection.FindOne(context.Background(), filter).Decode(&result)
 		assert.NoError(t, err)
-		assert.Equal(t, external.TASK_SOURCE_ID_LINEAR, result.SourceID)
+		assert.Equal(t, "linear_task", result.SourceID)
 
 		// clear DB for next test
 		taskCollection.DeleteMany(context.Background(), filter)

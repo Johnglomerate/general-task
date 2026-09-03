@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/GeneralTask/task-manager/backend/external"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/GeneralTask/task-manager/backend/database"
@@ -46,15 +45,37 @@ type TaskBase struct {
 	CompletedAt       primitive.DateTime `bson:"completed_at"`
 }
 
+// Comment and ExternalTaskStatus mirror the pre-migration shapes of these
+// fields. They are defined here rather than imported because the integration
+// that produced them has since been removed from the app's models, while the
+// documents this migration operates on may still carry them.
+type Comment struct {
+	Body string `bson:"body"`
+}
+
+type ExternalTaskStatus struct {
+	ExternalID string `bson:"external_id"`
+	State      string `bson:"state"`
+}
+
 type Task struct {
-	PriorityID         string                      `bson:"priority_id"`
-	PriorityNormalized float64                     `bson:"priority_normalized"`
-	TaskNumber         int                         `bson:"task_number"`
-	Comments           *[]database.Comment         `bson:"comments"`
-	Status             database.ExternalTaskStatus `bson:"status"`
+	PriorityID         string             `bson:"priority_id"`
+	PriorityNormalized float64            `bson:"priority_normalized"`
+	TaskNumber         int                `bson:"task_number"`
+	Comments           *[]Comment         `bson:"comments"`
+	Status             ExternalTaskStatus `bson:"status"`
 	// Used to cache the current status before marking the task as done
-	PreviousStatus  database.ExternalTaskStatus `bson:"previous_status"`
-	CompletedStatus database.ExternalTaskStatus `bson:"completed_status"`
+	PreviousStatus  ExternalTaskStatus `bson:"previous_status"`
+	CompletedStatus ExternalTaskStatus `bson:"completed_status"`
+}
+
+// migratedTask decodes the fields this migration is asserted on, including the
+// legacy comments field that database.Task no longer models.
+type migratedTask struct {
+	SourceID    string     `bson:"source_id"`
+	Title       *string    `bson:"title"`
+	IsCompleted *bool      `bson:"is_completed"`
+	Comments    *[]Comment `bson:"comments"`
 }
 
 func TestMigrate010(t *testing.T) {
@@ -73,7 +94,7 @@ func TestMigrate010(t *testing.T) {
 		taskCollection.InsertOne(context.Background(), Item{
 			TaskBase{
 				ID:          taskID,
-				SourceID:    external.TASK_SOURCE_ID_LINEAR,
+				SourceID:    "linear_task",
 				Title:       "HELLO",
 				IsCompleted: false,
 			},
@@ -82,7 +103,7 @@ func TestMigrate010(t *testing.T) {
 			},
 			Task{
 				PriorityID: "priority1",
-				Comments: &[]database.Comment{
+				Comments: &[]Comment{
 					{
 						Body: "THERE",
 					},
@@ -102,11 +123,11 @@ func TestMigrate010(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), count)
 
-		var result database.Task
+		var result migratedTask
 		err = taskCollection.FindOne(context.Background(), filter).Decode(&result)
 		assert.NoError(t, err)
-		assert.Equal(t, external.TASK_SOURCE_ID_LINEAR, result.SourceID)
-		assert.Equal(t, database.Comment{Body: "THERE"}, (*result.Comments)[0])
+		assert.Equal(t, "linear_task", result.SourceID)
+		assert.Equal(t, Comment{Body: "THERE"}, (*result.Comments)[0])
 		assert.Equal(t, false, *result.IsCompleted)
 		assert.Equal(t, "HELLO", *result.Title)
 	})

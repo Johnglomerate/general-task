@@ -33,7 +33,7 @@ func TestMigrate009(t *testing.T) {
 		task2ID := primitive.NewObjectID()
 		taskCollection.InsertOne(context.Background(), database.Task{
 			ID:       task2ID,
-			SourceID: external.TASK_SOURCE_ID_LINEAR,
+			SourceID: "linear_task",
 		})
 
 		filter := bson.M{}
@@ -50,7 +50,7 @@ func TestMigrate009(t *testing.T) {
 		var result database.Task
 		err = taskCollection.FindOne(context.Background(), filter).Decode(&result)
 		assert.NoError(t, err)
-		assert.Equal(t, external.TASK_SOURCE_ID_LINEAR, result.SourceID)
+		assert.Equal(t, "linear_task", result.SourceID)
 
 		// clear DB for next test
 		taskCollection.DeleteMany(context.Background(), filter)

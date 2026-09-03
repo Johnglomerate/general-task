@@ -96,12 +96,10 @@ const useCalendarDrop = ({ date, eventsContainerRef }: CalendarDropArgs) => {
                 case DropType.SUBTASK:
                 case DropType.NON_REORDERABLE_TASK:
                 case DropType.DUE_TASK:
-                case DropType.TASK:
-                case DropType.PULL_REQUEST: {
+                case DropType.TASK: {
                     scheduleOnCalendar({
                         start: dropTime,
                         task: item.task,
-                        pullRequest: item.pullRequest,
                         date,
                     })
                     break
@@ -170,7 +168,6 @@ const useCalendarDrop = ({ date, eventsContainerRef }: CalendarDropArgs) => {
                 DropType.EVENT_RESIZE_HANDLE,
                 DropType.OVERVIEW_VIEW_HEADER,
                 DropType.WEEK_TASK_TO_CALENDAR_TASK,
-                DropType.PULL_REQUEST,
             ],
             collect: (monitor) => !!calendars?.length && monitor.isOver(),
             drop: onDrop,
@@ -181,8 +178,7 @@ const useCalendarDrop = ({ date, eventsContainerRef }: CalendarDropArgs) => {
                     case DropType.WEEK_TASK_TO_CALENDAR_TASK:
                     case DropType.SUBTASK:
                     case DropType.NON_REORDERABLE_TASK:
-                    case DropType.TASK:
-                    case DropType.PULL_REQUEST: {
+                    case DropType.TASK: {
                         setEventPreview(undefined)
                         setDropPreviewPosition(dropPosition)
                         break

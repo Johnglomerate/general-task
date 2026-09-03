@@ -95,9 +95,6 @@ const TaskActionsDropdown = ({ task }: TaskActionsDropdownProps) => {
         if (task.is_deleted) {
             return [getTaskInfo()]
         }
-        if (task.source.name === 'Jira') {
-            return [[getScheduleAction()], [getTaskInfo()]]
-        }
         if (task.is_done) {
             return [[getDeleteTaskAction()], [getTaskInfo()]]
         }

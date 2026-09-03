@@ -226,16 +226,8 @@ func (googleCalendar GoogleCalendarSource) GetTasks(db *mongo.Database, userID p
 	result <- emptyTaskResult(nil)
 }
 
-func (googleCalendar GoogleCalendarSource) GetPullRequests(db *mongo.Database, userID primitive.ObjectID, accountID string, result chan<- PullRequestResult) {
-	result <- emptyPullRequestResult(nil, false)
-}
-
 func (googleCalendar GoogleCalendarSource) CreateNewTask(db *mongo.Database, userID primitive.ObjectID, accountID string, task TaskCreationObject) (primitive.ObjectID, error) {
 	return primitive.NilObjectID, errors.New("has not been implemented yet")
-}
-
-func (googleCalendar GoogleCalendarSource) AddComment(db *mongo.Database, userID primitive.ObjectID, accountID string, comment database.Comment, task *database.Task) error {
-	return errors.New("has not been implemented yet")
 }
 
 func (googleCalendar GoogleCalendarSource) CreateNewEvent(db *mongo.Database, userID primitive.ObjectID, accountID string, event EventCreateObject) error {

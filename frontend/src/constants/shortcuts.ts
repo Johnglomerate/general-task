@@ -240,13 +240,6 @@ const KEYBOARD_SHORTCUTS = asShortcuts({
         category: 'Navigation',
         icon: 'headphones',
     },
-    goToJiraPage: {
-        label: 'Go to Jira page',
-        key: `${OPT_ALT.key}+${SHIFT}+J|${OPT_ALT.key}+${SHIFT}+Ô`,
-        keyLabel: `${OPT_ALT.label}+${SHIFT}+J`,
-        category: 'Navigation',
-        icon: 'jira',
-    },
     goToNotesPage: {
         label: 'Go to Notes page',
         key: `${OPT_ALT.key}+${SHIFT}+N|${OPT_ALT.key}+${SHIFT}+˜`,
@@ -261,33 +254,12 @@ const KEYBOARD_SHORTCUTS = asShortcuts({
         category: 'Navigation',
         icon: 'houseDay',
     },
-    goToGithubPRsPage: {
-        label: 'Go to GitHub page',
-        key: `${OPT_ALT.key}+${SHIFT}+G|${OPT_ALT.key}+${SHIFT}+˝`,
-        keyLabel: `${OPT_ALT.label}+${SHIFT}+G`,
-        category: 'Navigation',
-        icon: 'github',
-    },
-    goToLinearPage: {
-        label: 'Go to Linear page',
-        key: `${OPT_ALT.key}+${SHIFT}+L|${OPT_ALT.key}+${SHIFT}+Ò`,
-        keyLabel: `${OPT_ALT.label}+${SHIFT}+L`,
-        category: 'Navigation',
-        icon: 'linear',
-    },
     goToRecurringTasksPage: {
         label: 'Go to Recurring Tasks page',
         key: `${OPT_ALT.key}+${SHIFT}+R|${OPT_ALT.key}+${SHIFT}+‰`,
         keyLabel: `${OPT_ALT.label}+${SHIFT}+R`,
         category: 'Navigation',
         icon: 'arrows_repeat',
-    },
-    goToSlackPage: {
-        label: 'Go to Slack page',
-        key: `${OPT_ALT.key}+${SHIFT}+S|${OPT_ALT.key}+${SHIFT}+Í`,
-        keyLabel: `${OPT_ALT.label}+${SHIFT}+S`,
-        category: 'Navigation',
-        icon: 'slack',
     },
     goToTaskInbox: {
         label: 'Go to Task Inbox',

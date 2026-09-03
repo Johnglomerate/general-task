@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/GeneralTask/task-manager/backend/external"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/GeneralTask/task-manager/backend/database"
@@ -29,7 +28,7 @@ func TestMigrate011(t *testing.T) {
 		externalTokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
 			ID:         linearID,
 			AccountID:  "test_migrate_11",
-			ServiceID:  external.TASK_SERVICE_ID_LINEAR,
+			ServiceID:  "linear",
 			IsBadToken: false,
 			Token:      "{ linear-token-string }",
 		})
@@ -37,7 +36,7 @@ func TestMigrate011(t *testing.T) {
 		externalTokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
 			ID:         slackID,
 			AccountID:  "test_migrate_11",
-			ServiceID:  external.TASK_SERVICE_ID_SLACK,
+			ServiceID:  "slack",
 			IsBadToken: false,
 			Token:      "{ slack-token-string }",
 		})
@@ -52,7 +51,7 @@ func TestMigrate011(t *testing.T) {
 		var result database.ExternalAPIToken
 		err = externalTokenCollection.FindOne(context.Background(), filter).Decode(&result)
 		assert.NoError(t, err)
-		assert.Equal(t, external.TASK_SERVICE_ID_LINEAR, result.ServiceID)
+		assert.Equal(t, "linear", result.ServiceID)
 		assert.Equal(t, linearID, result.ID)
 		assert.Equal(t, "{}", result.Token)
 		assert.True(t, result.IsBadToken)
@@ -63,7 +62,7 @@ func TestMigrate011(t *testing.T) {
 		assert.Equal(t, int64(1), count)
 		err = externalTokenCollection.FindOne(context.Background(), filter).Decode(&result)
 		assert.NoError(t, err)
-		assert.Equal(t, external.TASK_SERVICE_ID_SLACK, result.ServiceID)
+		assert.Equal(t, "slack", result.ServiceID)
 		assert.Equal(t, "{ slack-token-string }", result.Token)
 	})
 	t.Run("MigrateDown", func(t *testing.T) {

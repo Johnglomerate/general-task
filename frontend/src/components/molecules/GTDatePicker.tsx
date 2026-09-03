@@ -42,7 +42,6 @@ interface GTDatePickerProps {
     showIcon?: boolean
     onlyCalendar?: boolean
     disabled?: boolean
-    isLinearTask?: boolean
     // clearing emits the epoch date, which only makes sense where the date is optional
     showClearButton?: boolean
 }

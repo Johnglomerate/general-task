@@ -52,13 +52,7 @@ const useNavigateToTask = () => {
             }
 
             setCalendarType('day')
-            if (task.source.name === 'Slack' && window.location.pathname.startsWith('/slack')) {
-                navigate(`/slack/${suffix}`)
-                Log(`task_navigate__/slack/${suffix}`)
-            } else if (task.source.name === 'Linear' && window.location.pathname.startsWith('/linear')) {
-                navigate(`/linear/${suffix}`)
-                Log(`task_navigate__/linear/${suffix}`)
-            } else if (folderId && suffix) {
+            if (folderId && suffix) {
                 navigate(`/tasks/${folderId}/${suffix}`)
                 Log(`task_navigate__/task/${folderId}/${suffix}`)
             } else {

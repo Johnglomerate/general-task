@@ -30,7 +30,7 @@ func TestTaskBaseToTaskResult(t *testing.T) {
 		dueDate := time.Unix(0, 0)
 		primitiveDueDate := primitive.NewDateTimeFromTime(dueDate)
 		result := api.taskBaseToTaskResult(&database.Task{
-			SourceID: external.TASK_SOURCE_ID_LINEAR,
+			SourceID: external.TASK_SOURCE_ID_GT_TASK,
 			DueDate:  &primitiveDueDate,
 		}, userID)
 		assert.Equal(t, "", result.DueDate)
@@ -39,7 +39,7 @@ func TestTaskBaseToTaskResult(t *testing.T) {
 		dueDate := time.Unix(1676478754, 0)
 		primitiveDueDate := primitive.NewDateTimeFromTime(dueDate)
 		result := api.taskBaseToTaskResult(&database.Task{
-			SourceID: external.TASK_SOURCE_ID_LINEAR,
+			SourceID: external.TASK_SOURCE_ID_GT_TASK,
 			DueDate:  &primitiveDueDate,
 		}, userID)
 		assert.Equal(t, primitiveDueDate.Time().UTC().Format(constants.YEAR_MONTH_DAY_FORMAT), result.DueDate)
@@ -47,7 +47,7 @@ func TestTaskBaseToTaskResult(t *testing.T) {
 	t.Run("ValidTemplateID", func(t *testing.T) {
 		templateID := primitive.NewObjectID()
 		result := api.taskBaseToTaskResult(&database.Task{
-			SourceID:                external.TASK_SOURCE_ID_LINEAR,
+			SourceID:                external.TASK_SOURCE_ID_GT_TASK,
 			RecurringTaskTemplateID: templateID,
 		}, userID)
 		assert.Equal(t, templateID, result.RecurringTaskTemplateID)
@@ -60,46 +60,15 @@ func TestTaskBaseToTaskResult(t *testing.T) {
 		title := "hello!"
 		body := "example body"
 		priority := 3.0
-		externalStatus := database.ExternalTaskStatus{
-			ExternalID:        "example ID",
-			State:             "example state",
-			Type:              "example type",
-			Color:             "#ffffff",
-			IsValidTransition: true,
-		}
-		slackMessageParams := database.SlackMessageParams{
-			Channel: database.SlackChannel{
-				ID: "slackID",
-			},
-		}
-		allStatuses := []*database.ExternalTaskStatus{
-			&externalStatus,
-		}
-
-		externalPriority := database.ExternalTaskPriority{
-			ExternalID:         "example ID",
-			Name:               "example name",
-			PriorityNormalized: 3.0,
-			IconURL:            "https://example.com",
-			Color:              "#ffffff",
-		}
-		allPriorities := []*database.ExternalTaskPriority{
-			&externalPriority,
-		}
 
 		result := api.taskBaseToTaskResult(&database.Task{
-			SourceID:              external.TASK_SOURCE_ID_LINEAR,
-			DueDate:               &primitiveDueDate,
-			PriorityNormalized:    &priority,
-			TimeAllocation:        &timeAllocation,
-			IsCompleted:           &notCompleted,
-			Title:                 &title,
-			Body:                  &body,
-			Status:                &externalStatus,
-			SlackMessageParams:    &slackMessageParams,
-			AllStatuses:           allStatuses,
-			ExternalPriority:      &externalPriority,
-			AllExternalPriorities: allPriorities,
+			SourceID:           external.TASK_SOURCE_ID_GT_TASK,
+			DueDate:            &primitiveDueDate,
+			PriorityNormalized: &priority,
+			TimeAllocation:     &timeAllocation,
+			IsCompleted:        &notCompleted,
+			Title:              &title,
+			Body:               &body,
 		}, userID)
 		// TODO change to a helper method to compare taskResults
 		assert.Equal(t, primitiveDueDate.Time().UTC().Format(constants.YEAR_MONTH_DAY_FORMAT), result.DueDate)
@@ -107,16 +76,7 @@ func TestTaskBaseToTaskResult(t *testing.T) {
 		assert.False(t, result.IsDone)
 		assert.Equal(t, title, result.Title)
 		assert.Equal(t, body, result.Body)
-		assert.Equal(t, externalStatus.State, result.ExternalStatus.State)
-		assert.Equal(t, slackMessageParams.Channel.ID, result.SlackMessageParams.Channel.ID)
 		assert.Equal(t, priority, result.PriorityNormalized)
-		assert.Equal(t, 1, len(result.AllStatuses))
-		assert.Equal(t, externalStatus.Type, result.AllStatuses[0].Type)
-		assert.Equal(t, externalStatus.Color, result.AllStatuses[0].Color)
-		assert.Equal(t, externalStatus.IsValidTransition, result.AllStatuses[0].IsValidTransition)
-		assert.Equal(t, 1, len(result.AllExternalPriorities))
-		assert.Equal(t, externalPriority.Name, result.AllExternalPriorities[0].Name)
-		assert.Equal(t, externalPriority.PriorityNormalized, result.AllExternalPriorities[0].PriorityNormalized)
 		assert.Equal(t, primitive.NilObjectID, result.RecurringTaskTemplateID)
 	})
 }
@@ -133,36 +93,24 @@ func TestTaskListToTaskResultList(t *testing.T) {
 		notCompleted := false
 		title := "hello!"
 		body := "example body"
-		externalStatus := database.ExternalTaskStatus{
-			ExternalID: "example ID",
-			State:      "example state",
-			Type:       "example type",
-		}
-		slackMessageParams := database.SlackMessageParams{
-			Channel: database.SlackChannel{
-				ID: "slackID",
-			},
-		}
 
 		parentTaskID := primitive.NewObjectID()
 		results := api.taskListToTaskResultList(&[]database.Task{
 			{
-				ID:                 parentTaskID,
-				UserID:             userID,
-				SourceID:           external.TASK_SOURCE_ID_LINEAR,
-				DueDate:            &primitiveDueDate,
-				TimeAllocation:     &timeAllocation,
-				IsCompleted:        &notCompleted,
-				Title:              &title,
-				Body:               &body,
-				Status:             &externalStatus,
-				SlackMessageParams: &slackMessageParams,
+				ID:             parentTaskID,
+				UserID:         userID,
+				SourceID:       external.TASK_SOURCE_ID_GT_TASK,
+				DueDate:        &primitiveDueDate,
+				TimeAllocation: &timeAllocation,
+				IsCompleted:    &notCompleted,
+				Title:          &title,
+				Body:           &body,
 			},
 			{
 				UserID:        userID,
 				IsCompleted:   &notCompleted,
 				IDTaskSection: primitive.NilObjectID,
-				SourceID:      external.TASK_SOURCE_ID_LINEAR,
+				SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 				ParentTaskID:  parentTaskID,
 			}}, userID)
 
@@ -173,8 +121,6 @@ func TestTaskListToTaskResultList(t *testing.T) {
 		assert.False(t, result.IsDone)
 		assert.Equal(t, title, result.Title)
 		assert.Equal(t, body, result.Body)
-		assert.Equal(t, externalStatus.State, result.ExternalStatus.State)
-		assert.Equal(t, slackMessageParams.Channel.ID, result.SlackMessageParams.Channel.ID)
 		assert.Equal(t, 1, len(result.SubTasks))
 	})
 }
@@ -197,7 +143,7 @@ func TestGetSubtaskResults(t *testing.T) {
 			UserID:        userID,
 			IsCompleted:   &notCompleted,
 			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_LINEAR,
+			SourceID:      external.TASK_SOURCE_ID_GT_TASK,
 			ParentTaskID:  parentTaskID,
 		})
 		assert.NoError(t, err)
@@ -220,7 +166,7 @@ func TestUpdateLastFullRefreshTime(t *testing.T) {
 	token := database.ExternalAPIToken{
 		UserID:     userID,
 		AccountID:  accountID,
-		ServiceID:  external.TASK_SERVICE_ID_LINEAR,
+		ServiceID:  external.TASK_SERVICE_ID_GOOGLE,
 		ExternalID: "external",
 	}
 	collection.InsertOne(context.Background(), token)
@@ -233,52 +179,5 @@ func TestUpdateLastFullRefreshTime(t *testing.T) {
 		var tokenDB database.ExternalAPIToken
 		response.Decode(&tokenDB)
 		assert.Less(t, (15 * time.Minute), time.Now().Sub(tokenDB.LastFullRefreshTime.Time()))
-	})
-}
-
-func TestGetActiveLinearTasksFromDBForToken(t *testing.T) {
-	api, dbCleanup := GetAPIWithDBCleanup()
-	defer dbCleanup()
-
-	userID := primitive.NewObjectID()
-	accountID := "test@generaltask.com"
-
-	collection := database.GetTaskCollection(api.DB)
-	_notCompleted := false
-	// not completed, not deleted
-	task := database.Task{
-		UserID:          userID,
-		SourceAccountID: accountID,
-		SourceID:        external.TASK_SOURCE_ID_LINEAR,
-		IsCompleted:     &_notCompleted,
-	}
-	collection.InsertOne(context.Background(), task)
-
-	// not completed, deleted
-	_deleted := true
-	task = database.Task{
-		UserID:          userID,
-		SourceAccountID: accountID,
-		SourceID:        external.TASK_SOURCE_ID_LINEAR,
-		IsCompleted:     &_notCompleted,
-		IsDeleted:       &_deleted,
-	}
-	collection.InsertOne(context.Background(), task)
-
-	// completed, not deleted
-	_completed := true
-	task = database.Task{
-		UserID:          userID,
-		SourceAccountID: accountID,
-		SourceID:        external.TASK_SOURCE_ID_LINEAR,
-		IsCompleted:     &_completed,
-	}
-	collection.InsertOne(context.Background(), task)
-
-	t.Run("Success", func(t *testing.T) {
-		var tasks = make(chan external.TaskResult)
-		go api.getActiveLinearTasksFromDBForToken(userID, accountID, tasks)
-		taskResult := <-tasks
-		assert.Equal(t, 1, len(taskResult.Tasks))
 	})
 }
