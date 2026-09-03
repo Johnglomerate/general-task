@@ -26,7 +26,7 @@ func TestOverviewSuggestions(t *testing.T) {
 	UnauthorizedTest(t, "GET", "/overview/views/suggestion/", nil)
 
 	t.Run("NoTokens", func(t *testing.T) {
-		server := testutils.GetMockAPIServer(t, http.StatusOK, `{"id": "1", "choices": [{"text": "1. Task Inbox: This is the reasoning\n2. Linear Issues: Reasoning 2\n3. Slack Messages: Reasoning 3"}]}`)
+		server := testutils.GetMockAPIServer(t, http.StatusOK, `{"id": "1", "choices": [{"text": "1. Task Inbox: This is the reasoning\n2. Meeting Preparation: Reasoning 2\n3. Due Today: Reasoning 3"}]}`)
 		api.ExternalConfig.OpenAIOverrideURL = server.URL
 		currentTime := time.Now().UTC()
 		api.OverrideTime = &currentTime
@@ -71,7 +71,7 @@ func TestOverviewSuggestions(t *testing.T) {
 	})
 
 	t.Run("PromptTooLong", func(t *testing.T) {
-		server := testutils.GetMockAPIServer(t, http.StatusOK, `{"id": "1", "choices": [{"text": "1. Task Inbox: This is the reasoning\n2. Linear Issues: Reasoning 2\n3. Slack Messages: Reasoning 3"}]}`)
+		server := testutils.GetMockAPIServer(t, http.StatusOK, `{"id": "1", "choices": [{"text": "1. Task Inbox: This is the reasoning\n2. Meeting Preparation: Reasoning 2\n3. Due Today: Reasoning 3"}]}`)
 		api.ExternalConfig.OpenAIOverrideURL = server.URL
 		currentTime := time.Now().UTC()
 		api.OverrideTime = &currentTime
@@ -115,7 +115,7 @@ func TestOverviewSuggestions(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		server := testutils.GetMockAPIServer(t, http.StatusOK, `{"id": "1", "choices": [{"text": "1. Task Inbox: This is the reasoning\n2. Linear Issues: Reasoning 2\n3. Slack Messages: Reasoning 3"}]}`)
+		server := testutils.GetMockAPIServer(t, http.StatusOK, `{"id": "1", "choices": [{"text": "1. Task Inbox: This is the reasoning\n2. Meeting Preparation: Reasoning 2\n3. Due Today: Reasoning 3"}]}`)
 		api.ExternalConfig.OpenAIOverrideURL = server.URL
 		currentTime := time.Now().UTC()
 		api.OverrideTime = &currentTime

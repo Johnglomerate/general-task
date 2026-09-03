@@ -12,10 +12,8 @@ import {
     useModifyTask,
     useReorderTask,
 } from '../../services/api/tasks.hooks'
-import { externalStatusIcons, icons } from '../../styles/images'
-import { getExternalStatusMenuItems } from '../../utils/externalStatusMenuItems'
+import { icons } from '../../styles/images'
 import { TTaskFolder, TTaskV4 } from '../../utils/types'
-import adf2md from '../atoms/GTTextField/AtlassianEditor/adfToMd'
 import GTDatePicker from '../molecules/GTDatePicker'
 import ScheduleTaskModal from '../molecules/ScheduleTaskModal'
 import RecurringTaskTemplateModal from '../molecules/recurring-tasks/RecurringTaskTemplateModal'
@@ -158,30 +156,6 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange, reorder }: TaskC
     }
 
     const getPriorityOption = (task: TTaskV4): GTMenuItem => {
-        if (task.all_priorities) {
-            return {
-                label: 'Set priority',
-                icon: icons.priority,
-                subItems: task.all_priorities.map((priority) => ({
-                    label: priority.name,
-                    icon: priority.icon_url,
-                    selected: priority.priority_normalized === task.priority_normalized,
-                    onClick: () => {
-                        if (parentTask && task) {
-                            modifyTask(
-                                {
-                                    id: parentTask.id,
-                                    external_priority_id: priority.external_id,
-                                },
-                                task.optimisticId
-                            )
-                        } else {
-                            modifyTask({ id: task.id, external_priority_id: priority.external_id }, task.optimisticId)
-                        }
-                    },
-                })),
-            }
-        }
         return {
             label: 'Set priority',
             icon: icons.priority,
@@ -203,17 +177,12 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange, reorder }: TaskC
 
     const getDeleteMenuItem = (): GTMenuItem => {
         if (inMultiSelectMode) {
-            const disabled = selectedTaskIds.some(
-                (selectedTask) => allTasks?.find((t) => t.id === selectedTask)?.source.name === 'Jira'
-            )
             return {
                 label: getDeleteLabel(task),
                 icon: icons.trash,
                 iconColor: 'red',
                 textColor: 'red',
                 onClick: onMultiDeleteClick,
-                disabled,
-                tip: disabled ? 'Cannot delete Jira tasks' : undefined,
             }
         }
         return {
@@ -231,18 +200,14 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange, reorder }: TaskC
         ...(!task.is_deleted && !task.is_done ? [getScheduleMenuItem(() => setIsScheduleModalOpen(true))] : []),
         getSetDueDateMenuItem(task, onSingleSetDueDateClick),
         getPriorityOption(task),
-        ...(!task.id_parent && !task.is_deleted && !task.is_done && task.source.name !== 'Jira'
+        ...(!task.id_parent && !task.is_deleted && !task.is_done
             ? [
                   {
                       label: 'Duplicate task',
                       icon: icons.clone,
                       onClick: () => {
                           const optimisticId = uuidv4()
-                          let body = task.body
-                          if (task.source.name === 'Jira') {
-                              const json = JSON.parse(body)
-                              body = adf2md.convert(json).result
-                          }
+                          const body = task.body
                           createTask({
                               title: `${task.title} (copy)`,
                               body,
@@ -277,15 +242,6 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange, reorder }: TaskC
                   },
               ]
             : []),
-        ...(task.all_statuses && task.external_status
-            ? [
-                  {
-                      label: 'Set status',
-                      icon: externalStatusIcons[task.external_status.type],
-                      subItems: getExternalStatusMenuItems(task, modifyTask),
-                  },
-              ]
-            : []),
         ...(showRecurringTaskOption
             ? [
                   {
@@ -295,7 +251,7 @@ const TaskContextMenuWrapper = ({ task, children, onOpenChange, reorder }: TaskC
                   },
               ]
             : []),
-        ...(task.source.name !== 'Jira' ? [getDeleteMenuItem()] : []),
+        getDeleteMenuItem(),
     ]
 
     const multiSelectContextMenuItems: GTMenuItem[] = [

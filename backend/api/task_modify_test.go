@@ -36,62 +36,22 @@ func TestMarkAsDeleted(t *testing.T) {
 	completed := false
 	insertResult, err := taskCollection.InsertOne(context.Background(), database.Task{
 		UserID:      userID,
-		IDExternal:  "sample_linear_id",
-		SourceID:    external.TASK_SOURCE_ID_LINEAR,
-		IsCompleted: &completed,
-		PreviousStatus: &database.ExternalTaskStatus{
-			ExternalID: "previous-status-id",
-			State:      "In Progress",
-			Type:       "in-progress",
-		},
-	})
-	assert.NoError(t, err)
-	linearTaskID := insertResult.InsertedID.(primitive.ObjectID)
-	linearTaskIDHex := linearTaskID.Hex()
-
-	insertResult, err = taskCollection.InsertOne(context.Background(), database.Task{
-		UserID:      userID,
-		IDExternal:  "sample_calendar_id",
-		SourceID:    external.TASK_SOURCE_ID_GCAL,
+		IDExternal:  "sample_task_id",
+		SourceID:    external.TASK_SOURCE_ID_GT_TASK,
 		IsCompleted: &completed,
 	})
 	assert.NoError(t, err)
-
-	externalAPITokenCollection := database.GetExternalTokenCollection(db)
-
-	_, err = externalAPITokenCollection.UpdateOne(
-		context.Background(),
-		bson.M{"$and": []bson.M{{"user_id": userID}, {"service_id": external.TaskSourceLinear.Name}}},
-		bson.M{"$set": &database.ExternalAPIToken{
-			ServiceID: external.TASK_SERVICE_ID_LINEAR,
-			Token:     `{"access_token":"sample-token","refresh_token":"sample-token","scope":"sample-scope","expires_in":3600,"token_type":"Bearer"}`,
-			UserID:    userID,
-		}},
-		options.Update().SetUpsert(true),
-	)
-	assert.NoError(t, err)
-
-	response := `{"data": {"issueUpdate": {
-				"success": true,
-					"issue": {
-					"id": "1c3b11d7-9298-4cc3-8a4a-d2d6d4677315",
-						"title": "test title",
-						"description": "test description",
-						"state": {
-						"id": "39e87303-2b42-4c71-bfbe-4afb7bb7eecb",
-							"name": "Todo"
-					}}}}}`
-	taskUpdateServer := testutils.GetMockAPIServer(t, 200, response)
+	taskID := insertResult.InsertedID.(primitive.ObjectID)
+	taskIDHex := taskID.Hex()
 
 	api, dbCleanup := GetAPIWithDBCleanup()
 	defer dbCleanup()
-	api.ExternalConfig.Linear.ConfigValues.TaskUpdateURL = &taskUpdateServer.URL
 	router := GetRouter(api)
 
 	t.Run("MissingDeletionFlag", func(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			nil)
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -100,16 +60,12 @@ func TestMarkAsDeleted(t *testing.T) {
 	})
 
 	t.Run("DeletionFlagFalse", func(t *testing.T) {
-		response = `{"data": {"issueUnarchive": {"success": true}}}`
-		taskUpdateServer = testutils.GetMockAPIServer(t, 200, response)
-		api.ExternalConfig.Linear.ConfigValues.TaskUpdateURL = &taskUpdateServer.URL
-
-		err := database.MarkCompleteWithCollection(database.GetTaskCollection(db), linearTaskID)
+		err := database.MarkCompleteWithCollection(database.GetTaskCollection(db), taskID)
 		assert.NoError(t, err)
 		ServeRequest(t,
 			authToken,
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{"is_deleted": false}`)),
 			http.StatusOK,
 			api,
@@ -123,7 +79,7 @@ func TestMarkAsDeleted(t *testing.T) {
 		ServeRequest(t,
 			authToken,
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"1/",
+			"/tasks/modify/"+taskIDHex+"1/",
 			bytes.NewBuffer([]byte(`{"is_deleted": false}`)),
 			http.StatusNotFound,
 			api,
@@ -135,7 +91,7 @@ func TestMarkAsDeleted(t *testing.T) {
 		ServeRequest(t,
 			secondAuthToken,
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{"is_deleted": false}`)),
 			http.StatusNotFound,
 			api,
@@ -143,22 +99,21 @@ func TestMarkAsDeleted(t *testing.T) {
 	})
 
 	t.Run("MarkAsDeletedSuccess", func(t *testing.T) {
-		response = `{"data": {"issueArchive": {"success": true}}}`
-		taskUpdateServer = testutils.GetMockAPIServer(t, 200, response)
-		api.ExternalConfig.Linear.ConfigValues.TaskUpdateURL = &taskUpdateServer.URL
 		var task database.Task
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
+		err = taskCollection.FindOne(context.Background(), bson.M{"_id": taskID}).Decode(&task)
+		assert.NoError(t, err)
 		assert.Equal(t, false, *task.IsDeleted)
 		ServeRequest(t,
 			authToken,
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{"is_deleted": true}`)),
 			http.StatusOK,
 			api,
 		)
 
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
+		err = taskCollection.FindOne(context.Background(), bson.M{"_id": taskID}).Decode(&task)
+		assert.NoError(t, err)
 		assert.Equal(t, true, *task.IsDeleted)
 		assert.NotEqual(t, primitive.DateTime(0), task.CompletedAt)
 	})
@@ -174,33 +129,16 @@ func TestMarkAsComplete(t *testing.T) {
 
 	taskCollection := database.GetTaskCollection(db)
 
-	previousStatus := &database.ExternalTaskStatus{
-		ExternalID: "previous-status-id",
-		State:      "In Progress",
-		Type:       "in-progress",
-	}
-	doneStatus := &database.ExternalTaskStatus{
-		ExternalID:        "new-status-id",
-		State:             "DONE",
-		Type:              "completed",
-		IsCompletedStatus: true,
-	}
-
 	completed := false
 	insertResult, err := taskCollection.InsertOne(context.Background(), database.Task{
-		UserID:         userID,
-		IDExternal:     "sample_linear_id",
-		SourceID:       external.TASK_SOURCE_ID_LINEAR,
-		IsCompleted:    &completed,
-		PreviousStatus: previousStatus,
-		AllStatuses: []*database.ExternalTaskStatus{
-			previousStatus,
-			doneStatus,
-		},
+		UserID:      userID,
+		IDExternal:  "sample_task_id",
+		SourceID:    external.TASK_SOURCE_ID_GT_TASK,
+		IsCompleted: &completed,
 	})
 	assert.NoError(t, err)
-	linearTaskID := insertResult.InsertedID.(primitive.ObjectID)
-	linearTaskIDHex := linearTaskID.Hex()
+	taskID := insertResult.InsertedID.(primitive.ObjectID)
+	taskIDHex := taskID.Hex()
 
 	insertResult, err = taskCollection.InsertOne(context.Background(), database.Task{
 		UserID:      userID,
@@ -212,7 +150,6 @@ func TestMarkAsComplete(t *testing.T) {
 	calendarTaskID := insertResult.InsertedID.(primitive.ObjectID)
 	calendarTaskIDHex := calendarTaskID.Hex()
 
-	completed = false
 	deleted := true
 	insertResult, err = taskCollection.InsertOne(context.Background(), database.Task{
 		UserID:      userID,
@@ -225,41 +162,14 @@ func TestMarkAsComplete(t *testing.T) {
 	deletedTaskID := insertResult.InsertedID.(primitive.ObjectID)
 	deletedTaskIDHex := deletedTaskID.Hex()
 
-	externalAPITokenCollection := database.GetExternalTokenCollection(db)
-
-	_, err = externalAPITokenCollection.UpdateOne(
-		context.Background(),
-		bson.M{"$and": []bson.M{{"user_id": userID}, {"service_id": external.TaskSourceLinear.Name}}},
-		bson.M{"$set": &database.ExternalAPIToken{
-			ServiceID: external.TASK_SERVICE_ID_LINEAR,
-			Token:     `{"access_token":"sample-token","refresh_token":"sample-token","scope":"sample-scope","expires_in":3600,"token_type":"Bearer"}`,
-			UserID:    userID,
-		}},
-		options.Update().SetUpsert(true),
-	)
-	assert.NoError(t, err)
-
-	response := `{"data": {"issueUpdate": {
-				"success": true,
-					"issue": {
-					"id": "1c3b11d7-9298-4cc3-8a4a-d2d6d4677315",
-						"title": "test title",
-						"description": "test description",
-						"state": {
-						"id": "39e87303-2b42-4c71-bfbe-4afb7bb7eecb",
-							"name": "Todo"
-					}}}}}`
-	taskUpdateServer := testutils.GetMockAPIServer(t, 200, response)
-
 	api, dbCleanup := GetAPIWithDBCleanup()
 	defer dbCleanup()
-	api.ExternalConfig.Linear.ConfigValues.TaskUpdateURL = &taskUpdateServer.URL
 	router := GetRouter(api)
 
 	t.Run("MissingCompletionFlag", func(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			nil)
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -267,23 +177,12 @@ func TestMarkAsComplete(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, recorder.Code)
 	})
 
-	t.Run("InvalidStatusUpdate", func(t *testing.T) {
-		request, _ := http.NewRequest(
-			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
-			bytes.NewBuffer([]byte(`{"task": {"status": {"external_id": "invalid-status-id"}}}`)))
-		request.Header.Add("Authorization", "Bearer "+authToken)
-		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, request)
-		assert.Equal(t, http.StatusBadRequest, recorder.Code)
-	})
-
 	t.Run("CompletionFlagFalse", func(t *testing.T) {
-		err := database.MarkCompleteWithCollection(database.GetTaskCollection(db), linearTaskID)
+		err := database.MarkCompleteWithCollection(database.GetTaskCollection(db), taskID)
 		assert.NoError(t, err)
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{"is_completed": false}`)))
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -297,7 +196,7 @@ func TestMarkAsComplete(t *testing.T) {
 	t.Run("InvalidHex", func(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"1/",
+			"/tasks/modify/"+taskIDHex+"1/",
 			bytes.NewBuffer([]byte(`{"is_completed": true}`)))
 		request.Header.Add("Authorization", "Bearer "+authToken)
 		recorder := httptest.NewRecorder()
@@ -309,7 +208,7 @@ func TestMarkAsComplete(t *testing.T) {
 		secondAuthToken := login("tester@generaltask.com", "")
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{"is_completed": true}`)))
 		request.Header.Add("Authorization", "Bearer "+secondAuthToken)
 		recorder := httptest.NewRecorder()
@@ -320,32 +219,11 @@ func TestMarkAsComplete(t *testing.T) {
 	t.Run("MarkAsDoneSuccess", func(t *testing.T) {
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{"is_completed": true}`)))
 		var task database.Task
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
-		assert.Equal(t, false, *task.IsCompleted)
-
-		request.Header.Add("Authorization", "Bearer "+authToken)
-		recorder := httptest.NewRecorder()
-		router.ServeHTTP(recorder, request)
-		assert.Equal(t, http.StatusOK, recorder.Code)
-
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
-		assert.Equal(t, true, *task.IsCompleted)
-		assert.NotEqual(t, primitive.DateTime(0), task.CompletedAt)
-	})
-
-	t.Run("StatusMarkAsDoneSuccess", func(t *testing.T) {
-		_, err = taskCollection.UpdateOne(context.Background(), bson.M{"_id": linearTaskID}, bson.M{"$set": bson.M{"is_completed": false}})
+		err = taskCollection.FindOne(context.Background(), bson.M{"_id": taskID}).Decode(&task)
 		assert.NoError(t, err)
-
-		request, _ := http.NewRequest(
-			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
-			bytes.NewBuffer([]byte(`{"task": {"status": {"external_id": "new-status-id"}}}`)))
-		var task database.Task
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
 		assert.Equal(t, false, *task.IsCompleted)
 
 		request.Header.Add("Authorization", "Bearer "+authToken)
@@ -353,10 +231,10 @@ func TestMarkAsComplete(t *testing.T) {
 		router.ServeHTTP(recorder, request)
 		assert.Equal(t, http.StatusOK, recorder.Code)
 
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
+		err = taskCollection.FindOne(context.Background(), bson.M{"_id": taskID}).Decode(&task)
+		assert.NoError(t, err)
 		assert.Equal(t, true, *task.IsCompleted)
 		assert.NotEqual(t, primitive.DateTime(0), task.CompletedAt)
-		assert.Equal(t, *doneStatus, *task.CompletedStatus)
 	})
 
 	t.Run("CalendarSuccess", func(t *testing.T) {
@@ -367,6 +245,7 @@ func TestMarkAsComplete(t *testing.T) {
 			bytes.NewBuffer([]byte(`{"is_completed": true}`)))
 		var task database.Task
 		err = taskCollection.FindOne(context.Background(), bson.M{"_id": calendarTaskID}).Decode(&task)
+		assert.NoError(t, err)
 		assert.Equal(t, false, *task.IsCompleted)
 
 		request.Header.Add("Authorization", "Bearer "+authToken)
@@ -375,6 +254,7 @@ func TestMarkAsComplete(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 
 		err = taskCollection.FindOne(context.Background(), bson.M{"_id": calendarTaskID}).Decode(&task)
+		assert.NoError(t, err)
 		assert.Equal(t, true, *task.IsCompleted)
 	})
 
@@ -383,7 +263,7 @@ func TestMarkAsComplete(t *testing.T) {
 		assert.NoError(t, err)
 		request, _ := http.NewRequest(
 			"PATCH",
-			"/tasks/modify/"+linearTaskIDHex+"/",
+			"/tasks/modify/"+taskIDHex+"/",
 			bytes.NewBuffer([]byte(`{
 				"time_duration": 20,
 				"due_date": "`+dueDate.Format(time.RFC3339)+`",
@@ -392,7 +272,7 @@ func TestMarkAsComplete(t *testing.T) {
 				"is_completed": true
 				}`)))
 		var task database.Task
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
+		err = taskCollection.FindOne(context.Background(), bson.M{"_id": taskID}).Decode(&task)
 		assert.NoError(t, err)
 		assert.Equal(t, true, *task.IsCompleted)
 
@@ -401,9 +281,11 @@ func TestMarkAsComplete(t *testing.T) {
 		router.ServeHTTP(recorder, request)
 		assert.Equal(t, http.StatusOK, recorder.Code)
 
-		err = taskCollection.FindOne(context.Background(), bson.M{"_id": linearTaskID}).Decode(&task)
+		err = taskCollection.FindOne(context.Background(), bson.M{"_id": taskID}).Decode(&task)
 		assert.NoError(t, err)
 		assert.Equal(t, true, *task.IsCompleted)
+		assert.Equal(t, "New Title", *task.Title)
+		assert.Equal(t, "New Body", *task.Body)
 	})
 	t.Run("MarkDeletedTaskAsDoneSuccess", func(t *testing.T) {
 		_, err = taskCollection.UpdateOne(context.Background(), bson.M{"_id": deletedTaskID}, bson.M{"$set": bson.M{"is_completed": false, "is_deleted": true}})

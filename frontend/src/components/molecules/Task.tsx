@@ -24,14 +24,11 @@ import GTButton from '../atoms/buttons/GTButton'
 import MarkTaskDoneButton from '../atoms/buttons/MarkTaskDoneButton'
 import { LabelSmall } from '../atoms/typography/Typography'
 import { useCalendarContext } from '../calendar/CalendarContext'
-import JiraPriorityDropdown from '../radix/JiraPriorityDropdown'
 import PriorityDropdown from '../radix/PriorityDropdown'
-import StatusDropdown from '../radix/StatusDropdown'
 import TaskContextMenuWrapper from '../radix/TaskContextMenuWrapper'
 import Tip from '../radix/Tip'
 import { ReorderActions } from '../radix/reorderMenuItems'
 import ItemContainer from './ItemContainer'
-import LinearCycle from './LinearCycle'
 import { useGetRecurringTaskTemplateFromId } from './recurring-tasks/recurringTasks.utils'
 
 const MarginRight = styled.div`
@@ -217,21 +214,7 @@ const Task = ({
     const subtasks = allTasks?.filter((t) => t.id_parent === task.id && !t.is_deleted)
 
     const getPriorityDropdown = () => {
-        if (task.priority && task.all_priorities && task.source.name === 'Jira') {
-            return (
-                <JiraPriorityDropdown
-                    taskId={task.id}
-                    currentPriority={task.priority}
-                    allPriorities={task.all_priorities}
-                    condensedTrigger
-                />
-            )
-        }
-        if (
-            task.source?.name !== 'Jira' &&
-            task.priority_normalized !== 0 &&
-            Number.isInteger(task.priority_normalized)
-        ) {
+        if (task.priority_normalized !== 0 && Number.isInteger(task.priority_normalized)) {
             return (
                 <PriorityDropdown
                     value={task.priority_normalized}
@@ -279,23 +262,18 @@ const Task = ({
                         // rather than leaving an empty wrapper holding the gutter open.
                         <PositionedDomino isVisible={isHovered && !dragDisabled} />
                     )}
-                    {task.external_status && task.all_statuses ? (
-                        <StatusDropdown task={task} condensedTrigger />
-                    ) : (
-                        <MarkTaskDoneButton
-                            taskId={task.id}
-                            sectionId={task.id_folder}
-                            isDone={task.is_done}
-                            isSelected={isSelected}
-                            isDisabled={!!task.optimisticId || task.is_deleted}
-                            onMarkComplete={taskFadeOut}
-                            optimsticId={task.optimisticId}
-                        />
-                    )}
+                    <MarkTaskDoneButton
+                        taskId={task.id}
+                        sectionId={task.id_folder}
+                        isDone={task.is_done}
+                        isSelected={isSelected}
+                        isDisabled={!!task.optimisticId || task.is_deleted}
+                        onMarkComplete={taskFadeOut}
+                        optimsticId={task.optimisticId}
+                    />
                     <Title title={task.title}>{task.title}</Title>
                     <RightContainer>
                         {recurringTaskTemplate && <Icon icon={icons.arrows_repeat} />}
-                        {task.linear_cycle && <LinearCycle cycle={task.linear_cycle} isCondensed />}
                         <DueDate date={dueDate} isDoneOrDeleted={task.is_done || task.is_deleted} />
                         {getPriorityDropdown()}
                         {subtasks && subtasks.length > 0 && (

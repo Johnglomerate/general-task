@@ -37,7 +37,7 @@ func TestMigrate007(t *testing.T) {
 		externalTokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
 			ID:         slackID,
 			AccountID:  "test_migrate_007",
-			ServiceID:  external.TASK_SERVICE_ID_SLACK,
+			ServiceID:  "slack",
 			IsBadToken: false,
 			Token:      "{ slack-token-string }",
 		})
@@ -62,7 +62,7 @@ func TestMigrate007(t *testing.T) {
 		assert.Equal(t, int64(1), count)
 		err = externalTokenCollection.FindOne(context.Background(), filter).Decode(&result)
 		assert.NoError(t, err)
-		assert.Equal(t, external.TASK_SERVICE_ID_SLACK, result.ServiceID)
+		assert.Equal(t, "slack", result.ServiceID)
 		assert.Equal(t, "{ slack-token-string }", result.Token)
 	})
 	t.Run("MigrateDown", func(t *testing.T) {

@@ -42,17 +42,8 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	router.POST("/waitlist/", handlers.WaitlistAdd)
 
-	router.POST("/tasks/create_external/slack/", handlers.SlackTaskCreate)
-
-	router.POST("/linear/webhook/", handlers.LinearWebhook)
-
 	// Stripe webhook (unauthenticated, signature-verified)
 	router.POST("/subscriptions/webhook/", handlers.StripeWebhook)
-
-	// Slack App (Workspace level) endpoint for oauth verification
-	// We need this as we don't actually use the token provided, but still need to access it to
-	// successfully install our app in a new Workspace
-	router.GET("/link_app/slack/", handlers.LinkSlackApp)
 
 	// logout needs to use the token directly rather than the user so no need to run token middleware
 	router.POST("/logout/", handlers.Logout)
@@ -92,7 +83,6 @@ func GetRouter(handlers *API) *gin.Engine {
 	router.POST("/tasks/create/:source_id/", handlers.TaskCreate)
 	router.PATCH("/tasks/modify/:task_id/", handlers.TaskModify)
 	router.GET("/tasks/detail/:task_id/", handlers.TaskDetail)
-	router.POST("/tasks/:task_id/comments/add/", handlers.TaskAddComment)
 
 	router.GET("/recurring_task_templates/", handlers.RecurringTaskTemplateList)
 	router.GET("/recurring_task_templates/v2/", handlers.RecurringTaskTemplateListV2)
@@ -139,9 +129,6 @@ func GetRouter(handlers *API) *gin.Engine {
 	router.GET("/overview/views/suggestion/", handlers.OverviewViewsSuggestion)
 	router.GET("/overview/views/suggestions_remaining/", handlers.OverviewViewsSuggestionsRemaining)
 
-	router.GET("/pull_requests/", handlers.PullRequestsList)
-	router.GET("/pull_requests/fetch/", handlers.PullRequestsFetch)
-
 	router.GET("/daily_task_completion/", handlers.DailyTaskCompletionList)
 
 	// Subscription management endpoints
@@ -149,11 +136,6 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	// Add subscription middleware. Endpoints below this require an active subscription
 	router.Use(SubscriptionMiddleware(handlers.DB))
-	router.GET("/dashboard/data/", handlers.DashboardData)
-	router.GET("/dashboard/team_members/", handlers.DashboardTeamMembersList)
-	router.POST("/dashboard/team_members/", handlers.DashboardTeamMemberCreate)
-	router.DELETE("/dashboard/team_members/:team_member_id/", handlers.DashboardTeamMemberDelete)
-	router.GET("/dashboard/data/fetch/", handlers.DashboardFetch)
 	router.GET("/ping_subscribed/", handlers.Ping)
 
 	return router

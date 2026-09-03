@@ -5,9 +5,8 @@ import (
 	"time"
 
 	"github.com/GeneralTask/task-manager/backend/constants"
-	"github.com/GeneralTask/task-manager/backend/external"
-
 	"github.com/GeneralTask/task-manager/backend/database"
+	"github.com/GeneralTask/task-manager/backend/external"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,22 +20,6 @@ type TaskSource struct {
 	IsReplyable   bool   `json:"is_replyable"`
 }
 
-type externalStatus struct {
-	IDExternal        string `json:"external_id,omitempty"`
-	State             string `json:"state,omitempty"`
-	Type              string `json:"type,omitempty"`
-	Color             string `json:"color,omitempty"`
-	IsValidTransition bool   `json:"is_valid_transition,omitempty"`
-}
-
-type externalPriority struct {
-	IDExternal         string  `json:"external_id,omitempty"`
-	Name               string  `json:"name,omitempty"`
-	PriorityNormalized float64 `json:"priority_normalized,omitempty"`
-	Color              string  `json:"color,omitempty"`
-	IconURL            string  `json:"icon_url,omitempty"`
-}
-
 type MeetingPreparationParams struct {
 	DatetimeStart       string `json:"datetime_start"`
 	DatetimeEnd         string `json:"datetime_end"`
@@ -44,33 +27,27 @@ type MeetingPreparationParams struct {
 }
 
 type TaskResult struct {
-	ID                       primitive.ObjectID           `json:"id"`
-	IDOrdering               int                          `json:"id_ordering"`
-	Source                   TaskSource                   `json:"source"`
-	Deeplink                 string                       `json:"deeplink"`
-	Title                    string                       `json:"title"`
-	Body                     string                       `json:"body"`
-	Sender                   string                       `json:"sender"`
-	DueDate                  string                       `json:"due_date"`
-	PriorityNormalized       float64                      `json:"priority_normalized"`
-	TimeAllocation           int64                        `json:"time_allocated"`
-	SentAt                   string                       `json:"sent_at"`
-	IsDone                   bool                         `json:"is_done"`
-	IsDeleted                bool                         `json:"is_deleted"`
-	IsMeetingPreparationTask bool                         `json:"is_meeting_preparation_task"`
-	RecurringTaskTemplateID  primitive.ObjectID           `json:"recurring_task_template_id,omitempty"`
-	ExternalStatus           *externalStatus              `json:"external_status,omitempty"`
-	AllStatuses              []*externalStatus            `json:"all_statuses,omitempty"`
-	ExternalPriority         *externalPriority            `json:"priority,omitempty"`
-	AllExternalPriorities    []*externalPriority          `json:"all_priorities,omitempty"`
-	Comments                 *[]database.Comment          `json:"comments,omitempty"`
-	SlackMessageParams       *database.SlackMessageParams `json:"slack_message_params,omitempty"`
-	MeetingPreparationParams *MeetingPreparationParams    `json:"meeting_preparation_params,omitempty"`
-	SubTasks                 []*TaskResult                `json:"sub_tasks,omitempty"`
-	NUXNumber                int                          `json:"nux_number_id,omitempty"`
-	CreatedAt                string                       `json:"created_at,omitempty"`
-	UpdatedAt                string                       `json:"updated_at,omitempty"`
-	CompletedAt              primitive.DateTime           `json:"completed_at,omitempty"`
+	ID                       primitive.ObjectID        `json:"id"`
+	IDOrdering               int                       `json:"id_ordering"`
+	Source                   TaskSource                `json:"source"`
+	Deeplink                 string                    `json:"deeplink"`
+	Title                    string                    `json:"title"`
+	Body                     string                    `json:"body"`
+	Sender                   string                    `json:"sender"`
+	DueDate                  string                    `json:"due_date"`
+	PriorityNormalized       float64                   `json:"priority_normalized"`
+	TimeAllocation           int64                     `json:"time_allocated"`
+	SentAt                   string                    `json:"sent_at"`
+	IsDone                   bool                      `json:"is_done"`
+	IsDeleted                bool                      `json:"is_deleted"`
+	IsMeetingPreparationTask bool                      `json:"is_meeting_preparation_task"`
+	RecurringTaskTemplateID  primitive.ObjectID        `json:"recurring_task_template_id,omitempty"`
+	MeetingPreparationParams *MeetingPreparationParams `json:"meeting_preparation_params,omitempty"`
+	SubTasks                 []*TaskResult             `json:"sub_tasks,omitempty"`
+	NUXNumber                int                       `json:"nux_number_id,omitempty"`
+	CreatedAt                string                    `json:"created_at,omitempty"`
+	UpdatedAt                string                    `json:"updated_at,omitempty"`
+	CompletedAt              primitive.DateTime        `json:"completed_at,omitempty"`
 }
 
 type TaskSection struct {
@@ -122,22 +99,16 @@ func (api *API) fetchTasks(db *mongo.Database, userID interface{}) (*[]*database
 	for _, token := range tokens {
 		taskServiceResult, err := api.ExternalConfig.GetTaskServiceResult(token.ServiceID)
 		if err != nil {
-			api.Logger.Error().Err(err).Msg("error loading task service")
-			return nil, nil, err
+			api.Logger.Info().Err(err).Str("service_id", token.ServiceID).Msg("skipping retired task service")
+			continue
 		}
 		for _, taskSourceResult := range taskServiceResult.Sources {
 			var tasks = make(chan external.TaskResult)
 
-			// DO NOT COMMENT OUT BELOW LOGIC: CAN LEAD TO RATE LIMITING ISSUES
-			if token.ServiceID == external.TASK_SERVICE_ID_LINEAR && shouldPartialRefreshLinear(token) {
-				go api.getActiveLinearTasksFromDBForToken(token.UserID, token.AccountID, tasks)
-			} else {
-				go taskSourceResult.Source.GetTasks(api.DB, userID.(primitive.ObjectID), token.AccountID, tasks)
-				// TODO update last full refresh after we fetch the tasks
-				err := api.updateLastFullRefreshTime(token)
-				if err != nil {
-					api.Logger.Error().Err(err).Msg("error updating last refresh time")
-				}
+			go taskSourceResult.Source.GetTasks(api.DB, userID.(primitive.ObjectID), token.AccountID, tasks)
+			err := api.updateLastFullRefreshTime(token)
+			if err != nil {
+				api.Logger.Error().Err(err).Msg("error updating last refresh time")
 			}
 			taskChannels = append(taskChannels, tasks)
 		}
@@ -181,30 +152,6 @@ func (api *API) adjustForCompletedTasks(
 			err := database.MarkCompleteWithCollection(database.GetTaskCollection(db), currentTask.ID)
 			if err != nil {
 				api.Logger.Error().Err(err).Msg("failed to complete task")
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (api *API) adjustForCompletedPullRequests(
-	db *mongo.Database,
-	currentPullRequests *[]database.PullRequest,
-	fetchedPullRequests *[]*database.PullRequest,
-	failedFetchSources map[string]bool,
-) error {
-	newPRIDs := make(map[primitive.ObjectID]bool)
-	for _, fetchedPR := range *fetchedPullRequests {
-		newPRIDs[fetchedPR.ID] = true
-	}
-
-	// There's a more efficient way to do this but this way is easy to understand
-	for _, currentPullRequest := range *currentPullRequests {
-		if !newPRIDs[currentPullRequest.ID] && !failedFetchSources[currentPullRequest.SourceID] {
-			err := database.MarkCompleteWithCollection(database.GetPullRequestCollection(db), currentPullRequest.ID)
-			if err != nil {
-				api.Logger.Error().Err(err).Msg("failed to complete pull request")
 				return err
 			}
 		}
@@ -346,41 +293,10 @@ func (api *API) taskBaseToTaskResult(t *database.Task, userID primitive.ObjectID
 		PriorityNormalized:       priority,
 		IsDone:                   completed,
 		IsDeleted:                deleted,
-		Comments:                 t.Comments,
 		IsMeetingPreparationTask: t.IsMeetingPreparationTask,
 		NUXNumber:                t.NUXNumber,
 		CreatedAt:                t.CreatedAtExternal.Time().UTC().Format(time.RFC3339),
 		UpdatedAt:                t.UpdatedAt.Time().UTC().Format(time.RFC3339),
-	}
-
-	if t.Status != nil && *t.Status != (database.ExternalTaskStatus{}) {
-		taskResult.ExternalStatus = &externalStatus{
-			IDExternal: t.Status.ExternalID,
-			State:      t.Status.State,
-			Type:       t.Status.Type,
-		}
-	}
-	if t.AllStatuses != nil {
-		allStatuses := []*externalStatus{}
-		for _, status := range t.AllStatuses {
-			allStatuses = append(allStatuses, &externalStatus{
-				IDExternal:        status.ExternalID,
-				State:             status.State,
-				Type:              status.Type,
-				Color:             status.Color,
-				IsValidTransition: status.IsValidTransition,
-			})
-		}
-		taskResult.AllStatuses = allStatuses
-	}
-
-	if t.SlackMessageParams != nil && *t.SlackMessageParams != (database.SlackMessageParams{}) {
-		taskResult.SlackMessageParams = &database.SlackMessageParams{
-			Channel: t.SlackMessageParams.Channel,
-			User:    t.SlackMessageParams.User,
-			Team:    t.SlackMessageParams.Team,
-			Message: t.SlackMessageParams.Message,
-		}
 	}
 
 	if t.MeetingPreparationParams != nil && *t.MeetingPreparationParams != (database.MeetingPreparationParams{}) && t.IsMeetingPreparationTask {
@@ -389,30 +305,6 @@ func (api *API) taskBaseToTaskResult(t *database.Task, userID primitive.ObjectID
 			DatetimeEnd:         t.MeetingPreparationParams.DatetimeEnd.Time().UTC().Format(time.RFC3339),
 			EventMovedOrDeleted: t.MeetingPreparationParams.EventMovedOrDeleted,
 		}
-	}
-
-	if t.ExternalPriority != nil && *t.ExternalPriority != (database.ExternalTaskPriority{}) {
-		taskResult.ExternalPriority = &externalPriority{
-			IDExternal:         t.ExternalPriority.ExternalID,
-			Name:               t.ExternalPriority.Name,
-			PriorityNormalized: t.ExternalPriority.PriorityNormalized,
-			Color:              t.ExternalPriority.Color,
-			IconURL:            t.ExternalPriority.IconURL,
-		}
-	}
-
-	if len(t.AllExternalPriorities) > 0 {
-		allPriorities := []*externalPriority{}
-		for _, priority := range t.AllExternalPriorities {
-			allPriorities = append(allPriorities, &externalPriority{
-				IDExternal:         priority.ExternalID,
-				Name:               priority.Name,
-				PriorityNormalized: priority.PriorityNormalized,
-				Color:              priority.Color,
-				IconURL:            priority.IconURL,
-			})
-		}
-		taskResult.AllExternalPriorities = allPriorities
 	}
 
 	if t.RecurringTaskTemplateID != primitive.NilObjectID {
@@ -441,34 +333,6 @@ func (api *API) getSubtaskResults(taskID primitive.ObjectID, userID primitive.Ob
 	}
 }
 
-func (api *API) getActiveLinearTasksFromDBForToken(userID primitive.ObjectID, accountID string, result chan<- external.TaskResult) {
-	taskCollection := database.GetTaskCollection(api.DB)
-	additionalFilters := []bson.M{
-		{"source_account_id": accountID},
-		{"source_id": external.TASK_SOURCE_ID_LINEAR},
-		{"is_completed": false},
-		{"is_deleted": bson.M{"$ne": true}},
-	}
-	var tasks []database.Task
-	err := database.FindWithCollection(taskCollection, userID, &additionalFilters, &tasks, nil)
-	if err != nil {
-		result <- external.TaskResult{Error: err}
-		return
-	}
-
-	var taskResults []*database.Task
-	for _, task := range tasks {
-		taskCopy := task
-		taskResults = append(taskResults, &taskCopy)
-	}
-
-	result <- external.TaskResult{
-		Tasks:     taskResults,
-		ServiceID: external.TASK_SERVICE_ID_LINEAR,
-		AccountID: accountID,
-	}
-}
-
 func (api *API) updateLastFullRefreshTime(token database.ExternalAPIToken) error {
 	externalAPITokenCollection := database.GetExternalTokenCollection(api.DB)
 	refreshTime := time.Now()
@@ -479,8 +343,4 @@ func (api *API) updateLastFullRefreshTime(token database.ExternalAPIToken) error
 		nil,
 	)
 	return err
-}
-
-func shouldPartialRefreshLinear(token database.ExternalAPIToken) bool {
-	return time.Since(token.LastFullRefreshTime.Time()) < (15 * time.Minute)
 }

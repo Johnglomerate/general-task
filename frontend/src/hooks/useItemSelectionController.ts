@@ -13,10 +13,6 @@ export default function useItemSelectionController<T extends { id: string }>(
         (direction: 'up' | 'down') => {
             const selectedItemId =
                 params.task ??
-                params.pullRequest ??
-                params.linearIssueId ??
-                params.slackTaskId ??
-                params.jiraTaskId ??
                 params.overviewItemId ??
                 params.recurringTaskId ??
                 params.noteId

@@ -14,7 +14,6 @@ export const {
 // API Constants
 export const TASK_FOLDER_DEFAULT_ID = '-1'
 export const AUTHORIZATION_COOKE = 'authToken'
-export const MESSAGE_TYPE_DM = 'directmessage'
 
 // Time constants (in milliseconds)
 export const BACKFILL_RECURRING_TASKS_INTERVAL = 5 * 60 * 1000
@@ -27,7 +26,6 @@ export const FIVE_MINUTE_INTERVAL = 5 * 60 * 1000
 export const FIFTEEN_MINUTE_INTERVAL = 15 * 60 * 1000
 export const FIVE_SECOND_TIMEOUT = 5 * 1000
 export const NOTE_SYNC_TIMEOUT = 1 * 1000
-export const PR_REFETCH_INTERVAL = 120 * 1000
 export const QUEUED_MUTATION_DEBOUNCE = 1 * 1000
 export const SINGLE_SECOND_INTERVAL = 1000
 export const TASK_MARK_AS_DONE_TIMEOUT = 0.25 * 1000
@@ -39,8 +37,6 @@ export const DEFAULT_BACKGROUND_QUERY_STALE_TIME = 15 * 1000
 export const TASKS_URL = REACT_APP_API_BASE_URL + '/tasks/'
 export const TASKS_MODIFY_URL = REACT_APP_API_BASE_URL + '/tasks/modify/'
 export const TASKS_CREATE_URL = REACT_APP_API_BASE_URL + '/tasks/create/'
-export const ASANA_URL = REACT_APP_API_BASE_URL + '/link/asana/'
-export const JIRA_URL = REACT_APP_API_BASE_URL + '/link/jira/'
 export const LOGIN_URL = REACT_APP_API_BASE_URL + '/login/'
 export const DEEPLINK_LOGIN_URL = LOGIN_URL + '?use_deeplink=true'
 export const LOGOUT_URL = REACT_APP_API_BASE_URL + '/logout/'
@@ -69,8 +65,6 @@ export const TRASH_FOLDER_ID = '000000000000000000000005'
 export const TASK_INBOX_NAME = 'Task Inbox'
 export const TRASH_FOLDER_NAME = 'Trash'
 export const DONE_FOLDER_NAME = 'Done'
-export const GITHUB_SUPPORTED_TYPE_NAME = 'GitHub'
-export const GITHUB_SUPPORTED_VIEW_NAME = 'GitHub'
 
 export interface TTaskPriority {
     icon: TIconType
@@ -87,7 +81,6 @@ export const TASK_PRIORITIES: TTaskPriority[] = [
 
 export const GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME = 'Google Calendar'
 export const GENERAL_TASK_SOURCE_NAME = 'General Task'
-export const SLACK_SOURCE_NAME = 'Slack'
 
 export const SYNC_MESSAGES = {
     SYNCING: 'Syncing...',

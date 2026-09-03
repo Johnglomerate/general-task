@@ -3,8 +3,8 @@ package constants
 var StarterTasks = []string{
 	"🗓 Drag tasks onto your calendar",
 	"🔎 Shut out distractions with Focus Mode",
-	"⚙️ Connect your services to see things in one place",
-	"💬 Create tasks out of Slack Messages",
+	"⚙️ Connect Google Calendar",
+	"🗂 Plan your work from Task Inbox",
 	"A sincere thank you from the team",
 }
 

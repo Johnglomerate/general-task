@@ -26,6 +26,10 @@ type TaskCreateParams struct {
 
 func (api *API) TaskCreate(c *gin.Context) {
 	sourceID := c.Param("source_id")
+	if sourceID != external.TASK_SOURCE_ID_GT_TASK {
+		Handle404(c)
+		return
+	}
 	taskSourceResult, err := api.ExternalConfig.GetSourceResult(sourceID)
 	if err != nil || !taskSourceResult.Details.CanCreateTask {
 		Handle404(c)
@@ -50,31 +54,15 @@ func (api *API) TaskCreate(c *gin.Context) {
 		}
 	}
 
-	if sourceID != external.TASK_SOURCE_ID_GT_TASK {
-		externalAPICollection := database.GetExternalTokenCollection(api.DB)
-		count, err := externalAPICollection.CountDocuments(
-			context.Background(),
-			bson.M{"$and": []bson.M{
-				{"account_id": taskCreateParams.AccountID},
-				{"source_id": sourceID},
-				{"user_id": userID},
-			}},
-		)
-		if err != nil || count <= 0 {
-			c.JSON(404, gin.H{"detail": "account ID not found"})
-			return
-		}
-	} else {
-		// default is currently the only acceptable accountID for general task task source
-		taskCreateParams.AccountID = external.GeneralTaskDefaultAccountID
-		var assignedUser *database.User
-		var tempTitle string
-		assignedUser, tempTitle, err = getValidExternalOwnerAssignedTask(api.DB, userID, taskCreateParams.Title)
-		if err == nil {
-			userID = assignedUser.ID
-			IDTaskSection = constants.IDTaskSectionDefault
-			taskCreateParams.Title = tempTitle
-		}
+	// default is currently the only acceptable accountID for general task task source
+	taskCreateParams.AccountID = external.GeneralTaskDefaultAccountID
+	var assignedUser *database.User
+	var tempTitle string
+	assignedUser, tempTitle, err = getValidExternalOwnerAssignedTask(api.DB, userID, taskCreateParams.Title)
+	if err == nil {
+		userID = assignedUser.ID
+		IDTaskSection = constants.IDTaskSectionDefault
+		taskCreateParams.Title = tempTitle
 	}
 
 	var timeAllocation *int64

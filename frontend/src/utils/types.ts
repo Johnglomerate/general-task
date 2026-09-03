@@ -1,10 +1,9 @@
-import { TStatusColors } from '../styles/colors'
 import { TIconImage, TLogoImage } from '../styles/images'
 import { RecurrenceRate } from './enums'
 
 export type EmptyString = ''
 
-export type TTaskSourceName = 'General Task' | 'Google Calendar' | 'Git PR' | 'Jira' | 'Linear' | 'Slack'
+export type TTaskSourceName = 'General Task' | 'Google Calendar'
 
 export type TTaskSharedAccess = 'public' | 'domain'
 
@@ -32,23 +31,6 @@ export interface TSourcesResult {
     authorization_url: string
 }
 
-export interface TExternalPriority {
-    external_id: string
-    name: string
-    priority_normalized: number
-    color: string
-    icon_url: string
-}
-
-export interface TLinearCycle {
-    id: string
-    name?: string
-    number: number
-    is_current_cycle?: boolean
-    is_previous_cycle?: boolean
-    is_next_cycle?: boolean
-}
-
 export interface TTask {
     id: string
     optimisticId?: string
@@ -60,16 +42,12 @@ export interface TTask {
     priority_normalized: number
     time_allocated: number
     due_date: string
-    external_status?: TExternalStatus
-    all_statuses?: TExternalStatus[]
     source: TTaskSource
     sender: string
     is_done: boolean
     is_deleted: boolean
     is_meeting_preparation_task: boolean
-    comments?: TComment[]
     isSubtask?: boolean
-    slack_message_params?: TSlackMessageParams
     meeting_preparation_params?: TMeetingPreparationParams
     nux_number_id: number
     sub_tasks?: TTask[]
@@ -77,8 +55,6 @@ export interface TTask {
     updated_at: string
     parent_task_id?: string
     recurring_task_template_id?: string
-    priority?: TExternalPriority
-    all_priorities?: TExternalPriority[]
 }
 export interface TTaskV4 {
     id: string
@@ -102,68 +78,15 @@ export interface TTaskV4 {
     id_parent?: string
     subtask_ids?: string[]
     meeting_preparation_params?: TMeetingPreparationParams
-    slack_message_params?: TSlackMessageParams
-    comments?: TComment[]
-    external_status?: TExternalStatus
     recurring_task_template_id?: string
-    priority?: TExternalPriority
-    all_priorities?: TExternalPriority[]
-    linear_cycle?: TLinearCycle
     shared_until?: string
     shared_access?: TTaskSharedAccess
-
-    all_statuses?: TExternalStatus[] // Deprecated but still in response (will be moved to userInfo)
 }
 
 export interface TMeetingPreparationParams {
     datetime_start: string
     datetime_end: string
     event_moved_or_deleted: boolean
-}
-
-export interface TSlackMessageParams {
-    channel: {
-        id: string
-        name: string // ex. general, shitposting, directmessage
-    }
-    user: {
-        id: string
-        name: string // the user who initiated the shortcut. *NOT* the user who sent the message
-    }
-    team: {
-        id: string
-        domain: string // ex. generaltask
-    }
-    message: {
-        text: string
-        ts: number // time sent
-        type: string // message type
-        user: string // user ID of who sent the message. *NOT* the user name
-    }
-}
-
-export interface TComment {
-    body: string
-    created_at: string
-    user: TCommentUser
-}
-
-export interface TCommentUser {
-    DisplayName: string
-    Email: string
-    ExternalID: string
-    Name: string
-}
-
-export type TLinearStatusType = 'backlog' | 'unstarted' | 'started' | 'completed' | 'canceled'
-export type TJiraStatusType = 'new' | 'indeterminate' | 'done'
-export type TExternalStatusType = TLinearStatusType | TJiraStatusType
-
-export interface TExternalStatus {
-    external_id: string // the id of the status on linear
-    state: string // the custom name of the status (e.g. Todo) - note: these are self-defined by the users of linear and can be different even across teams
-    type: TExternalStatusType // the type of status native to the task application
-    is_valid_transition?: boolean
 }
 
 export interface TEvent {
@@ -184,7 +107,6 @@ export interface TEvent {
     conference_call: TConferenceCall
     linked_task_id: string
     linked_view_id: string
-    linked_pull_request_id: string
     linked_note_id?: string
 }
 
@@ -204,46 +126,6 @@ export interface TMeetingAction {
     logo: string
     title: string
     link: string
-}
-
-// Pull Request Types
-export interface TPullRequest {
-    id: string
-    deeplink: string
-    title: string
-    body: string
-    repository_name: string
-    number: number
-    author: string
-    branch: string
-    base_branch: string
-    status: {
-        text: string
-        color: TStatusColors
-    }
-    comments: TPullRequestComment[]
-    num_comments: number
-    num_commits: number
-    additions: number
-    deletions: number
-    created_at: string
-    last_updated_at: string
-}
-
-export interface TPullRequestComment {
-    type: 'inline' | 'toplevel'
-    body: string
-    author: string
-    filepath: string
-    line_number_start: number
-    line_number_end: number
-    last_updated_at: string
-}
-
-export interface TRepository {
-    id: string
-    name: string
-    pull_requests: TPullRequest[]
 }
 
 export interface TTaskSection {
@@ -298,8 +180,6 @@ export interface TUserInfo {
     is_employee: boolean
     email: string
     is_company_email: boolean
-    linear_name?: string
-    linear_display_name?: string
     subscription_status?: string
     is_subscribed?: boolean
     is_in_trial?: boolean
@@ -319,7 +199,6 @@ export enum DropType {
     OVERVIEW_VIEW = 'overview-view',
     FOLDER = 'folder',
     OVERVIEW_VIEW_HEADER = 'overview-view-header',
-    PULL_REQUEST = 'pull-request',
 }
 
 export interface DropItem {
@@ -329,7 +208,6 @@ export interface DropItem {
     event?: TEvent
     folder?: TTaskSection
     view?: TOverviewView
-    pullRequest?: TPullRequest
 }
 
 export interface TTaskCreateParams {
@@ -341,16 +219,9 @@ export interface TTaskCreateParams {
     id_task_section?: string
 }
 
-export type TOverviewItem = TTaskV4 & TTask & TPullRequest // TODO: change this to more general type
+export type TOverviewItem = TTaskV4 & TTask // TODO: change this to more general type
 
-export type TOverviewViewType =
-    | 'github'
-    | 'task_section'
-    | 'linear'
-    | 'slack'
-    | 'meeting_preparation'
-    | 'due_today'
-    | 'jira'
+export type TOverviewViewType = 'task_section' | 'meeting_preparation' | 'due_today'
 
 export interface TOverviewView {
     id: string
@@ -373,9 +244,7 @@ export interface TSupportedViewItem {
     optimisticId?: string
     name: string
     is_linked: boolean
-    github_id: string
     task_section_id: string
-    slack_id: string
     logo: TLogoImage
     is_added: boolean
 }
@@ -421,7 +290,7 @@ export interface TRecurringTaskTemplate {
     is_enabled: boolean
 }
 
-export type TLinkedAccountName = 'Atlassian' | 'GitHub' | 'Google Calendar' | 'Slack' | 'Linear' | 'Jira'
+export type TLinkedAccountName = 'Google Calendar'
 
 export interface TNote {
     id: string

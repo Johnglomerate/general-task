@@ -69,8 +69,49 @@ func TestOverview(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
-		regex := `\[{"id":"[a-z0-9]{24}","name":"Task Inbox","type":"task_section","logo":"generaltask","is_linked":true,"sources":\[\],"task_section_id":"000000000000000000000001","is_reorderable":true,"ordering_id":1,"view_items":\[{"id":"[a-z0-9]{24}","id_ordering":1,"source":{"name":"General Task","logo":"\/images\/generaltask.svg","logo_v2":"generaltask","is_completable":true,"is_replyable":false},"deeplink":"","title":"🗓 Drag tasks onto your calendar","body":"","sender":"","due_date":"","priority_normalized":0,"time_allocated":0,"sent_at":"20.*Z","is_done":false,"is_deleted":false,"is_meeting_preparation_task":false,"recurring_task_template_id":"000000000000000000000000","nux_number_id":1,"created_at":"20.*Z","updated_at":"1970-01-01T00:00:00Z"},{"id":"[a-z0-9]{24}","id_ordering":2,"source":{"name":"General Task","logo":"\/images\/generaltask.svg","logo_v2":"generaltask","is_completable":true,"is_replyable":false},"deeplink":"","title":"🔎 Shut out distractions with Focus Mode","body":"","sender":"","due_date":"","priority_normalized":0,"time_allocated":0,"sent_at":"20.*Z","is_done":false,"is_deleted":false,"is_meeting_preparation_task":false,"recurring_task_template_id":"000000000000000000000000","nux_number_id":2,"created_at":"20.*Z","updated_at":"1970-01-01T00:00:00Z"},{"id":"[a-z0-9]{24}","id_ordering":3,"source":{"name":"General Task","logo":"\/images\/generaltask.svg","logo_v2":"generaltask","is_completable":true,"is_replyable":false},"deeplink":"","title":"⚙️ Connect your services to see things in one place","body":"","sender":"","due_date":"","priority_normalized":0,"time_allocated":0,"sent_at":"20.*Z","is_done":false,"is_deleted":false,"is_meeting_preparation_task":false,"recurring_task_template_id":"000000000000000000000000","nux_number_id":3,"created_at":"20.*Z","updated_at":"1970-01-01T00:00:00Z"},{"id":"[a-z0-9]{24}","id_ordering":4,"source":{"name":"General Task","logo":"\/images\/generaltask.svg","logo_v2":"generaltask","is_completable":true,"is_replyable":false},"deeplink":"","title":"💬 Create tasks out of Slack Messages","body":"","sender":"","due_date":"","priority_normalized":0,"time_allocated":0,"sent_at":"20.*Z","is_done":false,"is_deleted":false,"is_meeting_preparation_task":false,"recurring_task_template_id":"000000000000000000000000","nux_number_id":5,"created_at":"20.*Z","updated_at":"1970-01-01T00:00:00Z"},{"id":"[a-z0-9]{24}","id_ordering":5,"source":{"name":"General Task","logo":"\/images\/generaltask.svg","logo_v2":"generaltask","is_completable":true,"is_replyable":false},"deeplink":"","title":"A sincere thank you from the team","body":"","sender":"","due_date":"","priority_normalized":0,"time_allocated":0,"sent_at":"20.*Z","is_done":false,"is_deleted":false,"is_meeting_preparation_task":false,"recurring_task_template_id":"000000000000000000000000","nux_number_id":4,"created_at":"20.*Z","updated_at":"1970-01-01T00:00:00Z"}],"view_item_ids":\["[a-z0-9]{24}","[a-z0-9]{24}","[a-z0-9]{24}","[a-z0-9]{24}","[a-z0-9]{24}"\],"has_tasks_completed_today":false},{"id":"[a-z0-9]{24}","name":"Linear Issues","type":"linear","logo":"linear","is_linked":false,"sources":\[{"name":"Linear","authorization_url":"http://localhost:8080/link/linear/"}],"task_section_id":"000000000000000000000000","is_reorderable":false,"ordering_id":2,"view_items":\[\],"view_item_ids":\[\],"has_tasks_completed_today":false},{"id":"[a-z0-9]{24}","name":"Slack Messages","type":"slack","logo":"slack","is_linked":false,"sources":\[{"name":"Slack","authorization_url":"http://localhost:8080/link/slack/"}\],"task_section_id":"000000000000000000000000","is_reorderable":false,"ordering_id":3,"view_items":\[\],"view_item_ids":\[\],"has_tasks_completed_today":false}]`
-		assert.Regexp(t, regex, string(body))
+		assert.Contains(t, string(body), `"name":"Task Inbox"`)
+		assert.Contains(t, string(body), `"title":"⚙️ Connect Google Calendar"`)
+		assert.Contains(t, string(body), `"title":"🗂 Plan your work from Task Inbox"`)
+		assert.NotContains(t, string(body), `"type":"linear"`)
+		assert.NotContains(t, string(body), `"type":"slack"`)
+		assert.NotContains(t, string(body), `"type":"github"`)
+		assert.NotContains(t, string(body), `"type":"jira"`)
+	})
+	t.Run("RetiredViewTypeIsSkippedNotFatal", func(t *testing.T) {
+		// Accounts created before the integrations were removed can still have
+		// rows like {"type": "linear"} in the view collection. Those must be
+		// skipped so the user still gets their overview instead of a 500.
+		db, dbCleanup, err := database.GetDBConnection()
+		assert.NoError(t, err)
+		defer dbCleanup()
+		userID := getUserIDFromAuthToken(t, db, authtoken)
+		viewCollection := database.GetViewCollection(db)
+		insertResult, err := viewCollection.InsertOne(context.Background(), database.View{
+			UserID:     userID,
+			IDOrdering: 1,
+			Type:       "linear",
+			IsLinked:   true,
+		})
+		assert.NoError(t, err)
+		retiredViewID := insertResult.InsertedID.(primitive.ObjectID)
+
+		request, _ := http.NewRequest("GET", "/overview/views/", nil)
+		request.Header.Set("Authorization", "Bearer "+authtoken)
+		request.Header.Set("Timezone-Offset", "420")
+
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		body, err := io.ReadAll(recorder.Body)
+		assert.NoError(t, err)
+		// the retired view is dropped from the response...
+		assert.NotContains(t, string(body), retiredViewID.Hex())
+		assert.NotContains(t, string(body), `"type":"linear"`)
+		// ...but the surviving views are still returned
+		assert.Contains(t, string(body), `"name":"Task Inbox"`)
+
+		_, err = viewCollection.DeleteOne(context.Background(), bson.M{"_id": retiredViewID})
+		assert.NoError(t, err)
 	})
 	t.Run("NoViews", func(t *testing.T) {
 		db, dbCleanup, err := database.GetDBConnection()
@@ -121,6 +162,58 @@ func TestGetOverviewResults(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "invalid view type", err.Error())
 		assert.Nil(t, result)
+	})
+	t.Run("RetiredViewTypesSkipped", func(t *testing.T) {
+		// Retired integration views must not be treated like an unknown/corrupt
+		// view type: they are dropped, and the remaining views still render.
+		userID := primitive.NewObjectID()
+		taskSectionName := "Survivor Section"
+		taskSectionCollection := database.GetTaskSectionCollection(api.DB)
+		taskSectionResult, err := taskSectionCollection.InsertOne(context.Background(), database.TaskSection{
+			Name:   taskSectionName,
+			UserID: userID,
+		})
+		assert.NoError(t, err)
+		taskSectionID := taskSectionResult.InsertedID.(primitive.ObjectID)
+
+		views := []database.View{}
+		for _, viewType := range constants.RetiredViewTypes {
+			views = append(views, database.View{
+				ID:     primitive.NewObjectID(),
+				Type:   viewType,
+				UserID: userID,
+			})
+		}
+		views = append(views, database.View{
+			ID:            primitive.NewObjectID(),
+			Type:          string(constants.ViewTaskSection),
+			UserID:        userID,
+			TaskSectionID: taskSectionID,
+			IDOrdering:    1,
+		})
+
+		result, err := api.GetOverviewResults(views, userID, 0, true, false)
+		assert.NoError(t, err)
+		assert.Len(t, result, 1)
+		overviewResult, ok := result[0].(*OverviewResult[TaskResult])
+		assert.True(t, ok)
+		assert.Equal(t, constants.ViewTaskSection, overviewResult.Type)
+		assert.Equal(t, taskSectionName, overviewResult.Name)
+	})
+	t.Run("OnlyRetiredViewTypes", func(t *testing.T) {
+		userID := primitive.NewObjectID()
+		views := []database.View{}
+		for _, viewType := range constants.RetiredViewTypes {
+			views = append(views, database.View{
+				ID:     primitive.NewObjectID(),
+				Type:   viewType,
+				UserID: userID,
+			})
+		}
+		result, err := api.GetOverviewResults(views, userID, 0, true, false)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, 0, len(result))
 	})
 	t.Run("SingleTaskSection", func(t *testing.T) {
 		userID := primitive.NewObjectID()
@@ -300,577 +393,6 @@ func TestGetTaskSectionOverviewResult(t *testing.T) {
 		result, err := api.GetTaskSectionOverviewResult(view, userID, 0)
 		assert.NoError(t, err)
 		assert.Nil(t, result)
-	})
-}
-
-func TestGetJiraOverviewResult(t *testing.T) {
-	userID := primitive.NewObjectID()
-	api, dbCleanup := GetAPIWithDBCleanup()
-	defer dbCleanup()
-	externalAPITokenCollection := database.GetExternalTokenCollection(api.DB)
-	_, err := externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-		UserID:    userID,
-		Token:     "testtoken",
-		ServiceID: external.TaskServiceAtlassian.ID,
-	})
-	assert.NoError(t, err)
-	view := database.View{
-		UserID:     userID,
-		IDOrdering: 1,
-		Type:       "jira",
-		IsLinked:   true,
-	}
-	viewCollection := database.GetViewCollection(api.DB)
-	_, err = viewCollection.InsertOne(context.Background(), view)
-	assert.NoError(t, err)
-
-	authURL := "http://localhost:8080/link/atlassian/"
-	expectedViewResult := OverviewResult[TaskResult]{
-		ID:            view.ID,
-		Name:          "Jira Issues",
-		Type:          constants.ViewJira,
-		Logo:          "jira",
-		IsLinked:      true,
-		IsReorderable: false,
-		Sources: []SourcesResult{
-			{
-				Name:             "Jira",
-				AuthorizationURL: &authURL,
-			},
-		},
-		IDOrdering:    1,
-		TaskSectionID: primitive.NilObjectID,
-	}
-	t.Run("EmptyViewItems", func(t *testing.T) {
-		result, err := api.GetJiraOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*TaskResult{}
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-		assert.Zero(t, len(result.ViewItemIDs))
-	})
-	t.Run("SingleJiraViewItem", func(t *testing.T) {
-		taskCollection := database.GetTaskCollection(api.DB)
-		notCompleted := false
-		completed := true
-		taskResult, err := taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_JIRA,
-		})
-		assert.NoError(t, err)
-
-		// Insert completed Jira task. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &completed,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_JIRA,
-			CompletedAt:   primitive.NewDateTimeFromTime(time.Now()),
-		})
-		assert.NoError(t, err)
-
-		// Insert completed Jira subtask. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &completed,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_JIRA,
-			ParentTaskID:  primitive.NewObjectID(),
-		})
-		assert.NoError(t, err)
-
-		// Insert task with different source. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      "randomSource",
-		})
-		assert.NoError(t, err)
-
-		// Insert Jira task with different UserID. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        primitive.NewObjectID(),
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_JIRA,
-		})
-		assert.NoError(t, err)
-
-		taskID := taskResult.InsertedID.(primitive.ObjectID)
-		result, err := api.GetJiraOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*TaskResult{
-			{
-				ID: taskID,
-			},
-		}
-		expectedViewResult.ViewItemIDs = []string{taskID.Hex()}
-		expectedViewResult.HasTasksCompletedToday = true
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-	t.Run("InvalidUser", func(t *testing.T) {
-		result, err := api.GetJiraOverviewResult(view, primitive.NewObjectID(), 0)
-		assert.Error(t, err)
-		assert.Equal(t, "invalid user", err.Error())
-		assert.Nil(t, result)
-	})
-	t.Run("ViewNotLinked", func(t *testing.T) {
-		view.IsLinked = false
-		result, err := api.GetJiraOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.IsLinked = false
-		expectedViewResult.ViewItems = []*TaskResult{}
-		expectedViewResult.ViewItemIDs = []string{}
-		expectedViewResult.HasTasksCompletedToday = false
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-}
-
-func TestGetLinearOverviewResult(t *testing.T) {
-	userID := primitive.NewObjectID()
-	api, dbCleanup := GetAPIWithDBCleanup()
-	defer dbCleanup()
-	externalAPITokenCollection := database.GetExternalTokenCollection(api.DB)
-	_, err := externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-		UserID:    userID,
-		Token:     "testtoken",
-		ServiceID: external.TaskServiceLinear.ID,
-	})
-	assert.NoError(t, err)
-	view := database.View{
-		UserID:     userID,
-		IDOrdering: 1,
-		Type:       "linear",
-		IsLinked:   true,
-	}
-	viewCollection := database.GetViewCollection(api.DB)
-	_, err = viewCollection.InsertOne(context.Background(), view)
-	assert.NoError(t, err)
-
-	authURL := "http://localhost:8080/link/linear/"
-	expectedViewResult := OverviewResult[TaskResult]{
-		ID:            view.ID,
-		Name:          "Linear Issues",
-		Type:          constants.ViewLinear,
-		Logo:          "linear",
-		IsLinked:      true,
-		IsReorderable: false,
-		Sources: []SourcesResult{
-			{
-				Name:             "Linear",
-				AuthorizationURL: &authURL,
-			},
-		},
-		IDOrdering:    1,
-		TaskSectionID: primitive.NilObjectID,
-	}
-	t.Run("EmptyViewItems", func(t *testing.T) {
-		result, err := api.GetLinearOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*TaskResult{}
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-		assert.Zero(t, len(result.ViewItemIDs))
-	})
-	t.Run("SingleLinearViewItem", func(t *testing.T) {
-		taskCollection := database.GetTaskCollection(api.DB)
-		notCompleted := false
-		completed := true
-		taskResult, err := taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_LINEAR,
-		})
-		assert.NoError(t, err)
-
-		// Insert completed Linear task. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &completed,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_LINEAR,
-			CompletedAt:   primitive.NewDateTimeFromTime(time.Now()),
-		})
-		assert.NoError(t, err)
-
-		// Insert completed Linear subtask. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &completed,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_LINEAR,
-			ParentTaskID:  primitive.NewObjectID(),
-		})
-		assert.NoError(t, err)
-
-		// Insert task with different source. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      "randomSource",
-		})
-		assert.NoError(t, err)
-
-		// Insert Linear task with different UserID. This task should not be in the view result.
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        primitive.NewObjectID(),
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_LINEAR,
-		})
-		assert.NoError(t, err)
-
-		taskID := taskResult.InsertedID.(primitive.ObjectID)
-		result, err := api.GetLinearOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*TaskResult{
-			{
-				ID: taskID,
-			},
-		}
-		expectedViewResult.ViewItemIDs = []string{taskID.Hex()}
-		expectedViewResult.HasTasksCompletedToday = true
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-	t.Run("InvalidUser", func(t *testing.T) {
-		result, err := api.GetLinearOverviewResult(view, primitive.NewObjectID(), 0)
-		assert.Error(t, err)
-		assert.Equal(t, "invalid user", err.Error())
-		assert.Nil(t, result)
-	})
-	t.Run("ViewNotLinked", func(t *testing.T) {
-		view.IsLinked = false
-		result, err := api.GetLinearOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.IsLinked = false
-		expectedViewResult.ViewItems = []*TaskResult{}
-		expectedViewResult.ViewItemIDs = []string{}
-		expectedViewResult.HasTasksCompletedToday = false
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-}
-
-func TestGetSlackOverviewResult(t *testing.T) {
-	api, dbCleanup := GetAPIWithDBCleanup()
-	defer dbCleanup()
-	userID := primitive.NewObjectID()
-	externalAPITokenCollection := database.GetExternalTokenCollection(api.DB)
-	_, err := externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-		UserID:    userID,
-		Token:     "testtoken",
-		ServiceID: external.TaskServiceSlack.ID,
-	})
-	assert.NoError(t, err)
-	view := database.View{
-		UserID:     userID,
-		IDOrdering: 1,
-		Type:       "slack",
-		IsLinked:   true,
-	}
-	viewCollection := database.GetViewCollection(api.DB)
-	_, err = viewCollection.InsertOne(context.Background(), view)
-	assert.NoError(t, err)
-	authURL := "http://localhost:8080/link/slack/"
-	expectedViewResult := OverviewResult[TaskResult]{
-		ID:       view.ID,
-		Name:     "Slack Messages",
-		Type:     constants.ViewSlack,
-		Logo:     "slack",
-		IsLinked: true,
-		Sources: []SourcesResult{
-			{
-				Name:             "Slack",
-				AuthorizationURL: &authURL,
-			},
-		},
-		IsReorderable: false,
-		IDOrdering:    1,
-		TaskSectionID: primitive.NilObjectID,
-	}
-	t.Run("EmptyViewItems", func(t *testing.T) {
-		result, err := api.GetSlackOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*TaskResult{}
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-	t.Run("SingleSlackViewItem", func(t *testing.T) {
-		taskCollection := database.GetTaskCollection(api.DB)
-		notCompleted := false
-		completed := true
-		deleted := true
-		taskResult, err := taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_SLACK_SAVED,
-		})
-		assert.NoError(t, err)
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &completed,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_SLACK_SAVED,
-			CompletedAt:   primitive.NewDateTimeFromTime(time.Now()),
-		})
-		assert.NoError(t, err)
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      "randomSource",
-		})
-		assert.NoError(t, err)
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_SLACK_SAVED,
-			ParentTaskID:  primitive.NewObjectID(),
-		})
-		assert.NoError(t, err)
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        primitive.NewObjectID(),
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_SLACK_SAVED,
-		})
-		assert.NoError(t, err)
-		_, err = taskCollection.InsertOne(context.Background(), database.Task{
-			UserID:        userID,
-			IsDeleted:     &deleted,
-			IsCompleted:   &notCompleted,
-			IDTaskSection: primitive.NilObjectID,
-			SourceID:      external.TASK_SOURCE_ID_SLACK_SAVED,
-		})
-		assert.NoError(t, err)
-
-		taskID := taskResult.InsertedID.(primitive.ObjectID)
-		result, err := api.GetSlackOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*TaskResult{
-			{
-				ID: taskID,
-			},
-		}
-		expectedViewResult.ViewItemIDs = []string{taskID.Hex()}
-		expectedViewResult.HasTasksCompletedToday = true
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-	t.Run("InvalidUser", func(t *testing.T) {
-		result, err := api.GetSlackOverviewResult(view, primitive.NewObjectID(), 0)
-		assert.Error(t, err)
-		assert.Equal(t, "invalid user", err.Error())
-		assert.Nil(t, result)
-	})
-	t.Run("ViewNotLinked", func(t *testing.T) {
-		view.IsLinked = false
-		result, err := api.GetSlackOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.IsLinked = false
-		expectedViewResult.ViewItems = []*TaskResult{}
-		expectedViewResult.ViewItemIDs = []string{}
-		expectedViewResult.HasTasksCompletedToday = false
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-}
-
-func TestGetGithubOverviewResult(t *testing.T) {
-	api, dbCleanup := GetAPIWithDBCleanup()
-	defer dbCleanup()
-
-	userID := primitive.NewObjectID()
-	externalAPITokenCollection := database.GetExternalTokenCollection(api.DB)
-	_, err := externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-		UserID:    userID,
-		Token:     "testtoken",
-		ServiceID: external.TaskServiceGithub.ID,
-	})
-	assert.NoError(t, err)
-	githubID := primitive.NewObjectID()
-	view := database.View{
-		UserID:     userID,
-		IDOrdering: 1,
-		Type:       "github",
-		IsLinked:   true,
-		GithubID:   githubID.Hex(),
-	}
-	repositoryCollection := database.GetRepositoryCollection(api.DB)
-	// wrong user id
-	_, err = repositoryCollection.InsertOne(context.Background(), database.Repository{
-		UserID:       primitive.NewObjectID(),
-		RepositoryID: githubID.Hex(),
-		FullName:     "OrganizationTest/RepositoryTestWrong",
-	})
-	assert.NoError(t, err)
-	// wrong repository id
-	_, err = repositoryCollection.InsertOne(context.Background(), database.Repository{
-		UserID:       userID,
-		RepositoryID: primitive.NewObjectID().Hex(),
-		FullName:     "OrganizationTest/RepositoryTestWrongAlso",
-	})
-	assert.NoError(t, err)
-	_, err = repositoryCollection.InsertOne(context.Background(), database.Repository{
-		UserID:       userID,
-		RepositoryID: githubID.Hex(),
-		FullName:     "OrganizationTest/RepositoryTest",
-	})
-	assert.NoError(t, err)
-	viewCollection := database.GetViewCollection(api.DB)
-	_, err = viewCollection.InsertOne(context.Background(), view)
-	assert.NoError(t, err)
-
-	authURL := "http://localhost:8080/link/github/"
-	expectedViewResult := OverviewResult[PullRequestResult]{
-		ID:       view.ID,
-		Name:     "GitHub PRs from OrganizationTest/RepositoryTest",
-		Type:     constants.ViewGithub,
-		Logo:     "github",
-		IsLinked: true,
-		Sources: []SourcesResult{
-			{
-				Name:             "Github",
-				AuthorizationURL: &authURL,
-			},
-		},
-		IsReorderable: false,
-		IDOrdering:    1,
-		TaskSectionID: primitive.NilObjectID,
-	}
-	t.Run("EmptyViewItems", func(t *testing.T) {
-		result, err := api.GetGithubOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.ViewItems = []*PullRequestResult{}
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-	})
-	t.Run("Success", func(t *testing.T) {
-		pullRequestCollection := database.GetPullRequestCollection(api.DB)
-		falseBool := false
-		trueBool := true
-		commentCreatedAtTime, _ := time.Parse(time.RFC3339, "2022-04-20T19:01:12Z")
-		commentCreatedAt := primitive.NewDateTimeFromTime(commentCreatedAtTime)
-		pullResult, err := pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
-			Body:           "oh no oh jeez",
-			UserID:         userID,
-			IsCompleted:    &falseBool,
-			SourceID:       external.TASK_SOURCE_ID_GITHUB_PR,
-			RepositoryID:   githubID.Hex(),
-			RequiredAction: external.ActionAddReviewers,
-			Comments: []database.PullRequestComment{{
-				Type:            constants.COMMENT_TYPE_INLINE,
-				Body:            "This is a comment",
-				Author:          "chad1616",
-				Filepath:        "tothemoon.txt",
-				LineNumberStart: 69,
-				LineNumberEnd:   420,
-				CreatedAt:       commentCreatedAt,
-			}},
-			Additions: 690,
-			Deletions: 42,
-		})
-		assert.NoError(t, err)
-		pullResult2, err := pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
-			UserID:         userID,
-			IsCompleted:    &falseBool,
-			SourceID:       external.TASK_SOURCE_ID_GITHUB_PR,
-			RepositoryID:   githubID.Hex(),
-			RequiredAction: external.ActionNoneNeeded,
-		})
-		assert.NoError(t, err)
-		pullResult3, err := pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
-			UserID:         userID,
-			IsCompleted:    &falseBool,
-			SourceID:       external.TASK_SOURCE_ID_GITHUB_PR,
-			RepositoryID:   githubID.Hex(),
-			RequiredAction: external.ActionMergePR,
-		})
-		assert.NoError(t, err)
-		// Insert Github PR with different UserID. This PR should not be in the view result.
-		_, err = pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
-			UserID:      primitive.NewObjectID(),
-			IsCompleted: &falseBool,
-			SourceID:    external.TASK_SOURCE_ID_GITHUB_PR,
-		})
-		assert.NoError(t, err)
-		// Insert completed Github PR. This PR should not be in the view result.
-		_, err = pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
-			UserID:       userID,
-			IsCompleted:  &trueBool,
-			SourceID:     external.TASK_SOURCE_ID_GITHUB_PR,
-			RepositoryID: githubID.Hex(),
-			CompletedAt:  primitive.NewDateTimeFromTime(time.Now()),
-		})
-		assert.NoError(t, err)
-		// Insert Github PR with different RepositoryID. This PR should not be in the view result.
-		_, err = pullRequestCollection.InsertOne(context.Background(), database.PullRequest{
-			UserID:       userID,
-			IsCompleted:  &falseBool,
-			SourceID:     external.TASK_SOURCE_ID_GITHUB_PR,
-			RepositoryID: primitive.NewObjectID().Hex(),
-		})
-		assert.NoError(t, err)
-
-		pullRequestID := pullResult.InsertedID.(primitive.ObjectID)
-		pullRequestID2 := pullResult2.InsertedID.(primitive.ObjectID)
-		pullRequestID3 := pullResult3.InsertedID.(primitive.ObjectID)
-		result, err := api.GetGithubOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		// verify sorting is happening (more thorough tests exists for the PR endpoint)
-		expectedViewResult.ViewItems = []*PullRequestResult{
-			{
-				ID:   pullRequestID.Hex(),
-				Body: "oh no oh jeez",
-				Comments: []PullRequestComment{{
-					Type:            constants.COMMENT_TYPE_INLINE,
-					Body:            "This is a comment",
-					Author:          "chad1616",
-					Filepath:        "tothemoon.txt",
-					LineNumberStart: 69,
-					LineNumberEnd:   420,
-					CreatedAt:       "2022-04-20T19:01:12Z",
-				}},
-				Additions: 690,
-				Deletions: 42,
-			},
-			{ID: pullRequestID3.Hex()},
-			{ID: pullRequestID2.Hex()},
-		}
-		expectedViewResult.ViewItemIDs = []string{pullRequestID.Hex(), pullRequestID3.Hex(), pullRequestID2.Hex()}
-		expectedViewResult.HasTasksCompletedToday = true
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
-		assert.Equal(t, expectedViewResult.ViewItems[0].Body, result.ViewItems[0].Body)
-		assert.Equal(t, expectedViewResult.ViewItems[0].Comments, result.ViewItems[0].Comments)
-	})
-	t.Run("InvalidUser", func(t *testing.T) {
-		result, err := api.GetGithubOverviewResult(view, primitive.NewObjectID(), 0)
-		assert.Error(t, err)
-		assert.Equal(t, "invalid user", err.Error())
-		assert.Nil(t, result)
-	})
-	t.Run("ViewNotLinked", func(t *testing.T) {
-		view.IsLinked = false
-		result, err := api.GetGithubOverviewResult(view, userID, 0)
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		expectedViewResult.IsLinked = false
-		expectedViewResult.Name = "Github PRs"
-		expectedViewResult.ViewItems = []*PullRequestResult{}
-		expectedViewResult.ViewItemIDs = []string{}
-		expectedViewResult.HasTasksCompletedToday = false
-		assertOverviewViewResultEqual(t, expectedViewResult, *result)
 	})
 }
 
@@ -1206,11 +728,11 @@ func TestGetDueTodayOverviewResult(t *testing.T) {
 				DueDate:     &primitiveBefore,
 				IDOrdering:  1,
 			},
-			// linear source, due before
+			// non-task source (calendar), due before
 			database.Task{
 				UserID:      userID,
 				IsCompleted: &notCompleted,
-				SourceID:    external.TASK_SOURCE_ID_LINEAR,
+				SourceID:    external.TASK_SOURCE_ID_GCAL,
 				DueDate:     &primitiveBefore,
 				IDOrdering:  2,
 			},
@@ -1368,7 +890,7 @@ func TestUpdateViewsLinkedStatus(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(views))
 	})
-	t.Run("UpdateSingleLinkedView", func(t *testing.T) {
+	t.Run("RetiredLinkedViewIgnored", func(t *testing.T) {
 		views := []database.View{
 			{
 				UserID:   userID,
@@ -1379,7 +901,7 @@ func TestUpdateViewsLinkedStatus(t *testing.T) {
 		err := api.UpdateViewsLinkedStatus(&views, userID)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(views))
-		assert.False(t, views[0].IsLinked)
+		assert.True(t, views[0].IsLinked)
 	})
 	t.Run("UpdateSingleGTView", func(t *testing.T) {
 		views := []database.View{
@@ -1394,7 +916,7 @@ func TestUpdateViewsLinkedStatus(t *testing.T) {
 		assert.Equal(t, 1, len(views))
 		assert.True(t, views[0].IsLinked)
 	})
-	t.Run("UpdateSingleUnlinkedView", func(t *testing.T) {
+	t.Run("RetiredUnlinkedViewIgnored", func(t *testing.T) {
 		views := []database.View{
 			{
 				UserID:   userID,
@@ -1402,44 +924,11 @@ func TestUpdateViewsLinkedStatus(t *testing.T) {
 				Type:     "linear",
 			},
 		}
+		// even with a leftover token for the retired service, the view is left alone
 		externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
 			UserID:    userID,
-			ServiceID: external.TaskServiceLinear.ID,
+			ServiceID: "linear",
 		})
-
-		err := api.UpdateViewsLinkedStatus(&views, userID)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(views))
-		assert.True(t, views[0].IsLinked)
-	})
-	t.Run("LinkedViewStaysLinked", func(t *testing.T) {
-		userID := primitive.NewObjectID()
-		views := []database.View{
-			{
-				UserID:   userID,
-				IsLinked: true,
-				Type:     "linear",
-			},
-		}
-		externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-			UserID:    userID,
-			ServiceID: external.TaskServiceLinear.ID,
-		})
-
-		err := api.UpdateViewsLinkedStatus(&views, userID)
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(views))
-		assert.True(t, views[0].IsLinked)
-	})
-	t.Run("UnlinkedViewStaysUnlinked", func(t *testing.T) {
-		userID := primitive.NewObjectID()
-		views := []database.View{
-			{
-				UserID:   userID,
-				IsLinked: false,
-				Type:     "linear",
-			},
-		}
 
 		err := api.UpdateViewsLinkedStatus(&views, userID)
 		assert.NoError(t, err)
@@ -1673,7 +1162,8 @@ func TestOverviewAdd(t *testing.T) {
 	})
 	t.Run("InvalidType", func(t *testing.T) {
 		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "invalid_type"}`)), http.StatusInternalServerError, nil)
+		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "invalid_type"}`)), http.StatusBadRequest, nil)
+		assert.Equal(t, "{\"detail\":\"unsupported 'type'\"}", string(body))
 		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), count)
@@ -1711,7 +1201,6 @@ func TestOverviewAdd(t *testing.T) {
 			Type:          string(constants.ViewTaskSection),
 			IsLinked:      true,
 			TaskSectionID: taskSection1ObjectID,
-			GithubID:      "",
 		}, addedView)
 
 		ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(fmt.Sprintf(`{"type": "task_section", "task_section_id": "%s"}`, taskSection1ID))), http.StatusBadRequest, nil)
@@ -1745,130 +1234,22 @@ func TestOverviewAdd(t *testing.T) {
 			Type:          string(constants.ViewTaskSection),
 			IsLinked:      true,
 			TaskSectionID: taskSection1ObjectID,
-			GithubID:      "",
 		}, addedView)
 
 		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), count)
 	})
-	t.Run("AddLinearViewSuccess", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		var addedView database.View
-		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "`+string(constants.ViewLinear)+`"}`)), http.StatusOK, nil)
-		err = viewCollection.FindOne(context.Background(), bson.M{"user_id": userID, "type": string(constants.ViewLinear)}).Decode(&addedView)
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`{"id":"%s"}`, addedView.ID.Hex()), string(body))
-		assert.Equal(t, database.View{
-			ID:            addedView.ID,
-			UserID:        userID,
-			IDOrdering:    1,
-			Type:          string(constants.ViewLinear),
-			IsLinked:      false,
-			TaskSectionID: primitive.NilObjectID,
-			GithubID:      "",
-		}, addedView)
+	t.Run("RejectRetiredViewTypes", func(t *testing.T) {
+		for _, viewType := range constants.RetiredViewTypes {
+			viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
+			body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "`+viewType+`"}`)), http.StatusBadRequest, nil)
+			assert.Equal(t, "{\"detail\":\"unsupported 'type'\"}", string(body))
 
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), count)
-	})
-	t.Run("AddSlackViewSuccess", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		var addedView database.View
-		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "`+string(constants.ViewSlack)+`"}`)), http.StatusOK, nil)
-		err = viewCollection.FindOne(context.Background(), bson.M{"user_id": userID, "type": string(constants.ViewSlack)}).Decode(&addedView)
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`{"id":"%s"}`, addedView.ID.Hex()), string(body))
-		assert.Equal(t, database.View{
-			ID:            addedView.ID,
-			UserID:        userID,
-			IDOrdering:    1,
-			Type:          string(constants.ViewSlack),
-			IsLinked:      false,
-			TaskSectionID: primitive.NilObjectID,
-			GithubID:      "",
-		}, addedView)
-
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), count)
-	})
-	t.Run("AddGithubViewMissingGithubID", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "github"}`)), http.StatusBadRequest, nil)
-		assert.Equal(t, "{\"detail\":\"'id_github' is required for github type views\"}", string(body))
-
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), count)
-	})
-	t.Run("AddGithubViewMalformattedGithubID", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "github", "github_id": 123}`)), http.StatusBadRequest, nil)
-		assert.Equal(t, "{\"detail\":\"invalid or missing parameter\"}", string(body))
-
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), count)
-	})
-	t.Run("AddGithubViewInvalidGithubID", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(`{"type": "github", "github_id": "foobar"}`)), http.StatusBadRequest, nil)
-		assert.Equal(t, "{\"detail\":\"invalid 'id_github'\"}", string(body))
-
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), count)
-	})
-	t.Run("IncorrectUserID", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		// Create pull request with incorrect user ID
-		_, err := createTestPullRequest(db, primitive.NewObjectID(), "amc-to-the-moon", false, true, "", time.Now(), "")
-		assert.NoError(t, err)
-		repositoryCollection := database.GetRepositoryCollection(db)
-		repositoryID := primitive.NewObjectID().Hex()
-		_, err = repositoryCollection.InsertOne(context.Background(), &database.Repository{
-			UserID:       primitive.NewObjectID(),
-			RepositoryID: repositoryID,
-		})
-		assert.NoError(t, err)
-		ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(fmt.Sprintf(`{"type": "`+string(constants.ViewGithub)+`", "github_id": "%s"}`, repositoryID))), http.StatusBadRequest, nil)
-
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID, "type": string(constants.ViewGithub)})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), count)
-	})
-	t.Run("AddGithubViewSuccess", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		_, err := createTestPullRequest(db, userID, "amc-to-the-moon", false, true, "", time.Now(), "")
-		assert.NoError(t, err)
-		repositoryCollection := database.GetRepositoryCollection(db)
-		repositoryID := primitive.NewObjectID().Hex()
-		_, err = repositoryCollection.InsertOne(context.Background(), &database.Repository{
-			UserID:       userID,
-			RepositoryID: repositoryID,
-		})
-		assert.NoError(t, err)
-		body := ServeRequest(t, authToken, "POST", "/overview/views/", bytes.NewBuffer([]byte(fmt.Sprintf(`{"type": "`+string(constants.ViewGithub)+`", "github_id": "%s"}`, repositoryID))), http.StatusOK, nil)
-		var addedView database.View
-		err = viewCollection.FindOne(context.Background(), bson.M{"user_id": userID, "type": string(constants.ViewGithub)}).Decode(&addedView)
-		assert.NoError(t, err)
-		assert.Equal(t, fmt.Sprintf(`{"id":"%s"}`, addedView.ID.Hex()), string(body))
-
-		assert.Equal(t, database.View{
-			ID:            addedView.ID,
-			UserID:        userID,
-			IDOrdering:    1,
-			Type:          string(constants.ViewGithub),
-			IsLinked:      false,
-			TaskSectionID: primitive.NilObjectID,
-			GithubID:      repositoryID,
-		}, addedView)
-
-		count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), count)
+			count, err := viewCollection.CountDocuments(context.Background(), bson.M{"user_id": userID})
+			assert.NoError(t, err)
+			assert.Equal(t, int64(0), count)
+		}
 	})
 }
 
@@ -1930,7 +1311,6 @@ func TestOverviewSupportedViewsList(t *testing.T) {
 
 	userID := getUserIDFromAuthToken(t, db, authToken)
 	viewCollection := database.GetViewCollection(db)
-	externalAPITokenCollection := database.GetExternalTokenCollection(db)
 	taskSectionCollection := database.GetTaskSectionCollection(db)
 	taskSection, err := taskSectionCollection.InsertOne(context.Background(), database.TaskSection{
 		UserID: userID,
@@ -1943,15 +1323,13 @@ func TestOverviewSupportedViewsList(t *testing.T) {
 	UnauthorizedTest(t, "GET", "/overview/supported_views/", nil)
 	t.Run("TestNoViewsAdded", func(t *testing.T) {
 		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		externalAPITokenCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
 		body := ServeRequest(t, authToken, "GET", "/overview/supported_views/", nil, http.StatusOK, nil)
 
-		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":false,\"task_section_id\":\"%s\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"jira\",\"name\":\"Jira\",\"logo\":\"jira\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/atlassian/\",\"views\":[{\"name\":\"Jira View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"linear\",\"name\":\"Linear\",\"logo\":\"linear\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/linear/\",\"views\":[{\"name\":\"Linear View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"slack\",\"name\":\"Slack\",\"logo\":\"slack\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/slack/\",\"views\":[{\"name\":\"Slack View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"github\",\"name\":\"GitHub\",\"logo\":\"github\",\"is_nested\":true,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/github/\",\"views\":[]}]", taskSectionObjectID.Hex())
+		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":false,\"task_section_id\":\"%s\",\"view_id\":\"000000000000000000000000\"}]}]", taskSectionObjectID.Hex())
 		assert.Equal(t, expectedBody, string(body))
 	})
 	t.Run("TestTaskSectionIsAdded", func(t *testing.T) {
 		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		externalAPITokenCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
 		view, err := viewCollection.InsertOne(context.Background(), database.View{
 			UserID:        userID,
 			Type:          "task_section",
@@ -1961,109 +1339,23 @@ func TestOverviewSupportedViewsList(t *testing.T) {
 		assert.NoError(t, err)
 		addedViewId := view.InsertedID.(primitive.ObjectID).Hex()
 		body := ServeRequest(t, authToken, "GET", "/overview/supported_views/", nil, http.StatusOK, nil)
-		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":true,\"task_section_id\":\"%s\",\"github_id\":\"\",\"view_id\":\"%s\"}]},{\"type\":\"jira\",\"name\":\"Jira\",\"logo\":\"jira\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/atlassian/\",\"views\":[{\"name\":\"Jira View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"linear\",\"name\":\"Linear\",\"logo\":\"linear\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/linear/\",\"views\":[{\"name\":\"Linear View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"slack\",\"name\":\"Slack\",\"logo\":\"slack\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/slack/\",\"views\":[{\"name\":\"Slack View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"github\",\"name\":\"GitHub\",\"logo\":\"github\",\"is_nested\":true,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/github/\",\"views\":[]}]", taskSectionID, addedViewId)
+		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":true,\"task_section_id\":\"%s\",\"view_id\":\"%s\"}]}]", taskSectionID, addedViewId)
 		assert.Equal(t, expectedBody, string(body))
 	})
-	t.Run("TestLinearIsAddedIsUnlinked", func(t *testing.T) {
+	t.Run("TestRetiredViewsIgnored", func(t *testing.T) {
 		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		externalAPITokenCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		view, err := viewCollection.InsertOne(context.Background(), database.View{
-			UserID:   userID,
-			Type:     "linear",
-			IsLinked: false,
-		})
-		assert.NoError(t, err)
-		addedViewId := view.InsertedID.(primitive.ObjectID).Hex()
+		for _, viewType := range constants.RetiredViewTypes {
+			_, err := viewCollection.InsertOne(context.Background(), database.View{
+				UserID: userID,
+				Type:   viewType,
+			})
+			assert.NoError(t, err)
+		}
 		body := ServeRequest(t, authToken, "GET", "/overview/supported_views/", nil, http.StatusOK, nil)
-		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":false,\"task_section_id\":\"%s\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"jira\",\"name\":\"Jira\",\"logo\":\"jira\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/atlassian/\",\"views\":[{\"name\":\"Jira View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"linear\",\"name\":\"Linear\",\"logo\":\"linear\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/linear/\",\"views\":[{\"name\":\"Linear View\",\"is_added\":true,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"%s\"}]},{\"type\":\"slack\",\"name\":\"Slack\",\"logo\":\"slack\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/slack/\",\"views\":[{\"name\":\"Slack View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"github\",\"name\":\"GitHub\",\"logo\":\"github\",\"is_nested\":true,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/github/\",\"views\":[]}]", taskSectionID, addedViewId)
-		assert.Equal(t, expectedBody, string(body))
-	})
-	t.Run("TestLinearIsAddedIsLinked", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		externalAPITokenCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		view, err := viewCollection.InsertOne(context.Background(), database.View{
-			UserID:   userID,
-			Type:     "linear",
-			IsLinked: true,
-		})
-		assert.NoError(t, err)
-		addedViewId := view.InsertedID.(primitive.ObjectID).Hex()
-		externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-			UserID:    userID,
-			Token:     "testtoken",
-			ServiceID: external.TASK_SERVICE_ID_LINEAR,
-		})
-		body := ServeRequest(t, authToken, "GET", "/overview/supported_views/", nil, http.StatusOK, nil)
-		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":false,\"task_section_id\":\"%s\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"jira\",\"name\":\"Jira\",\"logo\":\"jira\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/atlassian/\",\"views\":[{\"name\":\"Jira View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"linear\",\"name\":\"Linear\",\"logo\":\"linear\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Linear View\",\"is_added\":true,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"%s\"}]},{\"type\":\"slack\",\"name\":\"Slack\",\"logo\":\"slack\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/slack/\",\"views\":[{\"name\":\"Slack View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"github\",\"name\":\"GitHub\",\"logo\":\"github\",\"is_nested\":true,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/github/\",\"views\":[]}]", taskSectionID, addedViewId)
-		assert.Equal(t, expectedBody, string(body))
-	})
-	t.Run("TestSlackIsAddedIsUnlinked", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		externalAPITokenCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		view, err := viewCollection.InsertOne(context.Background(), database.View{
-			UserID:   userID,
-			Type:     "slack",
-			IsLinked: false,
-		})
-		assert.NoError(t, err)
-		addedViewId := view.InsertedID.(primitive.ObjectID).Hex()
-		body := ServeRequest(t, authToken, "GET", "/overview/supported_views/", nil, http.StatusOK, nil)
-		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":false,\"task_section_id\":\"%s\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"jira\",\"name\":\"Jira\",\"logo\":\"jira\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/atlassian/\",\"views\":[{\"name\":\"Jira View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"linear\",\"name\":\"Linear\",\"logo\":\"linear\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/linear/\",\"views\":[{\"name\":\"Linear View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"slack\",\"name\":\"Slack\",\"logo\":\"slack\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/slack/\",\"views\":[{\"name\":\"Slack View\",\"is_added\":true,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"%s\"}]},{\"type\":\"github\",\"name\":\"GitHub\",\"logo\":\"github\",\"is_nested\":true,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/github/\",\"views\":[]}]", taskSectionID, addedViewId)
-		assert.Equal(t, expectedBody, string(body))
-	})
-	t.Run("TestSlackIsAddedIsLinked", func(t *testing.T) {
-		viewCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		externalAPITokenCollection.DeleteMany(context.Background(), bson.M{"user_id": userID})
-		view, err := viewCollection.InsertOne(context.Background(), database.View{
-			UserID:   userID,
-			Type:     "slack",
-			IsLinked: false,
-		})
-		assert.NoError(t, err)
-		addedViewId := view.InsertedID.(primitive.ObjectID).Hex()
-		externalAPITokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-			UserID:    userID,
-			Token:     "testtoken",
-			ServiceID: external.TASK_SERVICE_ID_SLACK,
-		})
-		body := ServeRequest(t, authToken, "GET", "/overview/supported_views/", nil, http.StatusOK, nil)
-		expectedBody := fmt.Sprintf("[{\"type\":\"meeting_preparation\",\"name\":\"Meeting Preparation for the day\",\"logo\":\"gcal\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Meeting Preparation\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"due_today\",\"name\":\"Tasks Due Today\",\"logo\":\"generaltask\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Tasks Due Today View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"task_section\",\"name\":\"Task Folders\",\"logo\":\"generaltask\",\"is_nested\":true,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Task Inbox\",\"is_added\":false,\"task_section_id\":\"000000000000000000000001\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"},{\"name\":\"Duck section\",\"is_added\":false,\"task_section_id\":\"%s\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"jira\",\"name\":\"Jira\",\"logo\":\"jira\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/atlassian/\",\"views\":[{\"name\":\"Jira View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"linear\",\"name\":\"Linear\",\"logo\":\"linear\",\"is_nested\":false,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/linear/\",\"views\":[{\"name\":\"Linear View\",\"is_added\":false,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"000000000000000000000000\"}]},{\"type\":\"slack\",\"name\":\"Slack\",\"logo\":\"slack\",\"is_nested\":false,\"is_linked\":true,\"authorization_url\":\"\",\"views\":[{\"name\":\"Slack View\",\"is_added\":true,\"task_section_id\":\"000000000000000000000000\",\"github_id\":\"\",\"view_id\":\"%s\"}]},{\"type\":\"github\",\"name\":\"GitHub\",\"logo\":\"github\",\"is_nested\":true,\"is_linked\":false,\"authorization_url\":\"http://localhost:8080/link/github/\",\"views\":[]}]", taskSectionID, addedViewId)
-
-		assert.Equal(t, expectedBody, string(body))
-	})
-}
-
-func TestIsValidGithubRepository(t *testing.T) {
-	db, dbCleanup, err := database.GetDBConnection()
-	assert.NoError(t, err)
-	defer dbCleanup()
-	repositoryCollection := database.GetRepositoryCollection(db)
-
-	userID := primitive.NewObjectID()
-	repositoryID := primitive.NewObjectID().Hex()
-	repositoryCollection.InsertOne(context.Background(), database.Repository{
-		UserID:       userID,
-		RepositoryID: repositoryID,
-	})
-	t.Run("Success", func(t *testing.T) {
-		result, err := isValidGithubRepository(db, userID, repositoryID)
-		assert.NoError(t, err)
-		assert.True(t, result)
-	})
-	t.Run("InvalidUserID", func(t *testing.T) {
-		result, err := isValidGithubRepository(db, primitive.NewObjectID(), repositoryID)
-		assert.NoError(t, err)
-		assert.False(t, result)
-	})
-	t.Run("InvalidRepositoryID", func(t *testing.T) {
-		result, err := isValidGithubRepository(db, userID, primitive.NewObjectID().Hex())
-		assert.NoError(t, err)
-		assert.False(t, result)
-	})
-	t.Run("InvalidUserAndRepositoryID", func(t *testing.T) {
-		result, err := isValidGithubRepository(db, primitive.NewObjectID(), primitive.NewObjectID().Hex())
-		assert.NoError(t, err)
-		assert.False(t, result)
+		assert.NotContains(t, string(body), "\"type\":\"github\"")
+		assert.NotContains(t, string(body), "\"type\":\"jira\"")
+		assert.NotContains(t, string(body), "\"type\":\"linear\"")
+		assert.NotContains(t, string(body), "\"type\":\"slack\"")
 	})
 }
 

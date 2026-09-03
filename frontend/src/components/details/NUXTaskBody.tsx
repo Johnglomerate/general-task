@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { GITHUB_SUPPORTED_TYPE_NAME, GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME } from '../../constants'
+import { GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME } from '../../constants'
 import { useGetSupportedTypes } from '../../services/api/settings.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
@@ -65,32 +65,18 @@ const FocusMode = () => {
 
 const IntegrationsStaticContent = ({
     googleUrl,
-    githubUrl,
-    linearUrl,
-    slackUrl,
     setIsSettingsModalOpen,
 }: {
     googleUrl: string
-    githubUrl: string
-    linearUrl: string
-    slackUrl: string
     setIsSettingsModalOpen: (isSettingsModalOpen: boolean) => void
 }) => (
     <>
-        With General Task, you can <strong>connect a variety of services</strong> to give you a comprehensive view of
-        all your tasks and reduce the need to switch between apps.
+        With General Task, you can <strong>connect Google Calendar</strong> to plan your work around your day.
         <p>
             📅 <a href={googleUrl}>Google Calendar</a>: easily schedule tasks onto your calendar.
-            <br />
-            🤖 <a href={githubUrl}>GitHub</a>: manage and view your pull requests.
-            <br />✅ <a href={linearUrl}>Linear</a>: edit and keep track of your assigned issues.
-            <br />
-            💬 <a href={slackUrl}>Slack</a>: easily convert actionable messages into tasks.
-            <br />
         </p>
         <p>
-            You can find the full list of services in settings. Please leave us feedback to let us know which services
-            you want to see next.
+            You can manage your connected Google account in settings.
         </p>
         <DivCursorPointer onClick={() => setIsSettingsModalOpen(true)}>
             <img src="/images/nux-integrations.png" width="100%" />
@@ -102,18 +88,12 @@ const Integrations = () => {
     const { data: supportedTypes } = useGetSupportedTypes()
     const googleUrl =
         supportedTypes?.find((type) => type.name === GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME)?.authorization_url || ''
-    const githubUrl = supportedTypes?.find((type) => type.name === GITHUB_SUPPORTED_TYPE_NAME)?.authorization_url || ''
-    const linearUrl = supportedTypes?.find((type) => type.name === 'Linear')?.authorization_url || ''
-    const slackUrl = supportedTypes?.find((type) => type.name === 'Slack')?.authorization_url || ''
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
 
     return (
         <Container>
             <IntegrationsStaticContent
                 googleUrl={googleUrl}
-                githubUrl={githubUrl}
-                linearUrl={linearUrl}
-                slackUrl={slackUrl}
                 setIsSettingsModalOpen={setIsSettingsModalOpen}
             />
             <SettingsModal isOpen={isSettingsModalOpen} setIsOpen={setIsSettingsModalOpen} />
@@ -129,8 +109,8 @@ const JohnsLetterStaticContent = () => (
         </p>
         <p>
             We have spent the last year building what we believe is a focused productivity workspace for software
-            engineers. General Task brings your tasks, calendar, pull requests, and integrations into one place so you
-            can plan your day and keep work moving.
+            engineers. General Task brings your tasks and calendar into one place so you can plan your day and keep
+            work moving.
         </p>
         <p>
             Productivity is close to our hearts. Our team has worked at some of the most successful companies in the
@@ -179,30 +159,22 @@ const JohnsLetter = () => {
     )
 }
 
-const SlackTask = () => {
+const PlanningTask = () => {
     return (
         <Container>
-            With the Slack integration, you can <strong>quickly create a new task from a message</strong> by using the
-            three-dot menu. This can be a great way to keep track of important to-dos and ensure that nothing falls
-            through the cracks.
+            General Task works best when your Task Inbox reflects the work you intend to plan.
             <ul>
                 <li>
-                    First, <strong>connect your Slack account</strong> to General Task in Settings.
+                    Add a task for anything that needs focused time.
                 </li>
                 <li>
-                    When connected, you can create a task from a Slack message by simply clicking the three dot menu on
-                    any message.
+                    Drag it onto your calendar when you know when you want to work on it.
                 </li>
                 <li>
-                    Then, from the dropdown click the <strong>&quot;Create a task&quot;</strong> button.
-                </li>
-                <li>
-                    Once you’ve created a task, it will appear in Slack in the{' '}
-                    <strong>Services section of your Navigation Sidebar</strong> as well as your{' '}
-                    <strong>Task Inbox.</strong>
+                    Mark it done when the work is finished.
                 </li>
             </ul>
-            <img width="100%" src="/images/nux-slack-task.png" />
+            <img width="100%" src="/images/nux-task-to-cal.png" />
         </Container>
     )
 }
@@ -222,7 +194,7 @@ const NUXTaskBody = ({ nux_number_id }: NUXTaskBodyProps) => {
         case 4:
             return <JohnsLetter />
         case 5:
-            return <SlackTask />
+            return <PlanningTask />
         default:
             return null
     }
@@ -243,9 +215,6 @@ export const NuxTaskBodyStatic = ({ nux_number_id, renderSettingsModal }: NUXTas
                     )}
                     <IntegrationsStaticContent
                         googleUrl="https://api.generaltask.com/link/google/"
-                        githubUrl="https://api.generaltask.com/link/github/"
-                        slackUrl="https://api.generaltask.com/link/slack/"
-                        linearUrl="https://api.generaltask.com/link/linear/"
                         setIsSettingsModalOpen={setIsSettingsModalOpen}
                     />
                 </>
@@ -253,7 +222,7 @@ export const NuxTaskBodyStatic = ({ nux_number_id, renderSettingsModal }: NUXTas
         case 4:
             return <JohnsLetterStaticContent />
         case 5:
-            return <SlackTask />
+            return <PlanningTask />
         default:
             return null
     }

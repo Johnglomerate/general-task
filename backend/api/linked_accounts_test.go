@@ -30,8 +30,10 @@ func TestSupportedAccountTypesList(t *testing.T) {
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
 		assert.True(t, strings.Contains(string(body), "{\"name\":\"Google Calendar\",\"logo\":\"/images/gcal.png\",\"logo_v2\":\"gcal\",\"authorization_url\":\"http://localhost:8080/link/google/\"}"))
-		assert.Equal(t, 1, strings.Count(string(body), "{\"name\":\"Slack\",\"logo\":\"/images/slack.svg\",\"logo_v2\":\"slack\",\"authorization_url\":\"http://localhost:8080/link/slack/\"}"))
-		assert.Equal(t, 1, strings.Count(string(body), "{\"name\":\"Jira\",\"logo\":\"/images/jira.svg\",\"logo_v2\":\"jira\",\"authorization_url\":\"http://localhost:8080/link/atlassian/\"}"))
+		assert.NotContains(t, string(body), "Slack")
+		assert.NotContains(t, string(body), "Jira")
+		assert.NotContains(t, string(body), "GitHub")
+		assert.NotContains(t, string(body), "Linear")
 	})
 	UnauthorizedTest(t, "GET", "/linked_accounts/supported_types/", nil)
 }
@@ -54,7 +56,7 @@ func TestLinkedAccountsList(t *testing.T) {
 	})
 	t.Run("Success", func(t *testing.T) {
 		authToken := login("linkedaccounts2@generaltask.com", "")
-		linearTokenID := insertLinearToken(t, api.DB, authToken, false).Hex()
+		insertRetiredToken(t, api.DB, authToken, false)
 		router := GetRouter(api)
 		request, _ := http.NewRequest("GET", "/linked_accounts/", nil)
 		request.Header.Add("Authorization", "Bearer "+authToken)
@@ -64,13 +66,13 @@ func TestLinkedAccountsList(t *testing.T) {
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
 		googleTokenID := getGoogleTokenFromAuthToken(t, api.DB, authToken).ID.Hex()
-		assert.Equal(t, "[{\"id\":\""+googleTokenID+"\",\"display_id\":\"linkedaccounts2@generaltask.com\",\"name\":\"Google Calendar\",\"logo\":\"/images/gcal.png\",\"logo_v2\":\"gcal\",\"is_unlinkable\":false,\"has_bad_token\":false},{\"id\":\""+linearTokenID+"\",\"display_id\":\"Linear\",\"name\":\"Linear\",\"logo\":\"/images/linear.png\",\"logo_v2\":\"linear\",\"is_unlinkable\":true,\"has_bad_token\":false}]", string(body))
+		assert.Equal(t, "[{\"id\":\""+googleTokenID+"\",\"display_id\":\"linkedaccounts2@generaltask.com\",\"name\":\"Google Calendar\",\"logo\":\"/images/gcal.png\",\"logo_v2\":\"gcal\",\"is_unlinkable\":false,\"has_bad_token\":false}]", string(body))
 
 	})
 
 	t.Run("SuccessWithBadToken", func(t *testing.T) {
 		authToken := login("linkedaccounts3@generaltask.com", "")
-		linearTokenID := insertLinearToken(t, api.DB, authToken, true).Hex()
+		insertRetiredToken(t, api.DB, authToken, true)
 
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
@@ -84,7 +86,7 @@ func TestLinkedAccountsList(t *testing.T) {
 		body, err := io.ReadAll(recorder.Body)
 		assert.NoError(t, err)
 		googleTokenID := getGoogleTokenFromAuthToken(t, api.DB, authToken).ID.Hex()
-		assert.Equal(t, "[{\"id\":\""+googleTokenID+"\",\"display_id\":\"linkedaccounts3@generaltask.com\",\"name\":\"Google Calendar\",\"logo\":\"/images/gcal.png\",\"logo_v2\":\"gcal\",\"is_unlinkable\":false,\"has_bad_token\":false},{\"id\":\""+linearTokenID+"\",\"display_id\":\"Linear\",\"name\":\"Linear\",\"logo\":\"/images/linear.png\",\"logo_v2\":\"linear\",\"is_unlinkable\":true,\"has_bad_token\":true}]", string(body))
+		assert.Equal(t, "[{\"id\":\""+googleTokenID+"\",\"display_id\":\"linkedaccounts3@generaltask.com\",\"name\":\"Google Calendar\",\"logo\":\"/images/gcal.png\",\"logo_v2\":\"gcal\",\"is_unlinkable\":false,\"has_bad_token\":false}]", string(body))
 	})
 	UnauthorizedTest(t, "GET", "/linked_accounts/", nil)
 }
@@ -114,75 +116,15 @@ func TestDeleteLinkedAccount(t *testing.T) {
 	})
 	t.Run("Success", func(t *testing.T) {
 		authToken := login("deletelinkedaccount@generaltask.com", "")
-		linearTokenID := insertLinearToken(t, api.DB, authToken, false)
-		ServeRequest(t, authToken, "DELETE", "/linked_accounts/"+linearTokenID.Hex()+"/", nil, http.StatusOK, api)
+		retiredTokenID := insertRetiredToken(t, api.DB, authToken, false)
+		ServeRequest(t, authToken, "DELETE", "/linked_accounts/"+retiredTokenID.Hex()+"/", nil, http.StatusOK, api)
 		var token database.ExternalAPIToken
 		err := database.GetExternalTokenCollection(api.DB).FindOne(
 			context.Background(),
-			bson.M{"_id": linearTokenID},
+			bson.M{"_id": retiredTokenID},
 		).Decode(&token)
 		// assert token is not found in db anymore
 		assert.Error(t, err)
-	})
-	t.Run("SuccessGithub", func(t *testing.T) {
-		authToken := login("deletelinkedaccount_github@generaltask.com", "")
-		userID := getUserIDFromAuthToken(t, api.DB, authToken)
-		accountID := "correctAccountID"
-		// should delete cached repos matching the account ID upon github unlink
-		repositoryCollection := database.GetRepositoryCollection(api.DB)
-		res, err := repositoryCollection.InsertOne(context.Background(), &database.Repository{UserID: userID, AccountID: accountID})
-		assert.NoError(t, err)
-		repoToDeleteID := res.InsertedID.(primitive.ObjectID)
-		// should deleted cached repos with no account ID also (only affects accounts who have not recently refreshed PRs)
-		res, err = repositoryCollection.InsertOne(context.Background(), &database.Repository{UserID: userID})
-		assert.NoError(t, err)
-		repoToDeleteID2 := res.InsertedID.(primitive.ObjectID)
-		// wrong user id; shouldn't get deleted
-		res, err = repositoryCollection.InsertOne(context.Background(), &database.Repository{UserID: primitive.NewObjectID()})
-		assert.NoError(t, err)
-		wrongUserRepoID := res.InsertedID.(primitive.ObjectID)
-		// other account id; shouldn't get deleted
-		res, err = repositoryCollection.InsertOne(context.Background(), &database.Repository{UserID: userID, AccountID: "notthisone"})
-		assert.NoError(t, err)
-		otherAccountIDRepoID := res.InsertedID.(primitive.ObjectID)
-		res, err = database.GetExternalTokenCollection(api.DB).InsertOne(
-			context.Background(),
-			&database.ExternalAPIToken{
-				AccountID:    accountID,
-				ServiceID:    external.TASK_SERVICE_ID_GITHUB,
-				UserID:       userID,
-				DisplayID:    "Github",
-				IsUnlinkable: true,
-			},
-		)
-		assert.NoError(t, err)
-		externalTokenID := res.InsertedID.(primitive.ObjectID)
-
-		ServeRequest(t, authToken, "DELETE", "/linked_accounts/"+externalTokenID.Hex()+"/", nil, http.StatusOK, api)
-		var token database.ExternalAPIToken
-		err = database.GetExternalTokenCollection(api.DB).FindOne(
-			context.Background(),
-			bson.M{"_id": externalTokenID},
-		).Decode(&token)
-		// assert token is not found in db anymore
-		assert.Error(t, err)
-
-		var repository database.Repository
-		err = repositoryCollection.FindOne(context.Background(), bson.M{"_id": repoToDeleteID}).Decode(&repository)
-		// assert repo is not found in db anymore
-		assert.Error(t, err)
-
-		err = repositoryCollection.FindOne(context.Background(), bson.M{"_id": repoToDeleteID2}).Decode(&repository)
-		// assert repo is not found in db anymore
-		assert.Error(t, err)
-
-		err = repositoryCollection.FindOne(context.Background(), bson.M{"_id": wrongUserRepoID}).Decode(&repository)
-		// assert repo is found
-		assert.NoError(t, err)
-
-		err = repositoryCollection.FindOne(context.Background(), bson.M{"_id": otherAccountIDRepoID}).Decode(&repository)
-		// assert repo is found
-		assert.NoError(t, err)
 	})
 	t.Run("SuccessGoogle", func(t *testing.T) {
 		authToken := login("deletelinkedaccount_github@generaltask.com", "")
@@ -369,11 +311,14 @@ func TestDeleteLinkedAccount(t *testing.T) {
 	UnauthorizedTest(t, "DELETE", "/linked_accounts/123/", nil)
 }
 
-func insertLinearToken(t *testing.T, db *mongo.Database, authToken string, isBadToken bool) primitive.ObjectID {
+// insertRetiredToken inserts a token for a service that has since been removed.
+// Accounts created before the removal still have rows like this, so the list
+// endpoint has to skip them rather than fail to resolve the service.
+func insertRetiredToken(t *testing.T, db *mongo.Database, authToken string, isBadToken bool) primitive.ObjectID {
 	res, err := database.GetExternalTokenCollection(db).InsertOne(
 		context.Background(),
 		&database.ExternalAPIToken{
-			ServiceID:    external.TASK_SERVICE_ID_LINEAR,
+			ServiceID:    "linear",
 			UserID:       getUserIDFromAuthToken(t, db, authToken),
 			DisplayID:    "Linear",
 			IsUnlinkable: true,

@@ -50,30 +50,6 @@ const getMobileRouteState = (pathname: string): MobileRouteState => {
                 backPath: '/notes',
                 title: 'Notes',
             }
-        case 'pull-requests':
-            return {
-                isDetailRoute: pathParts.length >= 2,
-                backPath: '/pull-requests',
-                title: 'Pull Requests',
-            }
-        case 'linear':
-            return {
-                isDetailRoute: pathParts.length >= 2,
-                backPath: '/linear',
-                title: 'Linear',
-            }
-        case 'slack':
-            return {
-                isDetailRoute: pathParts.length >= 2,
-                backPath: '/slack',
-                title: 'Slack',
-            }
-        case 'jira':
-            return {
-                isDetailRoute: pathParts.length >= 2,
-                backPath: '/jira',
-                title: 'Jira',
-            }
         case 'recurring-tasks':
             return {
                 isDetailRoute: pathParts.length >= 2,

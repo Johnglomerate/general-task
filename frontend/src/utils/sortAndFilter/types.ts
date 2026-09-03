@@ -1,11 +1,5 @@
 import { TIconType } from '../../components/atoms/Icon'
 import {
-    GHFilterPreference,
-    GHSortDirection,
-    GHSortPreference,
-    LinearFilterPreference,
-    LinearSortDirection,
-    LinearSortPreference,
     NoteFilterPreference,
     NoteSortDirection,
     NoteSortPreference,
@@ -69,9 +63,9 @@ export interface FilterOptions<T> {
 export interface SortAndFilterSettingsConfig<T> {
     sortOptions: SortOptions<T>
     filterOptions: FilterOptions<T>
-    sortPreferenceId: GHSortPreference | TaskSortPreference | NoteSortPreference | LinearSortPreference
-    sortDirectionId: GHSortDirection | TaskSortDirection | NoteSortDirection | LinearSortDirection
-    filterPreferenceId: GHFilterPreference | TaskFilterPreference | NoteFilterPreference | LinearFilterPreference
+    sortPreferenceId: TaskSortPreference | NoteSortPreference
+    sortDirectionId: TaskSortDirection | NoteSortDirection
+    filterPreferenceId: TaskFilterPreference | NoteFilterPreference
     tieBreakerField: keyof T
     defaultSortsAndFilters: SortAndFilterSettings<T>
 }
