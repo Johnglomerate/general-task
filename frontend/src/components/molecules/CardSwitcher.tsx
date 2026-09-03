@@ -34,9 +34,12 @@ const mod = (n: number, m: number) => {
 }
 interface CardSwitcherProps {
     viewId: string
+    // Rendered when the list cannot be resolved — an event can outlive the list
+    // it was scheduled from, and showing nothing would leave a blank panel.
+    fallback?: React.ReactNode
 }
 
-const CardSwitcher = ({ viewId }: CardSwitcherProps) => {
+const CardSwitcher = ({ viewId, fallback = null }: CardSwitcherProps) => {
     const { lists } = useOverviewLists()
     const list = useMemo(() => lists?.find(({ id }) => id === viewId), [lists, viewId])
 
@@ -56,7 +59,8 @@ const CardSwitcher = ({ viewId }: CardSwitcherProps) => {
         else setCardIndex(index)
     }
 
-    if (!list || list.view_item_ids.length === 0 || !card) return null
+    if (!list) return <>{fallback}</>
+    if (list.view_item_ids.length === 0 || !card) return null
     return (
         <div>
             <Header>

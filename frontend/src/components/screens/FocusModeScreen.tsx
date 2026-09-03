@@ -290,6 +290,18 @@ const FocusModeScreen = () => {
     const timeStart = DateTime.fromISO(datetime_start || '')
     const timeEnd = DateTime.fromISO(datetime_end || '')
 
+    const eventDescription = (
+        <>
+            <BodyHeader>EVENT DESCRIPTON</BodyHeader>
+            <Body
+                dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(body || 'No event description set'),
+                }}
+                $isEmpty={!body}
+            />
+        </>
+    )
+
     useInterval(
         () => {
             const currentTime = DateTime.local().plus({ milliseconds: SINGLE_SECOND_INTERVAL })
@@ -437,17 +449,12 @@ const FocusModeScreen = () => {
                                     {chosenEvent && <EventMeetingAction event={chosenEvent} />}
                                     <div>
                                         {chosenEvent.linked_view_id ? (
-                                            <CardSwitcher viewId={chosenEvent.linked_view_id} />
+                                            <CardSwitcher
+                                                viewId={chosenEvent.linked_view_id}
+                                                fallback={eventDescription}
+                                            />
                                         ) : (
-                                            <>
-                                                <BodyHeader>EVENT DESCRIPTON</BodyHeader>
-                                                <Body
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: sanitizeHtml(body || 'No event description set'),
-                                                    }}
-                                                    $isEmpty={!body}
-                                                />
-                                            </>
+                                            eventDescription
                                         )}
                                     </div>
                                     <div>
