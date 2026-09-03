@@ -32,10 +32,8 @@ func (api *API) SupportedAccountTypesList(c *gin.Context) {
 	serverURL := config.GetConfigValue("SERVER_URL")
 	nameToService := api.ExternalConfig.GetNameToService()
 	supportedAccountTypes := []SupportedAccountType{}
-	for serviceName, service := range nameToService {
-		// need to check if Slack App (used in workflow installations)
-		// we don't want this to appear in supported account typed list
-		if !service.Details.IsLinkable || serviceName == external.TASK_SERVICE_ID_SLACK_APP {
+	for _, service := range nameToService {
+		if !service.Details.IsLinkable {
 			continue
 		}
 		supportedAccountTypes = append(supportedAccountTypes, SupportedAccountType{
@@ -73,9 +71,8 @@ func (api *API) LinkedAccountsList(c *gin.Context) {
 	for _, token := range tokens {
 		taskServiceResult, err := api.ExternalConfig.GetTaskServiceResult(token.ServiceID)
 		if err != nil {
-			api.Logger.Error().Err(err).Msg("failed to fetch task service")
-			Handle500(c)
-			return
+			api.Logger.Info().Err(err).Str("service_id", token.ServiceID).Msg("skipping retired linked account")
+			continue
 		}
 		linkedAccounts = append(linkedAccounts, linkedAccount{
 			ID:           token.ID.Hex(),
@@ -118,24 +115,7 @@ func (api *API) DeleteLinkedAccount(c *gin.Context) {
 		c.JSON(400, gin.H{"detail": "account is not unlinkable"})
 		return
 	}
-	if accountToDelete.ServiceID == external.TASK_SERVICE_ID_GITHUB {
-		_, err := database.GetRepositoryCollection(api.DB).DeleteMany(
-			context.Background(),
-			bson.M{"$and": []bson.M{
-				{"$or": []bson.M{
-					{"account_id": accountToDelete.AccountID},
-					{"account_id": bson.M{"$exists": false}},
-					{"account_id": ""},
-				}},
-				{"user_id": userID},
-			}},
-		)
-		if err != nil {
-			api.Logger.Error().Err(err).Msg("failed to clean up repositories")
-			Handle500(c)
-			return
-		}
-	} else if accountToDelete.ServiceID == external.TASK_SERVICE_ID_GOOGLE {
+	if accountToDelete.ServiceID == external.TASK_SERVICE_ID_GOOGLE {
 		// Revoke first: after the token row is gone we can no longer tell Google
 		// the grant is over. A failure here must not block the unlink, since the
 		// user can also revoke from their Google account page.

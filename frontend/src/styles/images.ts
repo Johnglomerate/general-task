@@ -1,4 +1,3 @@
-import { faGithub } from '@fortawesome/free-brands-svg-icons'
 import {
     faArrowDown,
     faArrowDownLeftAndArrowUpRightToCenter,
@@ -109,13 +108,9 @@ export const logos = Object.freeze({
     generaltask_beta_blue: '/images/GT-beta-logo-blue.png',
     generaltask_yellow_circle: '/images/gt-logo-yellow-circle.png',
     generaltask_blue_circle: '/images/gt-logo-blue-circle.png',
-    github: faGithub,
     gmail: '/images/google.svg',
     gcal: '/images/gcal.png',
     google_meet: '/images/google-meet.svg',
-    jira: '/images/jira.svg',
-    linear: '/images/linear.png',
-    slack: '/images/slack.svg',
 })
 
 export const icons = Object.freeze({
@@ -167,11 +162,6 @@ export const icons = Object.freeze({
     folder: faFolder,
     gcal: logos.gcal,
     gear: faGear,
-    github_high: '/images/github_high.svg',
-    github_low: '/images/github_low.svg',
-    github_med: '/images/github_med.svg',
-    github_paused: '/images/github_paused.svg',
-    github: logos.github,
     globe: faGlobe,
     hamburger: faBars,
     headphones: faHeadphones,
@@ -180,14 +170,7 @@ export const icons = Object.freeze({
     infinity: faInfinity,
     infoCircleSolid: faInfoCircleSolid,
     italic: faItalic,
-    jira: logos.jira,
     label: faTag,
-    linear: logos.linear,
-    linear_cycle_all: '/images/linear_cycle_all.svg',
-    linear_cycle_current: '/images/linear_cycle_current.svg',
-    linear_cycle_next: '/images/linear_cycle_next.svg',
-    linear_cycle_none: '/images/linear_backlog.svg',
-    linear_cycle_previous: '/images/linear_cycle_previous.svg',
     link: faLink,
     link_slashed: faLinkSlash,
     list_ol: faListOl,
@@ -213,7 +196,6 @@ export const icons = Object.freeze({
     share: faShare,
     sidebar: faSidebar,
     sidebarFlipped: faSidebarFlip,
-    slack: logos.slack,
     sort: faBarsSort,
     sortArrows: faSort,
     spinner: faArrowRotateRight,
@@ -237,28 +219,9 @@ export const buttons: { [key: string]: string } = {
     google_sign_in: '/images/google_sign_in.png', //missing svg
 }
 
-export const externalStatusIcons = Object.freeze({
-    // Linear
-    backlog: '/images/linear_backlog.svg',
-    unstarted: '/images/linear_todo.svg',
-    started: '/images/linear_inprogress.svg',
-    completed: '/images/linear_done.svg',
-    canceled: '/images/linear_canceled.svg',
-
-    inreview: '/images/linear_inreview.svg',
-    triage: '/images/linear_triage.svg',
-    duplicate: '/images/linear_duplicate.svg',
-
-    // Jira
-    new: '/images/jira/new.svg',
-    indeterminate: '/images/jira/indeterminate.svg',
-    done: '/images/jira/done.svg',
-})
-
 export const focusModeBackground = '/images/focus_mode_background.jpg'
 export const noteBackground = '/images/note_background.jpg'
 export const checkBig = '/images/check_big.svg'
 
 export type TLogoImage = keyof typeof logos
 export type TIconImage = keyof typeof icons
-export type TExternalStatusImage = keyof typeof externalStatusIcons

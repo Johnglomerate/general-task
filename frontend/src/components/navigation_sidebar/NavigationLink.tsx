@@ -3,8 +3,7 @@ import { useDrag, useDrop } from 'react-dnd'
 import { useNavigate } from 'react-router-dom'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import styled from 'styled-components'
-import { TASK_FOLDER_DEFAULT_ID, TRASH_FOLDER_ID } from '../../constants'
-import { usePreviewMode, useToast } from '../../hooks'
+import { TASK_FOLDER_DEFAULT_ID } from '../../constants'
 import Log from '../../services/api/log'
 import { useReorderTask } from '../../services/api/tasks.hooks'
 import { Border, Colors, Spacing, Typography } from '../../styles'
@@ -15,7 +14,6 @@ import { DropItem, DropType, TTaskFolder } from '../../utils/types'
 import { countWithOverflow } from '../../utils/utils'
 import { Icon } from '../atoms/Icon'
 import { useCalendarContext } from '../calendar/CalendarContext'
-import { toast } from '../molecules/toast'
 import Tip from '../radix/Tip'
 
 export const CollapsedIconContainer = styled.div<{ isSelected?: boolean }>`
@@ -110,23 +108,11 @@ const NavigationLink = ({
     const { mutate: reorderTask } = useReorderTask()
     const { showTaskToCalSidebar, setShowTaskToCalSidebar, calendarType } = useCalendarContext()
     const navigate = useNavigate()
-    const oldToast = useToast()
-    const { isPreviewMode } = usePreviewMode()
 
     const onDrop = useCallback(
         (item: DropItem) => {
             if (!taskFolder || !droppable || !item.task) return
             if (taskFolder.id === item.sectionId) return
-            if (item.task.source.name === 'Jira' && taskFolder.id === TRASH_FOLDER_ID) {
-                if (isPreviewMode) {
-                    toast('Cannot delete Jira tasks', { type: 'error' })
-                } else {
-                    oldToast.show({
-                        message: 'Cannot delete Jira tasks',
-                    })
-                }
-                return
-            }
             reorderTask(
                 {
                     id: item.id,

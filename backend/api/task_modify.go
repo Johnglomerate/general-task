@@ -18,15 +18,8 @@ import (
 )
 
 type TaskChangeable struct {
-	ExternalPriority   *database.ExternalTaskPriority `json:"external_priority,omitempty" bson:"external_priority,omitempty"`
-	PriorityNormalized *float64                       `json:"priority_normalized,omitempty" bson:"priority_normalized,omitempty"`
-	TaskNumber         *int                           `json:"task_number,omitempty" bson:"task_number,omitempty"`
-	Comments           *[]database.Comment            `json:"comments,omitempty" bson:"comments,omitempty"`
-	Status             *database.ExternalTaskStatus   `json:"status,omitempty" bson:"status,omitempty"`
-	// Used to cache the current status before marking the task as done
-	PreviousStatus          *database.ExternalTaskStatus `json:"previous_status,omitempty" bson:"previous_status,omitempty"`
-	CompletedStatus         *database.ExternalTaskStatus `json:"completed_status,omitempty" bson:"completed_status,omitempty"`
-	RecurringTaskTemplateID *string                      `json:"recurring_task_template_id,omitempty" bson:"recurring_task_template_id,omitempty"`
+	PriorityNormalized      *float64 `json:"priority_normalized,omitempty" bson:"priority_normalized,omitempty"`
+	RecurringTaskTemplateID *string  `json:"recurring_task_template_id,omitempty" bson:"recurring_task_template_id,omitempty"`
 }
 
 type TaskItemChangeableFields struct {
@@ -128,12 +121,6 @@ func (api *API) TaskModify(c *gin.Context) {
 			SharedUntil:        modifyParams.TaskItemChangeableFields.SharedUntil,
 			UpdatedAt:          primitive.NewDateTimeFromTime(time.Now()),
 			PriorityNormalized: modifyParams.TaskItemChangeableFields.Task.PriorityNormalized,
-			ExternalPriority:   modifyParams.TaskItemChangeableFields.Task.ExternalPriority,
-			TaskNumber:         modifyParams.TaskItemChangeableFields.Task.TaskNumber,
-			Comments:           modifyParams.TaskItemChangeableFields.Task.Comments,
-			Status:             modifyParams.TaskItemChangeableFields.Task.Status,
-			PreviousStatus:     modifyParams.TaskItemChangeableFields.Task.PreviousStatus,
-			CompletedStatus:    modifyParams.TaskItemChangeableFields.Task.CompletedStatus,
 		}
 		if dueDate != nil {
 			updateTask.DueDate = dueDate
@@ -204,26 +191,6 @@ func ValidateFields(c *gin.Context, updateFields *TaskItemChangeableFields, task
 		c.JSON(400, gin.H{"detail": "cannot be marked done"})
 		return false
 	}
-	if updateFields.Task.Status != nil {
-		var statusToUpdateTo *database.ExternalTaskStatus
-		for _, status := range task.AllStatuses {
-			if status.ExternalID == updateFields.Task.Status.ExternalID {
-				statusToUpdateTo = status
-			}
-		}
-		if statusToUpdateTo == nil {
-			c.JSON(400, gin.H{"detail": "status value not in all status field for task"})
-			return false
-		}
-		if statusToUpdateTo.IsCompletedStatus {
-			updateFields.Task.CompletedStatus = statusToUpdateTo
-		}
-
-		if (task.IsCompleted != nil) && ((*task.IsCompleted && !statusToUpdateTo.IsCompletedStatus) || (task.IsCompleted != nil && !*task.IsCompleted && statusToUpdateTo.IsCompletedStatus)) {
-			updateFields.IsCompleted = &statusToUpdateTo.IsCompletedStatus
-		}
-	}
-
 	if updateFields.IsCompleted != nil && *updateFields.IsCompleted {
 		updateFields.CompletedAt = primitive.NewDateTimeFromTime(time.Now())
 	}
@@ -240,20 +207,6 @@ func ValidateFields(c *gin.Context, updateFields *TaskItemChangeableFields, task
 			return false
 		} else {
 			*updateFields.TimeAllocation *= constants.NANOSECONDS_IN_SECOND
-		}
-	}
-	if updateFields.Task.ExternalPriority != nil {
-		matched := false
-		for _, priority := range task.AllExternalPriorities {
-			if updateFields.Task.ExternalPriority.ExternalID == priority.ExternalID {
-				updateFields.Task.ExternalPriority = priority
-				updateFields.Task.PriorityNormalized = &priority.PriorityNormalized
-				matched = true
-			}
-		}
-		if !matched {
-			c.JSON(400, gin.H{"detail": "priority value not valid for task"})
-			return false
 		}
 	}
 	return true
@@ -382,15 +335,6 @@ func (api *API) UpdateTaskInDB(c *gin.Context, task *database.Task, userID primi
 
 func (api *API) UpdateTaskInDBWithError(task *database.Task, userID primitive.ObjectID, updateFields *database.Task) error {
 	taskCollection := database.GetTaskCollection(api.DB)
-
-	if updateFields.IsCompleted != nil {
-		updateFields.PreviousStatus = task.Status
-		if *updateFields.IsCompleted {
-			updateFields.Status = task.CompletedStatus
-		} else {
-			updateFields.Status = task.PreviousStatus
-		}
-	}
 
 	res, err := taskCollection.UpdateOne(
 		context.Background(),

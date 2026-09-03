@@ -1,14 +1,12 @@
 import { Fragment, useDeferredValue, useMemo, useState } from 'react'
 import styled from 'styled-components'
 import { v4 as uuidv4 } from 'uuid'
-import { GITHUB_SUPPORTED_VIEW_NAME, TASK_INBOX_NAME } from '../../../constants'
+import { TASK_INBOX_NAME } from '../../../constants'
 import { useAuthWindow } from '../../../hooks'
 import { useAddView, useGetSupportedViews, useRemoveView } from '../../../services/api/overview.hooks'
-import { useGetLinkedAccounts } from '../../../services/api/settings.hooks'
 import { Colors, Spacing, Typography } from '../../../styles'
 import { icons, logos } from '../../../styles/images'
 import { TSupportedView, TSupportedViewItem } from '../../../utils/types'
-import { isGithubLinked } from '../../../utils/utils'
 import Flex from '../../atoms/Flex'
 import GTCheckbox from '../../atoms/GTCheckbox'
 import GTInput from '../../atoms/GTInput'
@@ -17,7 +15,6 @@ import { Icon } from '../../atoms/Icon'
 import { Divider } from '../../atoms/SectionDivider'
 import Spinner from '../../atoms/Spinner'
 import GTButton from '../../atoms/buttons/GTButton'
-import MissingRepositoryMessage from './MissingRepositoryMessage'
 
 const SupportedView = styled.div<{ isIndented?: boolean }>`
     display: flex;
@@ -58,10 +55,7 @@ export const AddListsModalContent = () => {
     const { data: supportedViews } = useGetSupportedViews()
     const { mutate: addView } = useAddView()
     const { mutate: removeView } = useRemoveView()
-    const { data: linkedAccounts } = useGetLinkedAccounts()
     const { openAuthWindow } = useAuthWindow()
-
-    const isGithubIntegrationLinked = isGithubLinked(linkedAccounts ?? [])
 
     const [searchTerm, setSearchTerm] = useState('')
     const deferredSearchTerm = useDeferredValue(searchTerm)
@@ -174,9 +168,6 @@ export const AddListsModalContent = () => {
                                 )}
                             </Fragment>
                         ))}
-                    {supportedView.name === GITHUB_SUPPORTED_VIEW_NAME && isGithubIntegrationLinked && (
-                        <MissingRepositoryMessage />
-                    )}
                 </Fragment>
             ))}
         </>

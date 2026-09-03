@@ -47,7 +47,7 @@ func TestEventList(t *testing.T) {
 		context.Background(),
 		&database.ExternalAPIToken{
 			AccountID: sourceAccountID,
-			ServiceID: external.TASK_SERVICE_ID_LINEAR,
+			ServiceID: external.TASK_SERVICE_ID_GOOGLE,
 			UserID:    userID,
 		},
 	)
