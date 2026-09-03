@@ -68,17 +68,39 @@
                             "asana_task",
                             "github_pr",
                             "jira",
-                            "linear_task",
-                            "slack"
+                            "linear_task"
                         ]
                     }
                 },
                 "u": {
                     "$unset": {
                         "linked_task_id": "",
-                        "linked_view_id": "",
                         "linked_pull_request_id": "",
                         "linked_task_source_id": ""
+                    }
+                },
+                "multi": true
+            },
+            {
+                "q": {
+                    "linked_task_source_id": "slack"
+                },
+                "u": {
+                    "$set": {
+                        "linked_task_source_id": "gt_task"
+                    }
+                },
+                "multi": true
+            },
+            {
+                "q": {
+                    "linked_pull_request_id": {
+                        "$exists": true
+                    }
+                },
+                "u": {
+                    "$unset": {
+                        "linked_pull_request_id": ""
                     }
                 },
                 "multi": true

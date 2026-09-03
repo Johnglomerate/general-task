@@ -76,11 +76,10 @@ const IntegrationsStaticContent = ({
             📅 <a href={googleUrl}>Google Calendar</a>: easily schedule tasks onto your calendar.
         </p>
         <p>
-            You can manage your connected Google account in settings.
+            <DivCursorPointer onClick={() => setIsSettingsModalOpen(true)}>
+                You can manage your connected Google account in settings.
+            </DivCursorPointer>
         </p>
-        <DivCursorPointer onClick={() => setIsSettingsModalOpen(true)}>
-            <img src="/images/nux-integrations.png" width="100%" />
-        </DivCursorPointer>
     </>
 )
 
