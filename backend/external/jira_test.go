@@ -193,6 +193,14 @@ func TestLoadJIRATasks(t *testing.T) {
 		tokenServer := getTokenServerForJIRA(t, http.StatusOK)
 		searchServer := getSearchServerForJIRA(t, http.StatusOK, false)
 		statusServer := getStatusServerForJIRA(t, http.StatusOK, false)
+		priorityServer := getJIRAPriorityServer(t, http.StatusOK, []byte(`[]`))
+		defer priorityServer.Close()
+		fieldsServer := getJIRAFieldsServer(t, http.StatusOK, []byte(`{"fields":{}}`))
+		defer fieldsServer.Close()
+		commentsServer := getJIRACommentsServer(t, http.StatusOK, []byte(`{"comments":[]}`))
+		defer commentsServer.Close()
+		transitionServer := getTransitionServerForJIRA(t, http.StatusOK, false, false)
+		defer transitionServer.Close()
 
 		dueDate, _ := time.Parse(constants.YEAR_MONTH_DAY_FORMAT, "2021-04-20")
 		title := "Sample Taskeroni"
@@ -230,7 +238,7 @@ func TestLoadJIRATasks(t *testing.T) {
 		)
 
 		var JIRATasks = make(chan TaskResult)
-		JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{APIBaseURL: &searchServer.URL, TokenURL: &tokenServer.URL, StatusListURL: &statusServer.URL}}}}
+		JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{APIBaseURL: &searchServer.URL, TokenURL: &tokenServer.URL, StatusListURL: &statusServer.URL, PriorityListURL: &priorityServer.URL, CommentsListURL: &commentsServer.URL, FieldsListURL: &fieldsServer.URL, TransitionURL: &transitionServer.URL}}}}
 		go JIRA.GetTasks(db, *userID, accountID, JIRATasks)
 		result := <-JIRATasks
 		assert.Equal(t, 1, len(result.Tasks))
@@ -260,6 +268,12 @@ func TestLoadJIRATasks(t *testing.T) {
 
 		server := getJIRAPriorityServer(t, 200, []byte(`[{"id": "9","iconUrl":"https://example.com"},{"id": "5","iconUrl":"https://example2.com"}]`))
 		defer server.Close()
+		fieldsServer := getJIRAFieldsServer(t, http.StatusOK, []byte(`{"fields":{}}`))
+		defer fieldsServer.Close()
+		commentsServer := getJIRACommentsServer(t, http.StatusOK, []byte(`{"comments":[]}`))
+		defer commentsServer.Close()
+		transitionServer := getTransitionServerForJIRA(t, http.StatusOK, false, false)
+		defer transitionServer.Close()
 
 		dueDate, _ := time.Parse(constants.YEAR_MONTH_DAY_FORMAT, "2021-04-20")
 		title := "Sample Taskeroni"
@@ -303,7 +317,7 @@ func TestLoadJIRATasks(t *testing.T) {
 		)
 
 		var JIRATasks = make(chan TaskResult)
-		JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{APIBaseURL: &searchServer.URL, TokenURL: &tokenServer.URL, StatusListURL: &statusServer.URL, PriorityListURL: &server.URL}}}}
+		JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{APIBaseURL: &searchServer.URL, TokenURL: &tokenServer.URL, StatusListURL: &statusServer.URL, PriorityListURL: &server.URL, CommentsListURL: &commentsServer.URL, FieldsListURL: &fieldsServer.URL, TransitionURL: &transitionServer.URL}}}}
 		go JIRA.GetTasks(db, *userID, accountID, JIRATasks)
 		result := <-JIRATasks
 		assert.Equal(t, 1, len(result.Tasks))
@@ -332,6 +346,14 @@ func TestLoadJIRATasks(t *testing.T) {
 		tokenServer := getTokenServerForJIRA(t, http.StatusOK)
 		searchServer := getSearchServerForJIRA(t, http.StatusOK, false)
 		statusServer := getStatusServerForJIRA(t, http.StatusOK, false)
+		priorityServer := getJIRAPriorityServer(t, http.StatusOK, []byte(`[]`))
+		defer priorityServer.Close()
+		fieldsServer := getJIRAFieldsServer(t, http.StatusOK, []byte(`{"fields":{}}`))
+		defer fieldsServer.Close()
+		commentsServer := getJIRACommentsServer(t, http.StatusOK, []byte(`{"comments":[]}`))
+		defer commentsServer.Close()
+		transitionServer := getTransitionServerForJIRA(t, http.StatusOK, false, false)
+		defer transitionServer.Close()
 
 		dueDate, _ := time.Parse(constants.YEAR_MONTH_DAY_FORMAT, "2021-04-20")
 		title := "Sample Taskeroni"
@@ -370,7 +392,7 @@ func TestLoadJIRATasks(t *testing.T) {
 		)
 
 		var JIRATasks = make(chan TaskResult)
-		JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{APIBaseURL: &searchServer.URL, TokenURL: &tokenServer.URL, StatusListURL: &statusServer.URL}}}}
+		JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{APIBaseURL: &searchServer.URL, TokenURL: &tokenServer.URL, StatusListURL: &statusServer.URL, PriorityListURL: &priorityServer.URL, CommentsListURL: &commentsServer.URL, FieldsListURL: &fieldsServer.URL, TransitionURL: &transitionServer.URL}}}}
 		go JIRA.GetTasks(db, *userID, accountID, JIRATasks)
 		result := <-JIRATasks
 		assert.Equal(t, 1, len(result.Tasks))
@@ -734,6 +756,23 @@ func getTransitionServerForJIRA(t *testing.T, statusCode int, empty bool, partia
 		w.Write(result)
 	}))
 }
+
+func TestGetJIRATransitionListTransportError(t *testing.T) {
+	server := getTransitionServerForJIRA(t, 200, false, false)
+	server.Close()
+
+	JIRA := JIRASource{Atlassian: AtlassianService{Config: AtlassianConfig{ConfigValues: AtlassianConfigValues{TransitionURL: &server.URL}}}}
+	resultChan := make(chan JIRATransitionList)
+	go JIRA.getTransitionList(&database.AtlassianSiteConfiguration{}, "issueID", "sample", resultChan)
+
+	select {
+	case result := <-resultChan:
+		assert.Equal(t, 0, len(result.Transitions))
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for JIRA transition error result")
+	}
+}
+
 func TestModifyJIRATask(t *testing.T) {
 	db, dbCleanup, err := database.GetDBConnection()
 	assert.NoError(t, err)

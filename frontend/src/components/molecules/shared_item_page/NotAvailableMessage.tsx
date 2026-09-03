@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import styled from 'styled-components'
-import { AUTHORIZATION_COOKE } from '../../../constants'
+import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../../constants'
 import getEnvVars from '../../../environment'
 import useAnalyticsEventTracker from '../../../hooks/useAnalyticsEventTracker'
 import { Spacing } from '../../../styles'
@@ -50,10 +50,10 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                     />
                 ) : (
                     <>
-                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_SIGN_UP_URL}>
-                            <GTButton styleType="primary" value="Sign In to General Task" />
+                        <NoStyleAnchor href={LOGIN_URL} target="_self">
+                            <GTButton styleType="primary" value="Start free trial" />
                         </NoStyleAnchor>
-                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>
+                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL} target="_self">
                             <GTButton styleType="secondary" value="Learn more about General Task" />
                         </NoStyleAnchor>
                     </>

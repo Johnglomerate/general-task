@@ -123,6 +123,7 @@ func (jira JIRASource) GetTasks(db *mongo.Database, userID primitive.ObjectID, a
 		result <- emptyTaskResultWithSource(err, TASK_SOURCE_ID_JIRA)
 		return
 	}
+	defer resp.Body.Close()
 
 	taskData, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -361,6 +362,15 @@ func (jira JIRASource) GetListOfComments(siteConfiguration *database.AtlassianSi
 		}
 		return
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		result <- JIRACommentResult{
+			CommentList: &dbComments,
+			Error:       errors.New("JIRA comments request failed"),
+		}
+		return
+	}
+
 	commentListString, err := io.ReadAll(resp.Body)
 	if err != nil {
 		result <- JIRACommentResult{
@@ -417,6 +427,11 @@ func (jira JIRASource) GetListOfStatuses(siteConfiguration *database.AtlassianSi
 	if err != nil {
 		return statusMap, err
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return statusMap, errors.New("JIRA statuses request failed")
+	}
+
 	statusListString, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return statusMap, err
@@ -465,6 +480,10 @@ func (jira JIRASource) GetListOfPriorities(siteConfiguration *database.Atlassian
 	if err != nil {
 		return priorityIds, err
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return priorityIds, errors.New("JIRA priorities request failed")
+	}
 
 	priorityListString, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -504,6 +523,14 @@ func (jira JIRASource) GetListOfFields(siteConfiguration *database.AtlassianSite
 		result <- JIRAFieldsResult{
 			JIRATaskParams: jiraFields,
 			Error:          err,
+		}
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		result <- JIRAFieldsResult{
+			JIRATaskParams: jiraFields,
+			Error:          errors.New("JIRA fields request failed"),
 		}
 		return
 	}
@@ -598,6 +625,7 @@ func (jira JIRASource) handleJIRAIssueDelete(siteConfiguration *database.Atlassi
 		if err != nil {
 			return err
 		}
+		defer resp.Body.Close()
 		if resp.StatusCode != 200 && resp.StatusCode != 204 {
 			return errors.New("unable to successfully delete JIRA task")
 		}
@@ -717,12 +745,21 @@ func (jira JIRASource) getTransitionList(siteConfiguration *database.AtlassianSi
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to request transitions")
 		result <- JIRATransitionList{}
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		err := errors.New("JIRA transitions request failed")
+		logger.Error().Err(err).Msg("failed to request transitions")
+		result <- JIRATransitionList{}
+		return
 	}
 
 	responseBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to read http response body")
 		result <- JIRATransitionList{}
+		return
 	}
 
 	var transitionList JIRATransitionList
@@ -730,12 +767,13 @@ func (jira JIRASource) getTransitionList(siteConfiguration *database.AtlassianSi
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to parse JIRA transition list")
 		result <- JIRATransitionList{}
-
+		return
 	}
 	if len(transitionList.Transitions) == 0 {
 		err := errors.New("no JIRA transitions found in list")
 		logger.Error().Err(err).Msg("no JIRA transitions found in list")
 		result <- JIRATransitionList{}
+		return
 	}
 
 	result <- transitionList
@@ -752,6 +790,7 @@ func (jira JIRASource) executeTransition(siteConfiguration *database.AtlassianSi
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return errors.New("unable to successfully make status transition update request")
 	}
@@ -767,6 +806,7 @@ func (jira JIRASource) executeFieldUpdate(apiBaseURL string, AtlassianAuthToken 
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 && resp.StatusCode != 204 {
 		return errors.New("unable to successfully make field update request")
 	}

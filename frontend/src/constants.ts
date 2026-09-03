@@ -1,5 +1,6 @@
 import { TIconType } from './components/atoms/Icon'
 import getEnvVars from './environment'
+import marketingCopy from './marketingCopy'
 import { TIconColor } from './styles/colors'
 import { icons } from './styles/images'
 
@@ -88,6 +89,9 @@ export const TASK_PRIORITIES: TTaskPriority[] = [
 export const GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME = 'Google Calendar'
 export const GENERAL_TASK_SOURCE_NAME = 'General Task'
 export const SLACK_SOURCE_NAME = 'Slack'
+export const SUBSCRIPTION_PRICE = marketingCopy.SUBSCRIPTION_PRICE
+export const SUBSCRIPTION_TRIAL_DAYS = marketingCopy.SUBSCRIPTION_TRIAL_DAYS
+export const SUBSCRIPTION_TRIAL_OFFER = marketingCopy.SUBSCRIPTION_TRIAL_OFFER
 
 export const SYNC_MESSAGES = {
     SYNCING: 'Syncing...',
