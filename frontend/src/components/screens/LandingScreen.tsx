@@ -100,6 +100,29 @@ const BrandName = styled.div`
     line-height: 32px;
 `
 
+const HeaderActions = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    @media (max-width: 479px) {
+        width: 100%;
+        justify-content: space-between;
+    }
+`
+
+const LoginLink = styled.a`
+    color: #222721;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+    text-decoration: none;
+
+    &:hover {
+        color: #515852;
+    }
+`
+
 const CTA = styled.a`
     display: inline-flex;
     align-items: center;
@@ -551,9 +574,14 @@ const LandingScreen = () => {
                         <Logo src={logos.generaltask_blue_circle} alt="" />
                         <BrandName>General Task</BrandName>
                     </Brand>
-                    <CTA href={LOGIN_URL} target="_self">
-                        Start free trial
-                    </CTA>
+                    <HeaderActions>
+                        <LoginLink href={LOGIN_URL} target="_self">
+                            Log in
+                        </LoginLink>
+                        <CTA href={LOGIN_URL} target="_self">
+                            Start free trial
+                        </CTA>
+                    </HeaderActions>
                 </Nav>
             </Header>
 
