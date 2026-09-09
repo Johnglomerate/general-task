@@ -5,7 +5,6 @@ import {
     AUTHORIZATION_COOKE,
     LOGIN_URL,
     PRIVACY_POLICY_ROUTE,
-    SUBSCRIPTION_TRIAL_OFFER,
     TERMS_OF_SERVICE_ROUTE,
 } from '../../constants'
 import { logos } from '../../styles/images'
@@ -39,7 +38,7 @@ const customerLogos = [
     },
 ]
 
-const signupFinePrint = 'No card at signup'
+const signupFinePrint = '67 day free trial. No card at signup.'
 
 const Page = styled.main`
     min-width: 100%;
@@ -594,8 +593,7 @@ const LandingScreen = () => {
                             <HeroCopy>
                                 <HeroTitle>Effortless time blocking.</HeroTitle>
                                 <LargeText>
-                                    Take control of your time with powerful daily planning software. Start with a{' '}
-                                    {SUBSCRIPTION_TRIAL_OFFER}.
+                                    Take control of your time with powerful daily planning software. Only $2/month.
                                 </LargeText>
                                 <ButtonStack>
                                     <LargeCTA href={LOGIN_URL} target="_self">
@@ -698,7 +696,7 @@ const LandingScreen = () => {
                         <BottomCard>
                             <BottomHeading>Get started below.</BottomHeading>
                             <BottomText>
-                                General Task is a paid consumer productivity app. Start with a {SUBSCRIPTION_TRIAL_OFFER}.
+                                General Task is a paid consumer productivity app. Only $2/month.
                             </BottomText>
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
