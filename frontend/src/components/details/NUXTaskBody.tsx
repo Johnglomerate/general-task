@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { GITHUB_SUPPORTED_TYPE_NAME, GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME } from '../../constants'
+import {
+    GITHUB_SUPPORTED_TYPE_NAME,
+    GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME,
+    SUBSCRIPTION_PRICE,
+    SUBSCRIPTION_TRIAL_DAYS,
+} from '../../constants'
 import { useGetSupportedTypes } from '../../services/api/settings.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Border, Colors, Shadows, Spacing, Typography } from '../../styles'
@@ -128,9 +133,9 @@ const JohnsLetterStaticContent = () => (
             we are truly honored that you landed on us.
         </p>
         <p>
-            We have spent the last year building what we believe is a focused productivity workspace for software
-            engineers. General Task brings your tasks, calendar, pull requests, and integrations into one place so you
-            can plan your day and keep work moving.
+            We have spent the last year building a focused productivity workspace for people planning real work. General
+            Task brings your tasks, calendar, pull requests, and integrations into one place, starts with a{' '}
+            {SUBSCRIPTION_TRIAL_DAYS}-day free trial, and is {SUBSCRIPTION_PRICE} after that.
         </p>
         <p>
             Productivity is close to our hearts. Our team has worked at some of the most successful companies in the
@@ -143,11 +148,6 @@ const JohnsLetterStaticContent = () => (
             productive day. We want to make those awesome days happen all the time. That’s why we built this. We use
             General Task in-house daily, and we are already seeing substantial improvements in our own productivity. It
             feels great. We hope you enjoy the tool as much as we do!
-        </p>
-        <p>
-            General Task, as it is currently available, is in beta. This means that it is an imperfect work in progress,
-            but will improve rapidly to help you be more and more productive over time. We are just getting started, and
-            we can’t wait to have you along for the ride.
         </p>
         <p>
             <strong>But we can’t do this alone!</strong>
