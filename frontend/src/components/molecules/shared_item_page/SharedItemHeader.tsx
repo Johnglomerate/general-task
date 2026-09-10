@@ -8,6 +8,7 @@ import useAnalyticsEventTracker from '../../../hooks/useAnalyticsEventTracker'
 import { Spacing } from '../../../styles'
 import { SHARED_ITEM_WIDTH, mediaQuery } from '../../../styles/dimensions'
 import { buttons } from '../../../styles/images'
+import NoStyleAnchor from '../../atoms/NoStyleAnchor'
 import GTButton from '../../atoms/buttons/GTButton'
 import NoStyleButton from '../../atoms/buttons/NoStyleButton'
 
@@ -31,8 +32,10 @@ export const HeaderContainer = styled.div`
         padding: ${Spacing._16};
     }
 `
-const SignInButton = styled(NoStyleButton)`
+const SignInLink = styled(NoStyleAnchor)`
+    display: block;
     width: 200px;
+    cursor: pointer;
     ${mediaQuery.phone} {
         width: 160px;
     }
@@ -78,21 +81,24 @@ const SharedItemHeader = ({ sharedType }: SharedItemHeaderProps) => {
                     }}
                 />
             ) : (
-                <SignInButton
-                    onClick={() => {
+                <SignInLink
+                    href={LOGIN_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(event) => {
                         GALog('Button click', 'Sign in with Google')
                         const didOpenAuthWindow = openAuthWindow({
                             url: LOGIN_URL,
                             logEvent: false,
                             closeOnCookieSet: true,
                         })
-                        if (!didOpenAuthWindow) {
-                            window.location.href = LOGIN_URL
+                        if (didOpenAuthWindow) {
+                            event.preventDefault()
                         }
                     }}
                 >
                     <GoogleImage src={buttons.google_sign_in} />
-                </SignInButton>
+                </SignInLink>
             )}
         </HeaderContainer>
     )
