@@ -21,7 +21,9 @@ describe('mobile shell at 390x844', () => {
         cy.contains('Take control of your time with powerful daily planning software. Only $2/month.').should(
             'be.visible'
         )
-        cy.contains('67 day free trial. No card at signup.').should('be.visible')
+        cy.task('getBackendTrialPeriodDays').then((trialPeriodDays) => {
+            cy.contains(`${trialPeriodDays} day free trial. No card at signup.`).should('be.visible')
+        })
         cy.contains('a', 'Log in').should('have.attr', 'href', 'http://localhost:8080/login/')
         cy.get('a').then(($links) => {
             const trialLinks = [...$links].filter((link) => link.textContent?.trim() === 'Start free trial')
