@@ -64,6 +64,7 @@ const Header = styled.header`
 const Nav = styled.div`
     width: 100%;
     max-width: 1050px;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -208,6 +209,7 @@ const HeroSection = styled(Section)`
 const Container = styled.div`
     width: 100%;
     max-width: 1050px;
+    box-sizing: border-box;
     margin: 0 auto;
     padding: 0 20px;
 `
