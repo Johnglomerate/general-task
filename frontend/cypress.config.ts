@@ -1,17 +1,4 @@
 import { defineConfig } from 'cypress'
-import { readFileSync } from 'fs'
-import path from 'path'
-
-const getBackendTrialPeriodDays = () => {
-    const subscriptionSource = readFileSync(path.resolve(__dirname, '../backend/api/subscription.go'), 'utf8')
-    const match = subscriptionSource.match(/^\s*TrialPeriodDays\s*=\s*(\d+)/m)
-
-    if (!match) {
-        throw new Error('Unable to find TrialPeriodDays in backend/api/subscription.go')
-    }
-
-    return Number(match[1])
-}
 
 // The app under test is a static `yarn build:test` bundle served on :3000. That is a *development*
 // build, so `src/environment.ts` points its API base URL at http://localhost:8080 and every request
@@ -21,11 +8,6 @@ export default defineConfig({
         baseUrl: 'http://localhost:3000',
         specPattern: 'cypress/e2e/**/*.cy.ts',
         supportFile: 'cypress/support/e2e.ts',
-        setupNodeEvents(on) {
-            on('task', {
-                getBackendTrialPeriodDays,
-            })
-        },
         // A phone, not a narrow desktop window: 390x844 is the iPhone 12/13/14 logical viewport, and
         // sits under BREAKPOINTS.phone (768) so `useIsMobile` reports true. Touch and `hover: none`
         // are layered on top per-test by `cy.emulatePhoneInput()`.
