@@ -24,6 +24,15 @@ describe('mobile shell at 390x844', () => {
         cy.contains('67 day free trial. No card at signup.').should('be.visible')
         cy.contains('a', 'Start free trial').should('have.attr', 'href', 'http://localhost:8080/login/')
         cy.contains('a', 'Log in').should('have.attr', 'href', 'http://localhost:8080/login/')
+        cy.get('a').then(($links) => {
+            const trialLinks = [...$links].filter((link) => link.textContent?.trim() === 'Start free trial')
+            expect(trialLinks.length, 'trial CTA count').to.be.greaterThan(0)
+            trialLinks.forEach((link) => {
+                const { left, right } = link.getBoundingClientRect()
+                expect(left, 'trial CTA starts on screen').to.be.at.least(0)
+                expect(right, 'trial CTA ends on screen').to.be.at.most(Cypress.config('viewportWidth'))
+            })
+        })
     })
 
     it('boots at /overview as a phone, not a narrow desktop', () => {
