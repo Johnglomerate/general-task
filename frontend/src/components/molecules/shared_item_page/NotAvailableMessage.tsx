@@ -57,7 +57,14 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                             value="Sign In to General Task"
                             onClick={() => {
                                 GALog('Button click', 'Sign In to General Task')
-                                openAuthWindow({ url: LOGIN_URL, logEvent: false, closeOnCookieSet: true })
+                                const didOpenAuthWindow = openAuthWindow({
+                                    url: LOGIN_URL,
+                                    logEvent: false,
+                                    closeOnCookieSet: true,
+                                })
+                                if (!didOpenAuthWindow) {
+                                    window.location.href = LOGIN_URL
+                                }
                             }}
                         />
                         <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>
