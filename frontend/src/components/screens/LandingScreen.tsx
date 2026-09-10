@@ -126,6 +126,7 @@ const CTA = styled.a`
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     min-height: 40px;
     padding: 10px 24px;
     border: 1px solid #222721;
