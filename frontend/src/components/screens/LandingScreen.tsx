@@ -8,7 +8,6 @@ import {
     PRIVACY_POLICY_ROUTE,
     TERMS_OF_SERVICE_ROUTE,
 } from '../../constants'
-import { LANDING_SIGNUP_FINE_PRINT } from '../../landingCopy'
 import { logos } from '../../styles/images'
 
 const ASSET_BASE = '/images/landing'
@@ -16,6 +15,9 @@ const assets = {
     background: `${ASSET_BASE}/general-task-background.png`,
     hero: `${ASSET_BASE}/general-task-front-illustration.png`,
 }
+
+// Marketing copy; keep aligned with TrialPeriodDays in backend/api/subscription.go.
+const signupFinePrint = '67 day free trial. No card at signup.'
 
 const Page = styled.main`
     min-width: 100%;
@@ -149,18 +151,21 @@ const HeroArt = styled.img`
     right: 0;
     bottom: 0;
     left: 0;
-    z-index: 40000;
+    z-index: 0;
     width: 100%;
     pointer-events: none;
 `
 
 const HeroBackground = styled.img`
     position: absolute;
+    top: 0;
     right: 0;
-    bottom: 0;
+    bottom: auto;
     left: 0;
-    z-index: -1;
+    z-index: 0;
     width: 100%;
+    height: 100%;
+    object-fit: cover;
     pointer-events: none;
 `
 
@@ -180,6 +185,8 @@ const Section = styled.section`
 `
 
 const HeroSection = styled(Section)`
+    overflow: hidden;
+    isolation: isolate;
     padding-top: 0;
 `
 
@@ -192,6 +199,8 @@ const Container = styled.div`
 `
 
 const HeroContainer = styled(Container)`
+    position: relative;
+    z-index: 1;
     max-width: 960px;
     margin-top: 100px;
     margin-bottom: 100px;
@@ -488,12 +497,12 @@ const LandingScreen = () => {
                 />
                 <meta content="General Task - Personal productivity for $2/month" property="og:title" />
                 <meta
-                    content={`Take control of your time with powerful daily planning software. ${LANDING_SIGNUP_FINE_PRINT}`}
+                    content={`Take control of your time with powerful daily planning software. ${signupFinePrint}`}
                     property="og:description"
                 />
                 <meta content="General Task - Personal productivity for $2/month" property="twitter:title" />
                 <meta
-                    content={`Take control of your time with powerful daily planning software. ${LANDING_SIGNUP_FINE_PRINT}`}
+                    content={`Take control of your time with powerful daily planning software. ${signupFinePrint}`}
                     property="twitter:description"
                 />
                 <meta property="og:image" content="/images/landing/general-task-background.png" />
@@ -516,10 +525,10 @@ const LandingScreen = () => {
             </Header>
 
             <PageWrapper>
-                <HeroArt src={assets.hero} alt="" />
-                <HeroBackground src={assets.background} alt="" />
                 <InnerBlock>
                     <HeroSection>
+                        <HeroBackground src={assets.background} alt="" />
+                        <HeroArt src={assets.hero} alt="" />
                         <HeroContainer>
                             <HeroCopy>
                                 <HeroTitle>Effortless time blocking.</HeroTitle>
@@ -531,7 +540,7 @@ const LandingScreen = () => {
                                         Start free trial
                                     </LargeCTA>
                                 </ButtonStack>
-                                <FinePrint>{LANDING_SIGNUP_FINE_PRINT}</FinePrint>
+                                <FinePrint>{signupFinePrint}</FinePrint>
                             </HeroCopy>
                         </HeroContainer>
                     </HeroSection>
@@ -607,7 +616,7 @@ const LandingScreen = () => {
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
                             </LargeCTA>
-                            <FinePrint>{LANDING_SIGNUP_FINE_PRINT}</FinePrint>
+                            <FinePrint>{signupFinePrint}</FinePrint>
                         </BottomCard>
                     </EndSection>
                 </InnerBlock>
