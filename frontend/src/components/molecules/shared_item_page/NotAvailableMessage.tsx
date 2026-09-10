@@ -50,7 +50,7 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                     />
                 ) : (
                     <>
-                        <NoStyleAnchor href={LOGIN_URL}>
+                        <NoStyleAnchor href={LOGIN_URL} target="_self">
                             <GTButton styleType="primary" value="Sign In to General Task" />
                         </NoStyleAnchor>
                         <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>
