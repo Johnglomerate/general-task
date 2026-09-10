@@ -16,23 +16,6 @@ const assets = {
     hero: `${ASSET_BASE}/general-task-front-illustration.png`,
 }
 
-const customerLogos = [
-    {
-        alt: 'Nvidia',
-        src: `${ASSET_BASE}/logo-nvidia.png`,
-    },
-    { alt: 'HubSpot', src: `${ASSET_BASE}/logo-hubspot.png` },
-    { alt: 'Salesforce', src: `${ASSET_BASE}/logo-salesforce.png` },
-    { alt: 'Qantas', src: `${ASSET_BASE}/logo-qantas.png` },
-    { alt: 'Square', src: `${ASSET_BASE}/logo-square.png` },
-    { alt: 'Grammarly', src: `${ASSET_BASE}/logo-grammarly.png` },
-    { alt: 'Zendesk', src: `${ASSET_BASE}/logo-zendesk.png` },
-    {
-        alt: 'Philippine Space Agency',
-        src: `${ASSET_BASE}/logo-philsa.png`,
-    },
-]
-
 const signupFinePrint = '67 day free trial. No card at signup.'
 
 const Page = styled.main`
@@ -292,37 +275,6 @@ const FinePrint = styled.p`
     text-align: center;
 `
 
-const LogoSection = styled(Section)`
-    padding-top: 40px;
-`
-
-const LogoContainer = styled(Container)`
-    max-width: 960px;
-    text-align: center;
-`
-
-const LogoGrid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    align-items: center;
-    justify-items: center;
-    gap: 24px 16px;
-    padding: 40px 80px;
-
-    @media (max-width: 767px) {
-        grid-template-columns: repeat(2, 1fr);
-        padding: 32px 20px;
-    }
-`
-
-const CustomerLogo = styled.img`
-    width: 100%;
-    max-width: 100%;
-    max-height: 52px;
-    padding: 0 20px;
-    object-fit: contain;
-`
-
 const Heading = styled.h2`
     margin: 0 0 16px;
     color: #222721;
@@ -339,17 +291,6 @@ const Heading = styled.h2`
         font-size: 25px;
         line-height: 31px;
     }
-`
-
-const LogoHeading = styled(Heading)`
-    text-align: center;
-`
-
-const Divider = styled.div`
-    width: 80%;
-    height: 1px;
-    margin: 100px auto 0;
-    background: #b6b6b6;
 `
 
 const SplitContainer = styled(Container)`
@@ -595,24 +536,6 @@ const LandingScreen = () => {
                             </HeroCopy>
                         </HeroContainer>
                     </HeroSection>
-
-                    <LogoSection>
-                        <LogoContainer>
-                            <LogoGrid>
-                                {customerLogos.map((logo) => (
-                                    <CustomerLogo
-                                        key={logo.alt}
-                                        src={logo.src}
-                                        alt={logo.alt}
-                                        loading="lazy"
-                                        decoding="async"
-                                    />
-                                ))}
-                            </LogoGrid>
-                            <LogoHeading>Used by the best teams.</LogoHeading>
-                            <Divider />
-                        </LogoContainer>
-                    </LogoSection>
 
                     <Section>
                         <SplitContainer>
