@@ -71,7 +71,8 @@ const useAuthWindow = () => {
             }
             if (refetchOnCookieSet && !closeOnCookieSet && hasAuthCookie && !didRefetchOnCookieSet) {
                 didRefetchOnCookieSet = true
-                queryClient.refetchQueries()
+                onClose(timer)
+                return
             }
             if (win.closed) {
                 onClose(timer)
