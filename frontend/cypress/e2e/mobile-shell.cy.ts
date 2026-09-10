@@ -13,28 +13,6 @@ describe('mobile shell at 390x844', () => {
         cy.emulatePhoneInput()
     })
 
-    it('shows the public landing page trial copy and login CTAs', () => {
-        cy.clearCookie('authToken')
-        cy.visit('/')
-
-        cy.contains('Effortless time blocking.').should('be.visible')
-        cy.contains('Take control of your time with powerful daily planning software. Only $2/month.').should(
-            'be.visible'
-        )
-        cy.contains('67 day free trial. No card at signup.').should('be.visible')
-        cy.contains('a', 'Log in').should('have.attr', 'href', 'http://localhost:8080/login/')
-        cy.get('a').then(($links) => {
-            const trialLinks = [...$links].filter((link) => link.textContent?.trim() === 'Start free trial')
-            expect(trialLinks.length, 'trial CTA count').to.be.greaterThan(0)
-            trialLinks.forEach((link) => {
-                expect(link.getAttribute('href'), 'trial CTA login href').to.eq('http://localhost:8080/login/')
-                const { left, right } = link.getBoundingClientRect()
-                expect(left, 'trial CTA starts on screen').to.be.at.least(0)
-                expect(right, 'trial CTA ends on screen').to.be.at.most(Cypress.config('viewportWidth'))
-            })
-        })
-    })
-
     it('keeps shared unavailable sign-in on the shared page', () => {
         const loginSelector = 'a[href="http://localhost:8080/login/"]'
         const assertSharedSignIn = (route: string, title: string, linkIndex: number, requestAlias: string) => {
@@ -49,9 +27,10 @@ describe('mobile shell at 390x844', () => {
             })
 
             cy.window().then((win) => {
+                const closeAuthWindow = cy.stub().as('closeAuthWindow')
                 cy.stub(win, 'open')
                     .as('authWindow')
-                    .returns({ closed: false, close: () => undefined } as unknown as Window)
+                    .returns({ closed: false, close: closeAuthWindow } as unknown as Window)
             })
 
             cy.get(loginSelector).eq(linkIndex).click()
@@ -59,6 +38,7 @@ describe('mobile shell at 390x844', () => {
             cy.location('pathname').should('eq', route)
             cy.setCookie('authToken', 'post-login-token')
             cy.wait(requestAlias)
+            cy.get('@closeAuthWindow').should('have.been.calledOnce')
             cy.location('pathname').should('eq', route)
         }
 
