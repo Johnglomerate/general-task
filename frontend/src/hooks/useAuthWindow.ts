@@ -21,6 +21,7 @@ export interface OpenAuthWindowOptions {
     onWindowClose?: () => void
     logEvent?: boolean
     closeOnCookieSet?: boolean
+    refetchOnCookieSet?: boolean
     isGoogleSignIn?: boolean
 }
 
@@ -33,6 +34,7 @@ const useAuthWindow = () => {
         onWindowClose,
         logEvent = true,
         closeOnCookieSet = false,
+        refetchOnCookieSet = false,
         isGoogleSignIn = false,
     }: OpenAuthWindowOptions) => {
         if (!url) return false
@@ -67,7 +69,7 @@ const useAuthWindow = () => {
                 onClose(timer)
                 return
             }
-            if (!closeOnCookieSet && hasAuthCookie && !didRefetchOnCookieSet) {
+            if (refetchOnCookieSet && !closeOnCookieSet && hasAuthCookie && !didRefetchOnCookieSet) {
                 didRefetchOnCookieSet = true
                 queryClient.refetchQueries()
             }
