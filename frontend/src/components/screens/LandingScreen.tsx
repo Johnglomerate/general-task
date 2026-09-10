@@ -18,6 +18,7 @@ const assets = {
 
 // Marketing copy; keep aligned with TrialPeriodDays in backend/api/subscription.go.
 const signupFinePrint = '67 day free trial. No card at signup.'
+const landingDescription = 'Take control of your time with powerful daily planning software. Only $2/month.'
 
 const Page = styled.main`
     min-width: 100%;
@@ -491,20 +492,11 @@ const LandingScreen = () => {
         <Page>
             <Helmet>
                 <title>General Task - Personal productivity for $2/month</title>
-                <meta
-                    content="Take control of your time with powerful daily planning software. Only $2/month."
-                    name="description"
-                />
+                <meta content={landingDescription} name="description" />
                 <meta content="General Task - Personal productivity for $2/month" property="og:title" />
-                <meta
-                    content={`Take control of your time with powerful daily planning software. ${signupFinePrint}`}
-                    property="og:description"
-                />
+                <meta content={landingDescription} property="og:description" />
                 <meta content="General Task - Personal productivity for $2/month" property="twitter:title" />
-                <meta
-                    content={`Take control of your time with powerful daily planning software. ${signupFinePrint}`}
-                    property="twitter:description"
-                />
+                <meta content={landingDescription} property="twitter:description" />
                 <meta property="og:image" content="/images/landing/general-task-background.png" />
             </Helmet>
             <Header>
@@ -532,9 +524,7 @@ const LandingScreen = () => {
                         <HeroContainer>
                             <HeroCopy>
                                 <HeroTitle>Effortless time blocking.</HeroTitle>
-                                <LargeText>
-                                    Take control of your time with powerful daily planning software. Only $2/month.
-                                </LargeText>
+                                <LargeText>{landingDescription}</LargeText>
                                 <ButtonStack>
                                     <LargeCTA href={LOGIN_URL} target="_self">
                                         Start free trial
