@@ -52,21 +52,24 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                     />
                 ) : (
                     <>
-                        <GTButton
-                            styleType="primary"
-                            value="Sign In to General Task"
-                            onClick={() => {
+                        <NoStyleAnchor
+                            href={LOGIN_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(event) => {
                                 GALog('Button click', 'Sign In to General Task')
                                 const didOpenAuthWindow = openAuthWindow({
                                     url: LOGIN_URL,
                                     logEvent: false,
                                     closeOnCookieSet: true,
                                 })
-                                if (!didOpenAuthWindow) {
-                                    window.location.href = LOGIN_URL
+                                if (didOpenAuthWindow) {
+                                    event.preventDefault()
                                 }
                             }}
-                        />
+                        >
+                            <GTButton styleType="primary" value="Sign In to General Task" />
+                        </NoStyleAnchor>
                         <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>
                             <GTButton styleType="secondary" value="Learn more about General Task" />
                         </NoStyleAnchor>
