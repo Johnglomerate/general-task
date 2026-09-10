@@ -21,10 +21,10 @@ type User struct {
 	GPTSuggestionsLeft    int                `bson:"gpt_suggestions_left"`
 	GPTLastSuggestionTime primitive.DateTime `bson:"gpt_last_suggestion_time"`
 	// Stripe subscription fields
-	StripeCustomerID           string             `bson:"stripe_customer_id,omitempty"`
-	SubscriptionID             string             `bson:"subscription_id,omitempty"`
-	SubscriptionStatus         string             `bson:"subscription_status,omitempty"`
-	SubscriptionPriceID        string             `bson:"subscription_price_id,omitempty"`
+	StripeCustomerID             string             `bson:"stripe_customer_id,omitempty"`
+	SubscriptionID               string             `bson:"subscription_id,omitempty"`
+	SubscriptionStatus           string             `bson:"subscription_status,omitempty"`
+	SubscriptionPriceID          string             `bson:"subscription_price_id,omitempty"`
 	SubscriptionCurrentPeriodEnd primitive.DateTime `bson:"subscription_current_period_end,omitempty"`
 }
 
@@ -91,7 +91,6 @@ type SharedAccess int
 const (
 	SharedAccessPublic SharedAccess = iota
 	SharedAccessDomain
-	SharedAccessMeetingAttendees
 )
 
 type Task struct {

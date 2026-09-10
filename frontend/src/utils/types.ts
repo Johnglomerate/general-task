@@ -8,8 +8,6 @@ export type TTaskSourceName = 'General Task' | 'Google Calendar' | 'Git PR' | 'J
 
 export type TTaskSharedAccess = 'public' | 'domain'
 
-export type TNoteSharedAccess = 'public' | 'domain' | 'meeting_attendees'
-
 export interface TTaskSource {
     name: TTaskSourceName
     logo: string
@@ -433,8 +431,6 @@ export interface TNote {
     author: string
     created_at: string
     updated_at: string
-    shared_until?: string
-    shared_access?: TNoteSharedAccess
     is_deleted: boolean
     optimisticId?: string
 }

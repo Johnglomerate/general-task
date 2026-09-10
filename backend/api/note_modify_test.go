@@ -54,7 +54,7 @@ func TestNoteModifyEditFields(t *testing.T) {
 		assert.Equal(t, "new title", *note.Title)
 		assert.Equal(t, "new body", *note.Body)
 		assert.Equal(t, "new author", note.Author)
-		assert.Equal(t, database.SharedAccessDomain, *note.SharedAccess)
+		assert.Nil(t, note.SharedAccess)
 		assert.Equal(t, *testutils.CreateDateTime("2020-04-20"), note.CreatedAt)
 		assert.Greater(t, note.UpdatedAt, *testutils.CreateDateTime("2020-04-20"))
 		assert.Equal(t, *testutils.CreateDateTime("9999-01-01"), note.SharedUntil)
@@ -62,5 +62,16 @@ func TestNoteModifyEditFields(t *testing.T) {
 		if note.IsDeleted != nil {
 			assert.True(t, *note.IsDeleted)
 		}
+	})
+	t.Run("LegacySharingFieldsIgnored", func(t *testing.T) {
+		response := ServeRequest(t, authToken, "PATCH", "/notes/modify/"+note1.ID.Hex()+"/",
+			bytes.NewBuffer([]byte(`{"shared_until":"2021-01-01T00:00:00Z","shared_access":"public","is_shared":true}`)), http.StatusOK, nil)
+		assert.Equal(t, "{}", string(response))
+
+		var note database.Note
+		err = database.GetNoteCollection(db).FindOne(context.Background(), bson.M{"_id": note1.ID}).Decode(&note)
+		assert.NoError(t, err)
+		assert.Nil(t, note.SharedAccess)
+		assert.Equal(t, *testutils.CreateDateTime("9999-01-01"), note.SharedUntil)
 	})
 }
