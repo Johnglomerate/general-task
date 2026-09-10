@@ -81,7 +81,14 @@ const SharedItemHeader = ({ sharedType }: SharedItemHeaderProps) => {
                 <SignInButton
                     onClick={() => {
                         GALog('Button click', 'Sign in with Google')
-                        openAuthWindow({ url: LOGIN_URL, logEvent: false, closeOnCookieSet: true })
+                        const didOpenAuthWindow = openAuthWindow({
+                            url: LOGIN_URL,
+                            logEvent: false,
+                            closeOnCookieSet: true,
+                        })
+                        if (!didOpenAuthWindow) {
+                            window.location.href = LOGIN_URL
+                        }
                     }}
                 >
                     <GoogleImage src={buttons.google_sign_in} />
