@@ -61,7 +61,6 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                                 const didOpenAuthWindow = openAuthWindow({
                                     url: LOGIN_URL,
                                     logEvent: false,
-                                    closeOnCookieSet: true,
                                 })
                                 if (didOpenAuthWindow) {
                                     event.preventDefault()
