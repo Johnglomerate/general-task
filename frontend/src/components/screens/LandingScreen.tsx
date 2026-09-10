@@ -5,7 +5,6 @@ import {
     AUTHORIZATION_COOKE,
     LOGIN_URL,
     PRIVACY_POLICY_ROUTE,
-    SUBSCRIPTION_TRIAL_OFFER,
     TERMS_OF_SERVICE_ROUTE,
 } from '../../constants'
 import { logos } from '../../styles/images'
@@ -697,7 +696,8 @@ const LandingScreen = () => {
                         <BottomCard>
                             <BottomHeading>Get started below.</BottomHeading>
                             <BottomText>
-                                General Task is a paid consumer productivity app. Start with a {SUBSCRIPTION_TRIAL_OFFER}.
+                                General Task is a paid consumer productivity app. Start with a 67-day free trial, then
+                                $2/month.
                             </BottomText>
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
