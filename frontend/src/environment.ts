@@ -10,7 +10,7 @@ const ENV = {
         REACT_APP_API_BASE_URL: 'https://api.generaltask.com',
         REACT_APP_FRONTEND_BASE_URL: 'https://generaltask.com',
         REACT_APP_TASK_BASE_URL: 'https://share.generaltask.com',
-        REACT_APP_TRY_BASE_URL: 'https://generaltask.com',
+        REACT_APP_TRY_BASE_URL: 'https://try.generaltask.com',
         COOKIE_DOMAIN: '.generaltask.com',
     },
 }
