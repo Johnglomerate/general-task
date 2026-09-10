@@ -696,8 +696,7 @@ const LandingScreen = () => {
                         <BottomCard>
                             <BottomHeading>Get started below.</BottomHeading>
                             <BottomText>
-                                General Task is a paid consumer productivity app. Start with a 67-day free trial, then
-                                $2/month.
+                                General Task is a paid consumer productivity app. Only $2/month.
                             </BottomText>
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
