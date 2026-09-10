@@ -8,13 +8,8 @@ import {
     PRIVACY_POLICY_ROUTE,
     TERMS_OF_SERVICE_ROUTE,
 } from '../../constants'
+import { mediaQuery } from '../../styles/dimensions'
 import { logos } from '../../styles/images'
-
-const ASSET_BASE = '/images/landing'
-const assets = {
-    background: `${ASSET_BASE}/general-task-background.png`,
-    hero: `${ASSET_BASE}/general-task-front-illustration.png`,
-}
 
 // Marketing copy; keep aligned with TrialPeriodDays in backend/api/subscription.go.
 const signupFinePrint = '67 day free trial. No card at signup.'
@@ -26,7 +21,7 @@ const Page = styled.main`
     overflow-x: hidden;
     background: #f0f3f7;
     color: #222721;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
 `
@@ -50,11 +45,11 @@ const Nav = styled.div`
     justify-content: space-between;
     padding: 16px 0;
 
-    @media (max-width: 1100px) {
+    ${mediaQuery.tabletOrSmaller} {
         padding: 16px 24px;
     }
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         gap: 16px;
         align-items: flex-start;
         flex-direction: column;
@@ -85,7 +80,7 @@ const HeaderActions = styled.div`
     align-items: center;
     gap: 16px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         width: 100%;
         justify-content: space-between;
     }
@@ -131,7 +126,7 @@ const LargeCTA = styled(CTA)`
     font-size: 24px;
     line-height: 28px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         width: 100%;
         font-size: 20px;
     }
@@ -145,29 +140,6 @@ const PageWrapper = styled.div`
     align-items: center;
     justify-content: center;
     flex-direction: column;
-`
-
-const HeroArt = styled.img`
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    pointer-events: none;
-`
-
-const HeroBackground = styled.img`
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: auto;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none;
 `
 
 const InnerBlock = styled.div`
@@ -189,6 +161,9 @@ const HeroSection = styled(Section)`
     overflow: hidden;
     isolation: isolate;
     padding-top: 0;
+    background:
+        linear-gradient(180deg, rgba(220, 236, 245, 0.78), rgba(255, 255, 255, 0.94) 64%),
+        #ffffff;
 `
 
 const Container = styled.div`
@@ -207,7 +182,7 @@ const HeroContainer = styled(Container)`
     margin-bottom: 100px;
     text-align: center;
 
-    @media (max-width: 991px) {
+    ${mediaQuery.tabletOrSmaller} {
         margin-bottom: 40px;
         padding-top: 40px;
         padding-bottom: 0;
@@ -229,12 +204,12 @@ const HeroTitle = styled.h1`
     line-height: 85px;
     text-align: center;
 
-    @media (max-width: 991px) {
+    ${mediaQuery.tabletOrSmaller} {
         font-size: 70px;
         line-height: 70px;
     }
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 56px;
         line-height: 58px;
     }
@@ -250,12 +225,12 @@ const LargeText = styled.p`
     line-height: 38px;
     text-align: center;
 
-    @media (max-width: 991px) {
+    ${mediaQuery.tabletOrSmaller} {
         font-size: 18px;
         line-height: 28px;
     }
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 16px;
         line-height: 24px;
     }
@@ -268,7 +243,7 @@ const ButtonStack = styled.div`
     gap: 8px;
     margin-top: 32px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         width: 100%;
         flex-direction: column;
     }
@@ -291,12 +266,12 @@ const Heading = styled.h2`
     font-weight: 700;
     line-height: 116%;
 
-    @media (max-width: 991px) {
+    ${mediaQuery.tabletOrSmaller} {
         font-size: 36px;
         line-height: 36px;
     }
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 25px;
         line-height: 31px;
     }
@@ -313,7 +288,7 @@ const Split = styled.div<{ $reverseOnMobile?: boolean }>`
     gap: 50px 16px;
     margin-top: 40px;
 
-    @media (max-width: 991px) {
+    ${mediaQuery.tabletOrSmaller} {
         display: flex;
         flex-direction: ${({ $reverseOnMobile }) => ($reverseOnMobile ? 'column-reverse' : 'column')};
     }
@@ -325,7 +300,7 @@ const FeatureText = styled.div`
     font-weight: 400;
     line-height: 28px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 14px;
         line-height: 24px;
     }
@@ -333,26 +308,142 @@ const FeatureText = styled.div`
 
 const FeaturePanel = styled.div`
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
+    flex-direction: column;
+    gap: 18px;
     min-height: 260px;
-    padding: 32px;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 24px;
     border: 1px solid rgba(34, 39, 33, 0.12);
     border-radius: 8px;
-    background:
-        linear-gradient(135deg, rgba(251, 221, 64, 0.24), rgba(220, 236, 245, 0.78)),
-        #ffffff;
+    background: #f7f9fb;
     color: #222721;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 34px;
-    text-align: center;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         min-height: 180px;
-        font-size: 22px;
-        line-height: 28px;
+        padding: 18px;
     }
+`
+
+const MiniToolbar = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 6px;
+`
+
+const MiniDot = styled.div<{ $color?: string }>`
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: ${({ $color }) => $color ?? '#dcecf5'};
+`
+
+const MiniWindow = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(34, 39, 33, 0.12);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 14px 34px rgba(34, 39, 33, 0.08);
+`
+
+const MiniTask = styled.div<{ $accent?: string }>`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-left: 4px solid ${({ $accent }) => $accent ?? '#fbdd40'};
+    border-radius: 6px;
+    background: #ffffff;
+    color: #222721;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+`
+
+const MiniTaskLine = styled.span`
+    display: block;
+    width: 100%;
+    height: 8px;
+    border-radius: 8px;
+    background: rgba(34, 39, 33, 0.16);
+`
+
+const TaskCalendarMock = styled.div`
+    display: grid;
+    grid-template-columns: 0.84fr 1fr;
+    gap: 12px;
+`
+
+const CalendarColumn = styled.div`
+    display: grid;
+    grid-template-rows: repeat(4, minmax(30px, 1fr));
+    gap: 8px;
+    min-height: 172px;
+`
+
+const CalendarSlot = styled.div<{ $filled?: boolean }>`
+    border: 1px solid rgba(34, 39, 33, 0.1);
+    border-radius: 6px;
+    background: ${({ $filled }) => ($filled ? '#dcecf5' : '#f7f9fb')};
+`
+
+const TaskStack = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+`
+
+const IntegrationGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+`
+
+const IntegrationCard = styled.div`
+    min-height: 58px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(34, 39, 33, 0.1);
+`
+
+const IntegrationName = styled.div`
+    margin-bottom: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+`
+
+const FocusMock = styled.div`
+    display: grid;
+    gap: 14px;
+`
+
+const FocusTimer = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 118px;
+    border-radius: 8px;
+    background: #222721;
+    color: #ffffff;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 48px;
+`
+
+const FocusMeta = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #ffffff;
 `
 
 const FocusSection = styled(Section)`
@@ -362,7 +453,7 @@ const FocusSection = styled(Section)`
 const FocusPanel = styled(FeaturePanel)`
     margin: 100px 0 40px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         max-width: 90%;
         margin: 64px auto 20px;
     }
@@ -374,7 +465,7 @@ const BlueSection = styled.section`
     padding: 60px;
     background: #dcecf5;
 
-    @media (max-width: 767px) {
+    ${mediaQuery.phone} {
         padding: 60px 20px;
     }
 `
@@ -387,7 +478,7 @@ const SmallHeading = styled.h4`
     font-weight: 700;
     line-height: 32px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 25px;
     }
 `
@@ -400,7 +491,7 @@ const MutedCopy = styled.div`
     line-height: 28px;
     opacity: 0.78;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 14px;
         line-height: 24px;
     }
@@ -428,7 +519,7 @@ const BottomHeading = styled(HeroTitle)`
     font-size: 56px;
     line-height: 56px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         font-size: 40px;
         line-height: 44px;
     }
@@ -461,7 +552,7 @@ const FooterInner = styled.div`
     margin: 0 auto;
     padding: 0 20px 40px;
 
-    @media (max-width: 479px) {
+    ${mediaQuery.phone} {
         align-items: flex-start;
         flex-direction: column;
     }
@@ -497,7 +588,6 @@ const LandingScreen = () => {
                 <meta content={landingDescription} property="og:description" />
                 <meta content="General Task - Personal productivity for $2/month" property="twitter:title" />
                 <meta content={landingDescription} property="twitter:description" />
-                <meta property="og:image" content="/images/landing/general-task-background.png" />
             </Helmet>
             <Header>
                 <Nav>
@@ -519,8 +609,6 @@ const LandingScreen = () => {
             <PageWrapper>
                 <InnerBlock>
                     <HeroSection>
-                        <HeroBackground src={assets.background} alt="" />
-                        <HeroArt src={assets.hero} alt="" />
                         <HeroContainer>
                             <HeroCopy>
                                 <HeroTitle>Effortless time blocking.</HeroTitle>
@@ -544,7 +632,28 @@ const LandingScreen = () => {
                                         Drag any task to your calendar, and an event will be created on your Google Calendar.
                                     </FeatureText>
                                 </div>
-                                <FeaturePanel>Task to calendar</FeaturePanel>
+                                <FeaturePanel aria-label="Task to calendar workflow">
+                                    <MiniWindow>
+                                        <MiniToolbar>
+                                            <MiniDot $color="#fbdd40" />
+                                            <MiniDot />
+                                            <MiniDot />
+                                        </MiniToolbar>
+                                        <TaskCalendarMock>
+                                            <TaskStack>
+                                                <MiniTask $accent="#fbdd40">Draft proposal</MiniTask>
+                                                <MiniTask $accent="#dcecf5">Review pull request</MiniTask>
+                                                <MiniTask $accent="#91d5c7">Plan launch notes</MiniTask>
+                                            </TaskStack>
+                                            <CalendarColumn>
+                                                <CalendarSlot />
+                                                <CalendarSlot $filled />
+                                                <CalendarSlot />
+                                                <CalendarSlot />
+                                            </CalendarColumn>
+                                        </TaskCalendarMock>
+                                    </MiniWindow>
+                                </FeaturePanel>
                             </Split>
                         </SplitContainer>
                     </Section>
@@ -552,7 +661,26 @@ const LandingScreen = () => {
                     <Section>
                         <SplitContainer>
                             <Split $reverseOnMobile>
-                                <FeaturePanel>All your work in one place</FeaturePanel>
+                                <FeaturePanel aria-label="Integrated work inbox">
+                                    <IntegrationGrid>
+                                        <IntegrationCard>
+                                            <IntegrationName>GitHub</IntegrationName>
+                                            <MiniTaskLine />
+                                        </IntegrationCard>
+                                        <IntegrationCard>
+                                            <IntegrationName>Linear</IntegrationName>
+                                            <MiniTaskLine />
+                                        </IntegrationCard>
+                                        <IntegrationCard>
+                                            <IntegrationName>Calendar</IntegrationName>
+                                            <MiniTaskLine />
+                                        </IntegrationCard>
+                                        <IntegrationCard>
+                                            <IntegrationName>Slack</IntegrationName>
+                                            <MiniTaskLine />
+                                        </IntegrationCard>
+                                    </IntegrationGrid>
+                                </FeaturePanel>
                                 <div>
                                     <Heading>All your most important tasks at a glance.</Heading>
                                     <FeatureText>
@@ -568,7 +696,15 @@ const LandingScreen = () => {
 
                     <FocusSection>
                         <SplitContainer>
-                            <FocusPanel>Focus mode</FocusPanel>
+                            <FocusPanel aria-label="Focus mode session">
+                                <FocusMock>
+                                    <FocusTimer>25:00</FocusTimer>
+                                    <FocusMeta>
+                                        <MiniDot $color="#fbdd40" />
+                                        <MiniTaskLine />
+                                    </FocusMeta>
+                                </FocusMock>
+                            </FocusPanel>
                             <div>
                                 <Heading>
                                     Forget multitasking - this is <em>singletasking</em>.
