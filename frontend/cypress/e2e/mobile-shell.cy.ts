@@ -37,9 +37,10 @@ describe('mobile shell at 390x844', () => {
 
     it('keeps shared unavailable sign-in on the shared page', () => {
         const loginSelector = 'a[href="http://localhost:8080/login/"]'
-        const assertSharedSignIn = (route: string, title: string) => {
+        const assertSharedSignIn = (route: string, title: string, linkIndex: number, requestAlias: string) => {
             cy.clearCookie('authToken')
             cy.visit(route)
+            cy.wait(requestAlias)
 
             cy.contains(title).should('be.visible')
             cy.get(loginSelector).should('have.length', 2)
@@ -53,17 +54,16 @@ describe('mobile shell at 390x844', () => {
                     .returns({ closed: false, close: () => undefined } as unknown as Window)
             })
 
-            cy.get(loginSelector).first().click()
+            cy.get(loginSelector).eq(linkIndex).click()
             cy.get('@authWindow').should('have.been.calledOnce')
             cy.location('pathname').should('eq', route)
-
-            cy.get(loginSelector).eq(1).click()
-            cy.get('@authWindow').should('have.been.calledTwice')
+            cy.setCookie('authToken', 'post-login-token')
+            cy.wait(requestAlias)
             cy.location('pathname').should('eq', route)
         }
 
-        assertSharedSignIn('/note/mobile-unavailable-note', 'Sign in to view this note')
-        assertSharedSignIn('/task/mobile-unavailable-task', 'Sign in to view this task')
+        assertSharedSignIn('/note/mobile-unavailable-note', 'Sign in to view this note', 0, '@sharedUnavailableNote')
+        assertSharedSignIn('/task/mobile-unavailable-task', 'Sign in to view this task', 1, '@sharedUnavailableTask')
     })
 
     it('boots at /overview as a phone, not a narrow desktop', () => {

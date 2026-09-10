@@ -59,10 +59,17 @@ const useAuthWindow = () => {
         }
 
         setIsAuthWindowOpen(true)
+        let didRefetchOnCookieSet = false
         const timer = setInterval(() => {
-            if (closeOnCookieSet && Cookie.get(AUTHORIZATION_COOKE)) {
+            const hasAuthCookie = !!Cookie.get(AUTHORIZATION_COOKE)
+            if (closeOnCookieSet && hasAuthCookie) {
                 win.close()
                 onClose(timer)
+                return
+            }
+            if (!closeOnCookieSet && hasAuthCookie && !didRefetchOnCookieSet) {
+                didRefetchOnCookieSet = true
+                queryClient.refetchQueries()
             }
             if (win.closed) {
                 onClose(timer)
