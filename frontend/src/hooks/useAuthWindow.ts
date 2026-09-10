@@ -21,7 +21,6 @@ export interface OpenAuthWindowOptions {
     onWindowClose?: () => void
     logEvent?: boolean
     closeOnCookieSet?: boolean
-    refetchOnCookieSet?: boolean
     isGoogleSignIn?: boolean
 }
 
@@ -34,7 +33,6 @@ const useAuthWindow = () => {
         onWindowClose,
         logEvent = true,
         closeOnCookieSet = false,
-        refetchOnCookieSet = false,
         isGoogleSignIn = false,
     }: OpenAuthWindowOptions) => {
         if (!url) return false
@@ -61,16 +59,10 @@ const useAuthWindow = () => {
         }
 
         setIsAuthWindowOpen(true)
-        let didRefetchOnCookieSet = false
         const timer = setInterval(() => {
             const hasAuthCookie = !!Cookie.get(AUTHORIZATION_COOKE)
             if (closeOnCookieSet && hasAuthCookie) {
                 win.close()
-                onClose(timer)
-                return
-            }
-            if (refetchOnCookieSet && !closeOnCookieSet && hasAuthCookie && !didRefetchOnCookieSet) {
-                didRefetchOnCookieSet = true
                 onClose(timer)
                 return
             }
