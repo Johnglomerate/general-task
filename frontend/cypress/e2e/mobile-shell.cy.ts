@@ -13,6 +13,18 @@ describe('mobile shell at 390x844', () => {
         cy.emulatePhoneInput()
     })
 
+    it('shows the public landing page trial copy and login CTAs', () => {
+        cy.visit('/')
+
+        cy.contains('Effortless time blocking.').should('be.visible')
+        cy.contains('Take control of your time with powerful daily planning software. Only $2/month.').should(
+            'be.visible'
+        )
+        cy.contains('67 day free trial. No card at signup.').should('be.visible')
+        cy.contains('a', 'Start free trial').should('have.attr', 'href', 'http://localhost:8080/login/')
+        cy.contains('a', 'Log in').should('have.attr', 'href', 'http://localhost:8080/login/')
+    })
+
     it('boots at /overview as a phone, not a narrow desktop', () => {
         cy.visit('/overview')
 
