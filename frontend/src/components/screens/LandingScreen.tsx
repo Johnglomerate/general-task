@@ -8,6 +8,7 @@ import {
     PRIVACY_POLICY_ROUTE,
     TERMS_OF_SERVICE_ROUTE,
 } from '../../constants'
+import { LANDING_SIGNUP_FINE_PRINT } from '../../landingCopy'
 import { logos } from '../../styles/images'
 
 const ASSET_BASE = '/images/landing'
@@ -15,8 +16,6 @@ const assets = {
     background: `${ASSET_BASE}/general-task-background.png`,
     hero: `${ASSET_BASE}/general-task-front-illustration.png`,
 }
-
-const signupFinePrint = '67 day free trial. No card at signup.'
 
 const Page = styled.main`
     min-width: 100%;
@@ -489,12 +488,12 @@ const LandingScreen = () => {
                 />
                 <meta content="General Task - Personal productivity for $2/month" property="og:title" />
                 <meta
-                    content="Take control of your time with powerful daily planning software. 67 day free trial. No card at signup."
+                    content={`Take control of your time with powerful daily planning software. ${LANDING_SIGNUP_FINE_PRINT}`}
                     property="og:description"
                 />
                 <meta content="General Task - Personal productivity for $2/month" property="twitter:title" />
                 <meta
-                    content="Take control of your time with powerful daily planning software. 67 day free trial. No card at signup."
+                    content={`Take control of your time with powerful daily planning software. ${LANDING_SIGNUP_FINE_PRINT}`}
                     property="twitter:description"
                 />
                 <meta property="og:image" content="/images/landing/general-task-background.png" />
@@ -532,7 +531,7 @@ const LandingScreen = () => {
                                         Start free trial
                                     </LargeCTA>
                                 </ButtonStack>
-                                <FinePrint>{signupFinePrint}</FinePrint>
+                                <FinePrint>{LANDING_SIGNUP_FINE_PRINT}</FinePrint>
                             </HeroCopy>
                         </HeroContainer>
                     </HeroSection>
@@ -608,7 +607,7 @@ const LandingScreen = () => {
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial
                             </LargeCTA>
-                            <FinePrint>{signupFinePrint}</FinePrint>
+                            <FinePrint>{LANDING_SIGNUP_FINE_PRINT}</FinePrint>
                         </BottomCard>
                     </EndSection>
                 </InnerBlock>
