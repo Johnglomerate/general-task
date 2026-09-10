@@ -3,6 +3,7 @@ import Cookies from 'js-cookie'
 import styled from 'styled-components'
 import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../../constants'
 import getEnvVars from '../../../environment'
+import { useAuthWindow } from '../../../hooks'
 import useAnalyticsEventTracker from '../../../hooks/useAnalyticsEventTracker'
 import { Spacing } from '../../../styles'
 import Flex from '../../atoms/Flex'
@@ -33,6 +34,7 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
     const type = sharedType === 'Notes' ? 'note' : 'task'
     const isLoggedIn = !!Cookies.get(AUTHORIZATION_COOKE)
     const { title, body } = getTitleAndBody(type, isLoggedIn)
+    const { openAuthWindow } = useAuthWindow()
 
     return (
         <Flex column gap={Spacing._16}>
@@ -50,9 +52,14 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                     />
                 ) : (
                     <>
-                        <NoStyleAnchor href={LOGIN_URL} target="_self">
-                            <GTButton styleType="primary" value="Sign In to General Task" />
-                        </NoStyleAnchor>
+                        <GTButton
+                            styleType="primary"
+                            value="Sign In to General Task"
+                            onClick={() => {
+                                GALog('Button click', 'Sign In to General Task')
+                                openAuthWindow({ url: LOGIN_URL, logEvent: false, closeOnCookieSet: true })
+                            }}
+                        />
                         <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>
                             <GTButton styleType="secondary" value="Learn more about General Task" />
                         </NoStyleAnchor>
