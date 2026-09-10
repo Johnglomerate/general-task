@@ -90,7 +90,6 @@ const SharedItemHeader = ({ sharedType }: SharedItemHeaderProps) => {
                         const didOpenAuthWindow = openAuthWindow({
                             url: LOGIN_URL,
                             logEvent: false,
-                            closeOnCookieSet: true,
                         })
                         if (didOpenAuthWindow) {
                             event.preventDefault()
