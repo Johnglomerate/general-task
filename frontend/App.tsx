@@ -42,26 +42,26 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
             <Helmet>
                 <meta charSet="utf-8" />
-                <title>General Task - Personal productivity for $2/month</title>
+                <title>General Task (beta)</title>
                 <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
                 <meta
-                    content="Take control of your time with powerful daily planning software. Only $2/month."
+                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
                     name="description"
                 />
-                <meta content="General Task - Personal productivity for $2/month" property="og:title" />
+                <meta content="General Task (beta) - Focused productivity for builders" property="og:title" />
                 <meta
-                    content="Take control of your time with powerful daily planning software. 67 day free trial. No card at signup."
+                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
                     property="og:description"
                 />
-                <meta content="General Task - Personal productivity for $2/month" property="twitter:title" />
+                <meta content="General Task (beta) - Focused productivity for builders" property="twitter:title" />
                 <meta
-                    content="Take control of your time with powerful daily planning software. 67 day free trial. No card at signup."
+                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
                     property="twitter:description"
                 />
                 <meta property="og:type" content="website" />
-                <meta property="og:image" content="/images/landing/frontpage-poster.jpg" />
+                <meta property="og:image" content="/images/futureman.png" />
                 <meta content="summary_large_image" name="twitter:card" />
             </Helmet>
             <BrowserRouter>

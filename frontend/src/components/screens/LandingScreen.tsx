@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
+import { Helmet } from 'react-helmet'
 import styled from 'styled-components'
 import {
     AUTHORIZATION_COOKE,
@@ -13,12 +14,6 @@ const ASSET_BASE = '/images/landing'
 const assets = {
     background: `${ASSET_BASE}/general-task-background.png`,
     hero: `${ASSET_BASE}/general-task-front-illustration.png`,
-    videoPoster: `${ASSET_BASE}/frontpage-poster.jpg`,
-    videoMp4: `${ASSET_BASE}/frontpage.mp4`,
-    videoWebm: `${ASSET_BASE}/frontpage.webm`,
-    taskToCalendar: `${ASSET_BASE}/task-to-calendar.png`,
-    integrations: `${ASSET_BASE}/integrations.png`,
-    focusMode: `${ASSET_BASE}/focus-mode.png`,
 }
 
 const customerLogos = [
@@ -297,36 +292,6 @@ const FinePrint = styled.p`
     text-align: center;
 `
 
-const VideoContainer = styled(Container)`
-    max-width: 1050px;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-`
-
-const ProductVideo = styled.video`
-    position: relative;
-    z-index: 500000;
-    width: 955px;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 955 / 540;
-    display: block;
-    object-fit: cover;
-    border-radius: 9px;
-    box-shadow:
-        0 1px 1px rgba(0, 0, 0, 0.03),
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        0 3px 3.5px rgba(0, 0, 0, 0.06),
-        0 5px 6.5px rgba(0, 0, 0, 0.07),
-        0 7px 12.12px rgba(0, 0, 0, 0.08),
-        0 12px 29px rgba(0, 0, 0, 0.11);
-
-    @media (max-width: 767px) {
-        width: 100%;
-    }
-`
-
 const LogoSection = styled(Section)`
     padding-top: 40px;
 `
@@ -416,31 +381,36 @@ const FeatureText = styled.div`
     }
 `
 
-const FeatureImage = styled.img`
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: contain;
-`
+const FeaturePanel = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    padding: 32px;
+    border: 1px solid rgba(34, 39, 33, 0.12);
+    border-radius: 8px;
+    background:
+        linear-gradient(135deg, rgba(251, 221, 64, 0.24), rgba(220, 236, 245, 0.78)),
+        #ffffff;
+    color: #222721;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 34px;
+    text-align: center;
 
-const IntegrationsImage = styled(FeatureImage)`
-    width: 450px;
-    max-width: 100%;
-    margin: 20px 0;
+    @media (max-width: 479px) {
+        min-height: 180px;
+        font-size: 22px;
+        line-height: 28px;
+    }
 `
 
 const FocusSection = styled(Section)`
     padding-bottom: 60px;
 `
 
-const FocusImage = styled.img`
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: contain;
+const FocusPanel = styled(FeaturePanel)`
     margin: 100px 0 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px -2px gray;
 
     @media (max-width: 479px) {
         max-width: 90%;
@@ -570,6 +540,24 @@ const LandingScreen = () => {
 
     return (
         <Page>
+            <Helmet>
+                <title>General Task - Personal productivity for $2/month</title>
+                <meta
+                    content="Take control of your time with powerful daily planning software. Only $2/month."
+                    name="description"
+                />
+                <meta content="General Task - Personal productivity for $2/month" property="og:title" />
+                <meta
+                    content="Take control of your time with powerful daily planning software. 67 day free trial. No card at signup."
+                    property="og:description"
+                />
+                <meta content="General Task - Personal productivity for $2/month" property="twitter:title" />
+                <meta
+                    content="Take control of your time with powerful daily planning software. 67 day free trial. No card at signup."
+                    property="twitter:description"
+                />
+                <meta property="og:image" content="/images/landing/general-task-background.png" />
+            </Helmet>
             <Header>
                 <Nav>
                     <Brand>
@@ -606,20 +594,6 @@ const LandingScreen = () => {
                                 <FinePrint>{signupFinePrint}</FinePrint>
                             </HeroCopy>
                         </HeroContainer>
-                        <VideoContainer>
-                            <ProductVideo
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
-                                preload="metadata"
-                                poster={assets.videoPoster}
-                                aria-label="General Task product walkthrough"
-                            >
-                                <source src={assets.videoMp4} type="video/mp4" />
-                                <source src={assets.videoWebm} type="video/webm" />
-                            </ProductVideo>
-                        </VideoContainer>
                     </HeroSection>
 
                     <LogoSection>
@@ -649,12 +623,7 @@ const LandingScreen = () => {
                                         Drag any task to your calendar, and an event will be created on your Google Calendar.
                                     </FeatureText>
                                 </div>
-                                <FeatureImage
-                                    src={assets.taskToCalendar}
-                                    alt="Task to Calendar"
-                                    loading="lazy"
-                                    decoding="async"
-                                />
+                                <FeaturePanel>Task to calendar</FeaturePanel>
                             </Split>
                         </SplitContainer>
                     </Section>
@@ -662,12 +631,7 @@ const LandingScreen = () => {
                     <Section>
                         <SplitContainer>
                             <Split $reverseOnMobile>
-                                <IntegrationsImage
-                                    src={assets.integrations}
-                                    alt="Integrations"
-                                    loading="lazy"
-                                    decoding="async"
-                                />
+                                <FeaturePanel>All your work in one place</FeaturePanel>
                                 <div>
                                     <Heading>All your most important tasks at a glance.</Heading>
                                     <FeatureText>
@@ -683,7 +647,7 @@ const LandingScreen = () => {
 
                     <FocusSection>
                         <SplitContainer>
-                            <FocusImage src={assets.focusMode} alt="Focus Mode" loading="lazy" decoding="async" />
+                            <FocusPanel>Focus mode</FocusPanel>
                             <div>
                                 <Heading>
                                     Forget multitasking - this is <em>singletasking</em>.
