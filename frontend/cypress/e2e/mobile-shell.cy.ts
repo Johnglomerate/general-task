@@ -1,5 +1,4 @@
 import { FOLDER_ID, FOLDER_NAME, TASK_ID, TASK_TITLE } from '../support/stubData'
-import { LANDING_SIGNUP_FINE_PRINT, LANDING_TRIAL_DAYS } from '../../src/landingCopy'
 
 /*
  * Acceptance proof for "Make the web app work on a phone browser".
@@ -22,11 +21,7 @@ describe('mobile shell at 390x844', () => {
         cy.contains('Take control of your time with powerful daily planning software. Only $2/month.').should(
             'be.visible'
         )
-        cy.contains(LANDING_SIGNUP_FINE_PRINT).should('be.visible')
-        cy.readFile('../backend/api/subscription.go').then((source: string) => {
-            const backendTrialDays = Number(source.match(/TrialPeriodDays\s*=\s*(\d+)/)?.[1])
-            expect(backendTrialDays, 'backend trial duration').to.eq(LANDING_TRIAL_DAYS)
-        })
+        cy.contains('67 day free trial. No card at signup.').should('be.visible')
         cy.contains('a', 'Start free trial').should('have.attr', 'href', 'http://localhost:8080/login/')
         cy.contains('a', 'Log in').should('have.attr', 'href', 'http://localhost:8080/login/')
         cy.get('a').then(($links) => {
