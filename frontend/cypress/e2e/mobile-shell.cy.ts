@@ -14,6 +14,7 @@ describe('mobile shell at 390x844', () => {
     })
 
     it('shows the public landing page trial copy and login CTAs', () => {
+        cy.clearCookie('authToken')
         cy.visit('/')
 
         cy.contains('Effortless time blocking.').should('be.visible')
