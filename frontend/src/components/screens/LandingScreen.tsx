@@ -612,6 +612,7 @@ const LandingScreen = () => {
                                 loop
                                 muted
                                 playsInline
+                                preload="metadata"
                                 poster={assets.videoPoster}
                                 aria-label="General Task product walkthrough"
                             >
@@ -625,7 +626,13 @@ const LandingScreen = () => {
                         <LogoContainer>
                             <LogoGrid>
                                 {customerLogos.map((logo) => (
-                                    <CustomerLogo key={logo.alt} src={logo.src} alt={logo.alt} />
+                                    <CustomerLogo
+                                        key={logo.alt}
+                                        src={logo.src}
+                                        alt={logo.alt}
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
                                 ))}
                             </LogoGrid>
                             <LogoHeading>Used by the best teams.</LogoHeading>
@@ -642,7 +649,12 @@ const LandingScreen = () => {
                                         Drag any task to your calendar, and an event will be created on your Google Calendar.
                                     </FeatureText>
                                 </div>
-                                <FeatureImage src={assets.taskToCalendar} alt="Task to Calendar" />
+                                <FeatureImage
+                                    src={assets.taskToCalendar}
+                                    alt="Task to Calendar"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
                             </Split>
                         </SplitContainer>
                     </Section>
@@ -650,7 +662,12 @@ const LandingScreen = () => {
                     <Section>
                         <SplitContainer>
                             <Split $reverseOnMobile>
-                                <IntegrationsImage src={assets.integrations} alt="Integrations" />
+                                <IntegrationsImage
+                                    src={assets.integrations}
+                                    alt="Integrations"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
                                 <div>
                                     <Heading>All your most important tasks at a glance.</Heading>
                                     <FeatureText>
@@ -666,7 +683,7 @@ const LandingScreen = () => {
 
                     <FocusSection>
                         <SplitContainer>
-                            <FocusImage src={assets.focusMode} alt="Focus Mode" />
+                            <FocusImage src={assets.focusMode} alt="Focus Mode" loading="lazy" decoding="async" />
                             <div>
                                 <Heading>
                                     Forget multitasking - this is <em>singletasking</em>.
