@@ -1,5 +1,10 @@
 basePath: /
 definitions:
+  api.LoginEmailParams:
+    properties:
+      email:
+        type: string
+    type: object
   api.SlackBlockValues:
     properties:
       task_details:
@@ -309,6 +314,77 @@ paths:
           schema:
             type: string
       summary: Begins General Task login process
+      tags:
+      - auth
+  /login/email/:
+    post:
+      consumes:
+      - application/json
+      description: Always returns 200 for a valid email so the response does not reveal whether the address is registered
+      parameters:
+      - description: email
+        in: body
+        name: email
+        required: true
+        schema:
+          $ref: '#/definitions/api.LoginEmailParams'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: login link sent
+          schema:
+            type: string
+        "400":
+          description: invalid params
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Email a one-time login link
+      tags:
+      - auth
+  /login/email/callback/:
+    get:
+      description: Renders a confirmation form so automated link scanners do not consume the token
+      parameters:
+      - description: magic link token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: confirmation page
+          schema:
+            type: string
+      summary: Opens email login confirmation
+      tags:
+      - auth
+    post:
+      description: Consumes a one-time magic link token and sets the authToken cookie
+      parameters:
+      - description: magic link token
+        in: formData
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: URL redirect
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Completes email login
       tags:
       - auth
   /logout/:

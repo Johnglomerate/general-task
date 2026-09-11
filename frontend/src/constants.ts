@@ -58,6 +58,7 @@ export const TERMS_OF_SERVICE_ROUTE = 'terms-of-service'
 export const PRIVACY_POLICY_ROUTE = 'privacy-policy'
 export const FOCUS_MODE_ROUTE = 'focus-mode'
 export const NOTE_ROUTE = 'note'
+export const LOGIN_ROUTE = 'login'
 export const GOOGLE_AUTH_ROUTE = 'link/google'
 export const SHAREABLE_TASK_ROUTE = 'task'
 

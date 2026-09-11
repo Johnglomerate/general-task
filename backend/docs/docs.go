@@ -330,6 +330,114 @@ const docTemplate = `{
                 }
             }
         },
+        "/login/email/": {
+            "post": {
+                "description": "Always returns 200 for a valid email so the response does not reveal whether the address is registered",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Email a one-time login link",
+                "parameters": [
+                    {
+                        "description": "email",
+                        "name": "email",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.LoginEmailParams"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "login link sent",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid params",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/login/email/callback/": {
+            "get": {
+                "description": "Renders a confirmation form so automated link scanners do not consume the token",
+                "produces": [
+                    "text/html"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Opens email login confirmation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "magic link token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "confirmation page",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Consumes a one-time magic link token and sets the authToken cookie",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Completes email login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "magic link token",
+                        "name": "token",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "302": {
+                        "description": "URL redirect",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/logout/": {
             "post": {
                 "description": "Removes the internal token associated with the session",
@@ -526,6 +634,14 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.LoginEmailParams": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
         "api.SlackBlockValues": {
             "type": "object",
             "properties": {

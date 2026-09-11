@@ -3,7 +3,7 @@ import Cookies from 'js-cookie'
 import styled from 'styled-components'
 import {
     AUTHORIZATION_COOKE,
-    LOGIN_URL,
+    LOGIN_ROUTE,
     PRIVACY_POLICY_ROUTE,
     SUBSCRIPTION_TRIAL_OFFER,
     TERMS_OF_SERVICE_ROUTE,
@@ -575,10 +575,10 @@ const LandingScreen = () => {
                         <BrandName>General Task</BrandName>
                     </Brand>
                     <HeaderActions>
-                        <LoginLink href={LOGIN_URL} target="_self">
+                        <LoginLink href={`/${LOGIN_ROUTE}`} target="_self">
                             Log in
                         </LoginLink>
-                        <CTA href={LOGIN_URL} target="_self">
+                        <CTA href={`/${LOGIN_ROUTE}`} target="_self">
                             Start free trial
                         </CTA>
                     </HeaderActions>
@@ -598,7 +598,7 @@ const LandingScreen = () => {
                                     {SUBSCRIPTION_TRIAL_OFFER}.
                                 </LargeText>
                                 <ButtonStack>
-                                    <LargeCTA href={LOGIN_URL} target="_self">
+                                    <LargeCTA href={`/${LOGIN_ROUTE}`} target="_self">
                                         Start free trial
                                     </LargeCTA>
                                 </ButtonStack>
@@ -700,7 +700,7 @@ const LandingScreen = () => {
                             <BottomText>
                                 General Task is a paid consumer productivity app. Start with a {SUBSCRIPTION_TRIAL_OFFER}.
                             </BottomText>
-                            <LargeCTA href={LOGIN_URL} target="_self">
+                            <LargeCTA href={`/${LOGIN_ROUTE}`} target="_self">
                                 Start free trial
                             </LargeCTA>
                             <FinePrint>{signupFinePrint}</FinePrint>

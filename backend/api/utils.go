@@ -31,6 +31,7 @@ type API struct {
 	OverrideTime        *time.Time
 	DB                  *mongo.Database
 	DBCleanup           func()
+	SendEmail           func(to, subject, body string) error
 }
 
 func GetAPIWithDBCleanup() (*API, func()) {

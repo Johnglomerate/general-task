@@ -39,6 +39,9 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	router.GET("/login/", handlers.Login)
 	router.GET("/login/callback/", handlers.LoginCallback)
+	router.POST("/login/email/", handlers.LoginEmailRequest)
+	router.GET("/login/email/callback/", handlers.LoginEmailCallbackRedirect)
+	router.POST("/login/email/callback/", handlers.LoginEmailCallback)
 
 	router.POST("/waitlist/", handlers.WaitlistAdd)
 

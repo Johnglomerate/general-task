@@ -358,6 +358,16 @@ type WaitlistEntry struct {
 	CreatedAt primitive.DateTime `bson:"created_at"`
 }
 
+// MagicLinkToken is a hashed, single-use sign-in token emailed to the user.
+type MagicLinkToken struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	Email     string             `bson:"email"`
+	TokenHash string             `bson:"token_hash"`
+	RequestIP string             `bson:"request_ip,omitempty"`
+	ExpiresAt primitive.DateTime `bson:"expires_at"`
+	CreatedAt primitive.DateTime `bson:"created_at"`
+}
+
 type FeedbackItem struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	UserID    primitive.ObjectID `bson:"user_id"`

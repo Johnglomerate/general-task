@@ -2,7 +2,9 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"regexp"
 
@@ -47,16 +49,59 @@ func IsEmailValid(e string) bool {
 
 const MANDRILL_SEND_URL = "https://mandrillapp.com/api/1.0/messages/send"
 
-func TestMailchimpEmail() error {
-	testMessage := `{"key": "` + config.GetConfigValue("MANDRILL_CLIENT_SECRET") + `", "message": {"from_email": "julian@generaltask.com", "subject": "General Task Test", "text": "Testing emails from General Task!", "to": [{ "email": "julian@generaltask.com", "type": "to" }]}}`
-	req, _ := http.NewRequest("POST", MANDRILL_SEND_URL, bytes.NewBuffer([]byte(testMessage)))
+type mandrillRecipient struct {
+	Email string `json:"email"`
+	Type  string `json:"type"`
+}
+
+type mandrillMessage struct {
+	FromEmail string              `json:"from_email"`
+	FromName  string              `json:"from_name"`
+	Subject   string              `json:"subject"`
+	Text      string              `json:"text"`
+	To        []mandrillRecipient `json:"to"`
+}
+
+type mandrillSendRequest struct {
+	Key     string          `json:"key"`
+	Message mandrillMessage `json:"message"`
+}
+
+func SendMandrillEmail(to, subject, text string) error {
+	from := config.GetConfigValue("EMAIL_FROM")
+	if from == "" {
+		from = "julian@generaltask.com"
+	}
+	payload, err := json.Marshal(mandrillSendRequest{
+		Key: config.GetConfigValue("MANDRILL_CLIENT_SECRET"),
+		Message: mandrillMessage{
+			FromEmail: from,
+			FromName:  "General Task",
+			Subject:   subject,
+			Text:      text,
+			To:        []mandrillRecipient{{Email: to, Type: "to"}},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", MANDRILL_SEND_URL, bytes.NewBuffer(payload))
+	if err != nil {
+		return err
+	}
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("email send failed")
 	}
 	return nil
+}
+
+func TestMailchimpEmail() error {
+	return SendMandrillEmail("julian@generaltask.com", "General Task Test", "Testing emails from General Task!")
 }

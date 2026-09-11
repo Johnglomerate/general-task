@@ -137,6 +137,28 @@ func makeLoginCallbackRequest(
 	skipStateTokenCheck bool,
 	skipRefreshToken bool,
 ) *httptest.ResponseRecorder {
+	return makeLoginCallbackRequestWithEmailVerified(
+		googleToken,
+		email,
+		name,
+		stateToken,
+		stateTokenCookie,
+		skipStateTokenCheck,
+		skipRefreshToken,
+		true,
+	)
+}
+
+func makeLoginCallbackRequestWithEmailVerified(
+	googleToken string,
+	email string,
+	name string,
+	stateToken string,
+	stateTokenCookie string,
+	skipStateTokenCheck bool,
+	skipRefreshToken bool,
+	emailVerified bool,
+) *httptest.ResponseRecorder {
 	mockConfig := MockGoogleConfig{}
 	mockToken := oauth2.Token{AccessToken: googleToken}
 	if !skipRefreshToken {
@@ -150,10 +172,11 @@ func makeLoginCallbackRequest(
 	).Return(
 		&http.Response{
 			Body: io.NopCloser(bytes.NewBufferString(fmt.Sprintf(
-				"{\"sub\": \"goog12345_%s\", \"email\": \"%s\", \"name\": \"%s\"}",
+				"{\"sub\": \"goog12345_%s\", \"email\": \"%s\", \"name\": \"%s\", \"email_verified\": %t}",
 				email,
 				email,
 				name,
+				emailVerified,
 			)))},
 		nil,
 	)
