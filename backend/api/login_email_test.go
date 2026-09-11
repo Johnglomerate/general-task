@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -119,10 +120,14 @@ func TestLoginEmailRequest(t *testing.T) {
 		ip := "203.0.113.10"
 
 		for i := 0; i < constants.MAGIC_LINK_IP_REQUEST_LIMIT; i++ {
-			response := requestMagicLinkResponse(t, api, createRandomGTEmail(), ip)
+			response := requestMagicLinkResponseWithHeaders(t, api, createRandomGTEmail(), ip, map[string]string{
+				"X-Forwarded-For": "198.51.100.100",
+			})
 			assert.NotEmpty(t, response["login_url"])
 		}
-		response := requestMagicLinkResponse(t, api, createRandomGTEmail(), ip)
+		response := requestMagicLinkResponseWithHeaders(t, api, createRandomGTEmail(), ip, map[string]string{
+			"X-Forwarded-For": "198.51.100.200",
+		})
 		assert.Equal(t, "login link sent", response["detail"])
 		assert.Empty(t, response["login_url"])
 
@@ -304,6 +309,40 @@ func TestLoginEmailCallback(t *testing.T) {
 		assert.Equal(t, "Sign in to General Task", sentSubject)
 		assert.Contains(t, sentBody, "/login/email/callback/?token=")
 	})
+	t.Run("ProdSendFailureAllowsRetry", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+		t.Setenv("ENVIRONMENT", "prod")
+		sendAttempts := 0
+		api.SendEmail = func(to, subject, body string) error {
+			sendAttempts++
+			if sendAttempts == 1 {
+				return errors.New("send failed")
+			}
+			return nil
+		}
+
+		email := createRandomGTEmail()
+		router := GetRouter(api)
+		payload, err := json.Marshal(map[string]string{"email": email})
+		assert.NoError(t, err)
+		request, _ := http.NewRequest("POST", "/login/email/", bytes.NewBuffer(payload))
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+		assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+		count, err := database.GetMagicLinkTokenCollection(api.DB).CountDocuments(context.Background(), bson.M{"email": email})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), count)
+
+		request, _ = http.NewRequest("POST", "/login/email/", bytes.NewBuffer(payload))
+		recorder = httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		assert.Equal(t, 2, sendAttempts)
+		count, err = database.GetMagicLinkTokenCollection(api.DB).CountDocuments(context.Background(), bson.M{"email": email})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), count)
+	})
 }
 
 func TestGoogleLoginMergesEmailOnlyUser(t *testing.T) {
@@ -404,12 +443,19 @@ func requestMagicLink(t *testing.T, api *API, email string) string {
 }
 
 func requestMagicLinkResponse(t *testing.T, api *API, email string, remoteIP string) map[string]string {
+	return requestMagicLinkResponseWithHeaders(t, api, email, remoteIP, nil)
+}
+
+func requestMagicLinkResponseWithHeaders(t *testing.T, api *API, email string, remoteIP string, headers map[string]string) map[string]string {
 	router := GetRouter(api)
 	payload, err := json.Marshal(map[string]string{"email": email})
 	assert.NoError(t, err)
 	request, _ := http.NewRequest("POST", "/login/email/", bytes.NewBuffer(payload))
 	if remoteIP != "" {
 		request.RemoteAddr = remoteIP + ":1234"
+	}
+	for key, value := range headers {
+		request.Header.Set(key, value)
 	}
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, request)

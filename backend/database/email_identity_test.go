@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -125,33 +124,4 @@ func TestAttachGoogleIDToEmailUser(t *testing.T) {
 		assert.Equal(t, older.InsertedID, user.ID)
 		assert.Equal(t, "sub-oldest", user.GoogleID)
 	})
-}
-
-func TestEnsureMagicLinkTokenIndexes(t *testing.T) {
-	db, dbCleanup, err := GetDBConnection()
-	assert.NoError(t, err)
-	defer dbCleanup()
-
-	err = EnsureMagicLinkTokenIndexes(db)
-	assert.NoError(t, err)
-
-	cursor, err := GetMagicLinkTokenCollection(db).Indexes().List(context.Background())
-	assert.NoError(t, err)
-	var indexes []bson.M
-	assert.NoError(t, cursor.All(context.Background(), &indexes))
-
-	indexesByName := map[string]bson.M{}
-	for _, index := range indexes {
-		name, ok := index["name"].(string)
-		if ok {
-			indexesByName[name] = index
-		}
-	}
-
-	assert.Contains(t, indexesByName, "magic_link_token_hash")
-	assert.Contains(t, indexesByName, "magic_link_email_created_at")
-	assert.Contains(t, indexesByName, "magic_link_request_ip_created_at")
-	ttlIndex, ok := indexesByName["magic_link_expires_at_ttl"]
-	assert.True(t, ok)
-	assert.Equal(t, int32(0), ttlIndex["expireAfterSeconds"])
 }

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -55,11 +56,6 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	email := database.NormalizeEmail(params.Email)
 
 	now := api.GetCurrentTime()
-	if err := database.EnsureMagicLinkTokenIndexes(api.DB); err != nil {
-		api.Logger.Error().Err(err).Msg("failed to ensure magic link token indexes")
-		Handle500(c)
-		return
-	}
 	tokenCollection := database.GetMagicLinkTokenCollection(api.DB)
 	cooldownDuration := time.Duration(constants.MAGIC_LINK_COOLDOWN_SECONDS) * time.Second
 	cooldownThreshold := primitive.NewDateTimeFromTime(now.Add(-cooldownDuration))
@@ -79,7 +75,7 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 		return
 	}
 
-	requestIP := c.ClientIP()
+	requestIP := remoteAddrIP(c)
 	if requestIP != "" {
 		recentIPCount, err := tokenCollection.CountDocuments(
 			context.Background(),
@@ -103,6 +99,7 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 		return
 	}
 
+	tokenHash := hashMagicLinkToken(plaintext)
 	_, err = tokenCollection.DeleteMany(context.Background(), bson.M{"email": email})
 	if err != nil {
 		api.Logger.Error().Err(err).Msg("failed to invalidate previous magic link tokens")
@@ -111,7 +108,7 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	}
 	_, err = tokenCollection.InsertOne(context.Background(), &database.MagicLinkToken{
 		Email:     email,
-		TokenHash: hashMagicLinkToken(plaintext),
+		TokenHash: tokenHash,
 		RequestIP: requestIP,
 		ExpiresAt: primitive.NewDateTimeFromTime(now.Add(time.Duration(constants.MAGIC_LINK_TTL_SECONDS) * time.Second)),
 		CreatedAt: primitive.NewDateTimeFromTime(now),
@@ -132,6 +129,9 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	subject := "Sign in to General Task"
 	body := fmt.Sprintf("Use this link to sign in. It expires in 15 minutes.\n\n%s", loginURL)
 	if err := api.sendLoginEmail(email, subject, body); err != nil {
+		if _, deleteErr := tokenCollection.DeleteOne(context.Background(), bson.M{"token_hash": tokenHash}); deleteErr != nil {
+			api.Logger.Error().Err(deleteErr).Msg("failed to delete unsent magic link token")
+		}
 		api.Logger.Error().Err(err).Msg("failed to send magic link email")
 		Handle500(c)
 		return
@@ -185,11 +185,6 @@ func (api *API) LoginEmailCallback(c *gin.Context) {
 		return
 	}
 
-	if err := database.EnsureMagicLinkTokenIndexes(api.DB); err != nil {
-		api.Logger.Error().Err(err).Msg("failed to ensure magic link token indexes")
-		Handle500(c)
-		return
-	}
 	tokenCollection := database.GetMagicLinkTokenCollection(api.DB)
 	var stored database.MagicLinkToken
 	err := tokenCollection.FindOneAndDelete(
@@ -249,4 +244,12 @@ func generateMagicLinkToken() (string, error) {
 func hashMagicLinkToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+
+func remoteAddrIP(c *gin.Context) string {
+	host, _, err := net.SplitHostPort(c.Request.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return c.Request.RemoteAddr
 }

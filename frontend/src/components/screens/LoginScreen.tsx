@@ -70,6 +70,7 @@ const LoginScreen = () => {
     return (
         <Container>
             <Panel column alignItems="center" gap={Spacing._16}>
+                {isSubscriptionLogin && <BodySmall color="muted">Subscription required</BodySmall>}
                 <GoogleLink href={LOGIN_URL} target="_self">
                     <GoogleImage>{GoogleSignInButtonImage}</GoogleImage>
                 </GoogleLink>

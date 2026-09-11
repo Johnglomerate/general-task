@@ -15,7 +15,7 @@ export const FOLDER_NAME = 'Mobile Acceptance'
 export const TASK_TITLE = 'Read the acceptance proof on a phone'
 
 // `has_product_access` is the only field that gates rendering: AuthenticatedRoutes' SubscriptionGate
-// sends the browser to LOGIN_URL without it, which would leave the SPA entirely.
+// sends the browser to the login route without it, which would leave this fixture's route entirely.
 export const userInfo: TUserInfo = {
     agreed_to_terms: true,
     opted_into_marketing: false,
