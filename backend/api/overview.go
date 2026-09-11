@@ -749,20 +749,14 @@ func (api *API) OverviewViewAdd(c *gin.Context) {
 		c.JSON(400, gin.H{"detail": "view already exists"})
 		return
 	}
-	var serviceID string
+	serviceID := external.TASK_SERVICE_ID_GT
 	taskSectionID := primitive.NilObjectID
 	if viewCreateParams.Type == string(constants.ViewTaskSection) {
-		serviceID = external.TASK_SERVICE_ID_GT
 		taskSectionID, err = getValidTaskSection(*viewCreateParams.TaskSectionID, userID, api.DB)
 		if err != nil {
 			c.JSON(400, gin.H{"detail": "'task_section_id' is not a valid ID"})
 			return
 		}
-	} else if viewCreateParams.Type == string(constants.ViewMeetingPreparation) || viewCreateParams.Type == string(constants.ViewDueToday) {
-		serviceID = external.TASK_SERVICE_ID_GT
-	} else {
-		c.JSON(400, gin.H{"detail": "unsupported 'type'"})
-		return
 	}
 
 	isLinked, err := api.IsServiceLinked(api.DB, userID, serviceID)
