@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"github.com/GeneralTask/task-manager/backend/constants"
 	"time"
 
 	"github.com/GeneralTask/task-manager/backend/database"
@@ -16,16 +15,17 @@ import (
 )
 
 type NoteChangeable struct {
-	Title        *string             `json:"title,omitempty"`
-	Body         *string             `json:"body,omitempty"`
-	Author       string              `json:"author,omitempty"`
-	SharedUntil  *primitive.DateTime `json:"shared_until,omitempty"`
-	SharedAccess *string             `json:"shared_access,omitempty" bson:"shared_access,omitempty"`
-	IsDeleted    *bool               `json:"is_deleted,omitempty"`
+	Title     *string `json:"title,omitempty"`
+	Body      *string `json:"body,omitempty"`
+	Author    string  `json:"author,omitempty"`
+	IsDeleted *bool   `json:"is_deleted,omitempty"`
 }
 
 type NoteModifyParams struct {
 	NoteChangeable
+	LegacySharedUntil  *primitive.DateTime `json:"shared_until,omitempty"`
+	LegacySharedAccess *string             `json:"shared_access,omitempty"`
+	LegacyIsShared     *bool               `json:"is_shared,omitempty"`
 }
 
 func (api *API) NoteModify(c *gin.Context) {
@@ -51,54 +51,26 @@ func (api *API) NoteModify(c *gin.Context) {
 		return
 	}
 
-	// check if all fields are empty
-	if modifyParams == (NoteModifyParams{}) {
+	if modifyParams.NoteChangeable == (NoteChangeable{}) {
+		if modifyParams.LegacySharedUntil != nil || modifyParams.LegacySharedAccess != nil || modifyParams.LegacyIsShared != nil {
+			c.JSON(200, gin.H{})
+			return
+		}
 		c.JSON(400, gin.H{"detail": "note changes missing"})
 		return
 	}
 
-	var sharedAccess *database.SharedAccess
-	if modifyParams.SharedAccess != nil {
-		var _sharedAccess database.SharedAccess
-		if *modifyParams.SharedAccess == constants.StringSharedAccessPublic {
-			_sharedAccess = database.SharedAccessPublic
-		} else if *modifyParams.SharedAccess == constants.StringSharedAccessDomain {
-			_sharedAccess = database.SharedAccessDomain
-		} else if *modifyParams.SharedAccess == constants.StringSharedAccessMeetingAttendees {
-			_sharedAccess = database.SharedAccessMeetingAttendees
-		} else {
-			c.JSON(400, gin.H{"detail": "invalid shared access token"})
-			return
-		}
-		sharedAccess = &_sharedAccess
+	updatedNote := database.Note{
+		UserID:    userID,
+		Title:     modifyParams.NoteChangeable.Title,
+		Body:      modifyParams.NoteChangeable.Body,
+		Author:    modifyParams.NoteChangeable.Author,
+		IsDeleted: modifyParams.NoteChangeable.IsDeleted,
+		UpdatedAt: primitive.NewDateTimeFromTime(time.Now()),
+		CreatedAt: note.CreatedAt,
 	}
 
-	sharedAccessValid := database.CheckNoteSharingAccessValid(sharedAccess)
-	if !sharedAccessValid {
-		api.Logger.Error().Err(err).Msg("invalid shared access token")
-		c.JSON(400, gin.H{"detail": "invalid shared access token"})
-		return
-	}
-
-	if modifyParams.NoteChangeable != (NoteChangeable{}) {
-		sharedUntil := note.SharedUntil
-		if modifyParams.NoteChangeable.SharedUntil != nil {
-			sharedUntil = *modifyParams.NoteChangeable.SharedUntil
-		}
-		updatedNote := database.Note{
-			UserID:       userID,
-			Title:        modifyParams.NoteChangeable.Title,
-			Body:         modifyParams.NoteChangeable.Body,
-			Author:       modifyParams.NoteChangeable.Author,
-			SharedUntil:  sharedUntil,
-			SharedAccess: sharedAccess,
-			IsDeleted:    modifyParams.NoteChangeable.IsDeleted,
-			UpdatedAt:    primitive.NewDateTimeFromTime(time.Now()),
-			CreatedAt:    note.CreatedAt,
-		}
-
-		api.UpdateNoteInDB(c, note, userID, &updatedNote)
-	}
+	api.UpdateNoteInDB(c, note, userID, &updatedNote)
 
 	c.JSON(200, gin.H{})
 }

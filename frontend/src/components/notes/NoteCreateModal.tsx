@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DateTime } from 'luxon'
 import { v4 as uuidv4 } from 'uuid'
 import { NOTE_SYNC_TIMEOUT, NO_TITLE, SYNC_MESSAGES } from '../../constants'
 import KEYBOARD_SHORTCUTS from '../../constants/shortcuts'
-import useQueryContext from '../../context/QueryContext'
-import { usePreviewMode, useToast } from '../../hooks'
 import { useCreateNote, useGetNotes, useModifyNote } from '../../services/api/notes.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { Spacing } from '../../styles'
@@ -16,8 +13,6 @@ import GTTextField from '../atoms/GTTextField'
 import GTButton from '../atoms/buttons/GTButton'
 import { BodySmall } from '../atoms/typography/Typography'
 import GTModal from '../mantine/GTModal'
-import { toast } from '../molecules/toast'
-import { getNoteURL } from './utils'
 
 interface NoteCreateModalProps {
     isOpen: boolean
@@ -31,13 +26,10 @@ const NoteCreateModal = ({ isOpen, setIsOpen }: NoteCreateModalProps) => {
     const [noteTitle, setNoteTitle] = useState('')
     const [noteBody, setNoteBody] = useState('')
     const optimisticId = useRef<string | undefined>(undefined)
-    const { getIdFromOptimisticId } = useQueryContext()
     const [isEditing, setIsEditing] = useState(false)
     const [syncIndicatorText, setSyncIndicatorText] = useState(SYNC_MESSAGES.COMPLETE)
     const timer = useRef<{ timeout: NodeJS.Timeout; callback: () => void }>()
-    const oldToast = useToast()
     const navigate = useNavigate()
-    const { isPreviewMode } = usePreviewMode()
 
     useEffect(() => {
         if (isEditing || isLoading) {
@@ -51,42 +43,21 @@ const NoteCreateModal = ({ isOpen, setIsOpen }: NoteCreateModalProps) => {
         }
     }, [isOpen, isError, isLoading, isEditing])
 
-    const copyNoteLink = (realId: string) => {
-        navigator.clipboard.writeText(getNoteURL(realId))
-        if (isPreviewMode) {
-            toast('Note URL copied to clipboard')
-        } else {
-            oldToast.show(
-                {
-                    message: `Note URL copied to clipboard`,
-                },
-                {
-                    autoClose: 2000,
-                    pauseOnFocusLoss: false,
-                    theme: 'dark',
-                }
-            )
-        }
-    }
-
-    const onEdit = (
-        { title, body, shared_until }: { title?: string; body?: string; shared_until?: string },
-        timeoutOverride?: number
-    ) => {
+    const onEdit = ({ title, body }: { title?: string; body?: string }, timeoutOverride?: number) => {
         if (title) setNoteTitle(title)
         if (body) setNoteBody(body)
         setIsEditing(true)
         if (timer.current) clearTimeout(timer.current.timeout)
         timer.current = {
             timeout: setTimeout(
-                () => handleSave({ title: title ?? noteTitle, body: body ?? noteBody, shared_until }),
+                () => handleSave({ title: title ?? noteTitle, body: body ?? noteBody }),
                 timeoutOverride ?? NOTE_SYNC_TIMEOUT
             ),
-            callback: () => handleSave({ title: title ?? noteTitle, body: body ?? noteBody, shared_until }),
+            callback: () => handleSave({ title: title ?? noteTitle, body: body ?? noteBody }),
         }
     }
 
-    const handleSave = ({ title, body, shared_until }: { title: string; body: string; shared_until?: string }) => {
+    const handleSave = ({ title, body }: { title: string; body: string }) => {
         setIsEditing(false)
         if (timer.current) clearTimeout(timer.current.timeout)
 
@@ -96,7 +67,6 @@ const NoteCreateModal = ({ isOpen, setIsOpen }: NoteCreateModalProps) => {
                     id: optimisticId.current,
                     title: title || NO_TITLE,
                     body: body,
-                    shared_until,
                 },
                 optimisticId.current
             )
@@ -107,7 +77,6 @@ const NoteCreateModal = ({ isOpen, setIsOpen }: NoteCreateModalProps) => {
                 body: body,
                 author: userInfo?.name || 'Anonymous',
                 optimisticId: newOptimisticNoteId,
-                shared_until: shared_until,
             })
             optimisticId.current = newOptimisticNoteId
         }
@@ -183,26 +152,6 @@ const NoteCreateModal = ({ isOpen, setIsOpen }: NoteCreateModalProps) => {
                         <Flex justifyContent="space-between" alignItems="center">
                             <BodySmall color="light">{syncIndicatorText}</BodySmall>
                             <Flex gap={Spacing._8}>
-                                <GTButton
-                                    value="Share note"
-                                    styleType="secondary"
-                                    icon={icons.share}
-                                    disabled={!optimisticId.current || !getIdFromOptimisticId(optimisticId.current)}
-                                    onClick={() => {
-                                        onEdit(
-                                            {
-                                                title: noteTitle,
-                                                body: noteBody,
-                                                shared_until: DateTime.local().plus({ months: 3 }).toISO(),
-                                            },
-                                            0
-                                        )
-                                        const realId = optimisticId.current
-                                            ? getIdFromOptimisticId(optimisticId.current)
-                                            : undefined
-                                        if (realId) copyNoteLink(realId)
-                                    }}
-                                />
                                 <GTButton
                                     value="Save note"
                                     styleType="secondary"

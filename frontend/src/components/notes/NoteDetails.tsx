@@ -1,19 +1,17 @@
 import { DateTime } from 'luxon'
 import styled from 'styled-components'
-import { NOTE_SYNC_TIMEOUT, SHARED_ITEM_INDEFINITE_DATE } from '../../constants'
+import { NOTE_SYNC_TIMEOUT } from '../../constants'
 import { useDebouncedEdit } from '../../hooks'
 import { useModifyNote } from '../../services/api/notes.hooks'
 import { Spacing } from '../../styles'
 import { icons, logos } from '../../styles/images'
 import { TNote } from '../../utils/types'
 import { getFormattedEventTime } from '../../utils/utils'
-import Flex from '../atoms/Flex'
 import GTTextField from '../atoms/GTTextField'
 import { Icon } from '../atoms/Icon'
 import { BodySmall, LabelSmall } from '../atoms/typography/Typography'
 import DetailsViewTemplate from '../templates/DetailsViewTemplate'
 import NoteActionsDropdown from './NoteActionsDropdown'
-import NoteSharingDropdown from './NoteSharingDropdown'
 
 const TITLE_MAX_HEIGHT = 208
 const NOTE_TITLE_MAX_WIDTH = 125
@@ -55,14 +53,6 @@ const NoteDetails = ({ note }: NoteDetailsProps) => {
     const { mutate: onSave, isError, isLoading } = useModifyNote()
     const { onEdit, syncIndicatorText } = useDebouncedEdit({ onSave, isError, isLoading }, NOTE_SYNC_TIMEOUT)
 
-    const sharedUntil =
-        note.shared_until === SHARED_ITEM_INDEFINITE_DATE
-            ? 'Shared indefinitely'
-            : `Shared until ${DateTime.fromISO(note.shared_until ?? '0').toLocaleString({
-                  month: 'long',
-                  day: 'numeric',
-              })}`
-    const isShared = +DateTime.fromISO(note.shared_until ?? '0') > +DateTime.local()
     const isMeetingNote = note.linked_event_id != null
 
     return (
@@ -75,13 +65,6 @@ const NoteDetails = ({ note }: NoteDetailsProps) => {
                     <BodySmall color="light">{syncIndicatorText}</BodySmall>
                 </DetailItem>
                 <MarginLeftAuto>
-                    {isShared && (
-                        <Flex gap={Spacing._8}>
-                            <Icon icon={icons.link} color="green" />
-                            <BodySmall color="green">{sharedUntil}</BodySmall>
-                        </Flex>
-                    )}
-                    <NoteSharingDropdown note={note} />
                     <NoteActionsDropdown note={note} />
                 </MarginLeftAuto>
             </DetailsTopContainer>

@@ -89,7 +89,6 @@ type SharedAccess int
 const (
 	SharedAccessPublic SharedAccess = iota
 	SharedAccessDomain
-	SharedAccessMeetingAttendees
 )
 
 type Task struct {

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"github.com/GeneralTask/task-manager/backend/constants"
 	"github.com/GeneralTask/task-manager/backend/logging"
 	"time"
 
@@ -19,12 +18,10 @@ type NoteResult struct {
 	Author           string             `json:"author,omitempty"`
 	CreatedAt        string             `json:"created_at,omitempty"`
 	UpdatedAt        string             `json:"updated_at,omitempty"`
-	SharedUntil      string             `json:"shared_until,omitempty"`
 	IsDeleted        bool               `json:"is_deleted,omitempty"`
 	LinkedEventID    string             `json:"linked_event_id,omitempty"`
 	LinkedEventStart string             `json:"linked_event_start,omitempty"`
 	LinkedEventEnd   string             `json:"linked_event_end,omitempty"`
-	SharedAccess     string             `json:"shared_access,omitempty"`
 }
 
 func (api *API) NotesList(c *gin.Context) {
@@ -73,26 +70,14 @@ func (api *API) noteToNoteResult(note *database.Note) *NoteResult {
 		isDeleted = true
 	}
 	noteResult := NoteResult{
-		ID:          note.ID,
-		Title:       title,
-		Body:        body,
-		Author:      note.Author,
-		CreatedAt:   note.CreatedAt.Time().UTC().Format(time.RFC3339),
-		UpdatedAt:   note.UpdatedAt.Time().UTC().Format(time.RFC3339),
-		SharedUntil: note.SharedUntil.Time().UTC().Format(time.RFC3339),
-		IsDeleted:   isDeleted,
+		ID:        note.ID,
+		Title:     title,
+		Body:      body,
+		Author:    note.Author,
+		CreatedAt: note.CreatedAt.Time().UTC().Format(time.RFC3339),
+		UpdatedAt: note.UpdatedAt.Time().UTC().Format(time.RFC3339),
+		IsDeleted: isDeleted,
 	}
-	var sharedAccess string
-	if note.SharedAccess != nil {
-		if *note.SharedAccess == database.SharedAccessPublic {
-			sharedAccess = constants.StringSharedAccessPublic
-		} else if *note.SharedAccess == database.SharedAccessDomain {
-			sharedAccess = constants.StringSharedAccessDomain
-		} else if *note.SharedAccess == database.SharedAccessMeetingAttendees {
-			sharedAccess = constants.StringSharedAccessMeetingAttendees
-		}
-	}
-	noteResult.SharedAccess = sharedAccess
 	if note.LinkedEventID != primitive.NilObjectID {
 		noteResult.LinkedEventID = note.LinkedEventID.Hex()
 		calEvent, err := database.GetCalendarEventWithoutUserID(api.DB, note.LinkedEventID)

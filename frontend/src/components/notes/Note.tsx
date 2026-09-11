@@ -32,7 +32,6 @@ interface NoteProps {
 }
 const Note = ({ note, isSelected, onSelect }: NoteProps) => {
     const [contextMenuOpen, setContextMenuOpen] = useState(false)
-    const isShared = +DateTime.fromISO(note.shared_until ?? '0') > +DateTime.local()
     const isMeetingNote = note.linked_event_id != null
     const { calendarType, setCalendarType, setDate, dayViewDate } = useCalendarContext()
     const onClick = () => {
@@ -52,7 +51,6 @@ const Note = ({ note, isSelected, onSelect }: NoteProps) => {
                         <NoteTitle>{note.title}</NoteTitle>
                     </TitleContainer>
                     <Flex gap={Spacing._12} alignItems="center">
-                        {isShared && <Icon icon={icons.link} />}
                         {isMeetingNote ? (
                             <>
                                 {isMeetingNote && note.linked_event_start && note.linked_event_end && (

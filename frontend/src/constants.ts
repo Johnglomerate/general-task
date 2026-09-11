@@ -7,7 +7,6 @@ import { icons } from './styles/images'
 export const {
     REACT_APP_API_BASE_URL,
     REACT_APP_FRONTEND_BASE_URL,
-    REACT_APP_NOTES_BASE_URL,
     COOKIE_DOMAIN,
     REACT_APP_TASK_BASE_URL,
 } = getEnvVars()
@@ -57,7 +56,7 @@ export const EVENTS_URL = REACT_APP_API_BASE_URL + '/events/'
 export const TERMS_OF_SERVICE_ROUTE = 'terms-of-service'
 export const PRIVACY_POLICY_ROUTE = 'privacy-policy'
 export const FOCUS_MODE_ROUTE = 'focus-mode'
-export const NOTE_ROUTE = 'note'
+export const LEGACY_NOTE_ROUTE = 'note'
 export const GOOGLE_AUTH_ROUTE = 'link/google'
 export const SHAREABLE_TASK_ROUTE = 'task'
 

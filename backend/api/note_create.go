@@ -11,12 +11,10 @@ import (
 )
 
 type NoteCreateParams struct {
-	Title         string                 `json:"title" binding:"required"`
-	Body          string                 `json:"body"`
-	Author        string                 `json:"author"`
-	SharedUntil   primitive.DateTime     `json:"shared_until"`
-	SharedAccess  *database.SharedAccess `json:"shared_access,omitempty"`
-	LinkedEventID primitive.ObjectID     `json:"linked_event_id,omitempty"`
+	Title         string             `json:"title" binding:"required"`
+	Body          string             `json:"body"`
+	Author        string             `json:"author"`
+	LinkedEventID primitive.ObjectID `json:"linked_event_id,omitempty"`
 }
 
 func (api *API) NoteCreate(c *gin.Context) {
@@ -38,13 +36,6 @@ func (api *API) NoteCreate(c *gin.Context) {
 		}
 	}
 
-	sharedAccessValid := database.CheckNoteSharingAccessValid(noteCreateParams.SharedAccess)
-	if !sharedAccessValid {
-		api.Logger.Error().Err(err).Msg("invalid shared access token")
-		c.JSON(400, gin.H{"detail": "invalid shared access token"})
-		return
-	}
-
 	newNote := database.Note{
 		UserID:        userID,
 		Title:         &noteCreateParams.Title,
@@ -52,8 +43,6 @@ func (api *API) NoteCreate(c *gin.Context) {
 		Author:        noteCreateParams.Author,
 		CreatedAt:     primitive.NewDateTimeFromTime(time.Now()),
 		UpdatedAt:     primitive.NewDateTimeFromTime(time.Now()),
-		SharedUntil:   noteCreateParams.SharedUntil,
-		SharedAccess:  noteCreateParams.SharedAccess,
 		LinkedEventID: noteCreateParams.LinkedEventID,
 	}
 	insertResult, err := database.GetNoteCollection(api.DB).InsertOne(context.Background(), newNote)

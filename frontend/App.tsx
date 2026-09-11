@@ -4,13 +4,13 @@ import { Helmet } from 'react-helmet'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AuthenticatedRoutes from './src/AuthenticatedRoutes'
-import SharedNoteView from './src/components/notes/SharedNoteView'
 import GoogleAuth from './src/components/screens/GoogleAuthScreen'
 import LandingScreen from './src/components/screens/LandingScreen'
+import SharedNoteUnavailableView from './src/components/views/SharedNoteUnavailableView'
 import SharedTaskView from './src/components/views/SharedTaskView'
 import {
     GOOGLE_AUTH_ROUTE,
-    NOTE_ROUTE,
+    LEGACY_NOTE_ROUTE,
     PRIVACY_POLICY_ROUTE,
     SHAREABLE_TASK_ROUTE,
     TERMS_OF_SERVICE_ROUTE,
@@ -58,8 +58,8 @@ const App = () => {
                         path={PRIVACY_POLICY_ROUTE}
                         element={<CompanyPolicyView page={CompanyPolicyPages.PrivacyPolicy} />}
                     />
-                    <Route path={NOTE_ROUTE} element={<SharedNoteView />}>
-                        <Route path=":noteId" element={<SharedNoteView />} />
+                    <Route path={LEGACY_NOTE_ROUTE} element={<SharedNoteUnavailableView />}>
+                        <Route path=":noteId" element={<SharedNoteUnavailableView />} />
                     </Route>
                     <Route path={GOOGLE_AUTH_ROUTE} element={<GoogleAuth />} />
                     <Route path={SHAREABLE_TASK_ROUTE} element={<SharedTaskView />}>
