@@ -42,8 +42,6 @@ const (
 	// Overview page settings
 	SettingCollapseEmptyLists     = "collapse_empty_lists"
 	SettingMoveEmptyListsToBottom = "move_empty_lists_to_bottom"
-	// Lab settings
-	LabSmartPrioritizeEnabled = "lab_smart_prioritize_enabled"
 	// Misc settings
 	HasDismissedMulticalPrompt = "has_dismissed_multical_prompt"
 )

@@ -34,7 +34,6 @@ type Config struct {
 	Atlassian             AtlassianConfig
 	SlackOverrideURL      string
 	GoogleOverrideURLs    GoogleURLOverrides
-	OpenAIOverrideURL     string
 }
 
 func GetConfig() Config {

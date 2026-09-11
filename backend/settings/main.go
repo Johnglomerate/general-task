@@ -173,15 +173,6 @@ var OverviewMoveEmptyListsToBottomSetting = SettingDefinition{
 	},
 }
 
-var LabSmartPrioritizeEnabledSetting = SettingDefinition{
-	FieldKey:      constants.LabSmartPrioritizeEnabled,
-	DefaultChoice: "false",
-	Choices: []SettingChoice{
-		{Key: "true"},
-		{Key: "false"},
-	},
-}
-
 var HasDismissedMulticalPromptSetting = SettingDefinition{
 	FieldKey:      constants.HasDismissedMulticalPrompt,
 	DefaultChoice: "false",
@@ -223,8 +214,6 @@ var hardcodedSettings = []SettingDefinition{
 	// overview settings
 	OverviewCollapseEmptyListsSetting,
 	OverviewMoveEmptyListsToBottomSetting,
-	// smart prioritize settings
-	LabSmartPrioritizeEnabledSetting,
 	// multical settings
 	HasDismissedMulticalPromptSetting,
 }
