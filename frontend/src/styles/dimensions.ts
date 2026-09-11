@@ -85,8 +85,6 @@ export const OVERLAY_MAX_WIDTH = `calc(100vw - ${OVERLAY_GUTTER} * 2)`
 // not cut off the bottom.
 export const OVERLAY_MAX_HEIGHT = `calc(100dvh - ${OVERLAY_GUTTER} * 2)`
 
-// Reading width of the shared /task/:id and /note/:id pages. A max-width, not a fixed width.
-export const SHARED_ITEM_WIDTH = '750px'
 export const NAVIGATION_BAR_WIDTH = '250px'
 export const TASK_ACTION_WIDTH = '200px'
 export const DEFAULT_VIEW_WIDTH = '480px'
