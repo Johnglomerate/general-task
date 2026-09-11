@@ -22,13 +22,12 @@ import {
 import { Colors, Spacing, Typography } from '../../styles'
 import { icons, logos } from '../../styles/images'
 import { TRecurringTaskTemplate, TTaskV4 } from '../../utils/types'
-import { EMPTY_ARRAY, isTaskActive, isTaskBeingShared, isTaskParentTask } from '../../utils/utils'
+import { EMPTY_ARRAY, isTaskParentTask } from '../../utils/utils'
 import Flex from '../atoms/Flex'
 import GTTextField from '../atoms/GTTextField'
 import { Icon } from '../atoms/Icon'
 import { MeetingStartText } from '../atoms/MeetingStartText'
 import { Divider } from '../atoms/SectionDivider'
-import SharedItemMessage from '../atoms/SharedItemMessage'
 import Spinner from '../atoms/Spinner'
 import TimeRange from '../atoms/TimeRange'
 import ExternalLinkButton from '../atoms/buttons/ExternalLinkButton'
@@ -39,7 +38,6 @@ import CreateLinearComment from '../molecules/CreateLinearComment'
 import FolderSelector from '../molecules/FolderSelector'
 import GTDatePicker from '../molecules/GTDatePicker'
 import LinearCycle from '../molecules/LinearCycle'
-import TaskSharingDropdown from '../molecules/TaskSharingDropdown'
 import DeleteRecurringTaskTemplateButton from '../molecules/recurring-tasks/DeleteRecurringTaskTemplateButton'
 import RecurringTaskDetailsBanner from '../molecules/recurring-tasks/RecurringTaskDetailsBanner'
 import RecurringTaskTemplateDetailsBanner from '../molecules/recurring-tasks/RecurringTaskTemplateDetailsBanner'
@@ -256,14 +254,6 @@ const TaskDetails = ({ task, isRecurringTaskTemplate }: TaskDetailsProps) => {
                                 />
                             )}
 
-                            <Flex gap={Spacing._8}>
-                                {taskv4.shared_access && isTaskBeingShared(taskv4) && !isSubtask && (
-                                    <SharedItemMessage shareAccess={taskv4.shared_access} />
-                                )}
-                                {taskv4.source?.name === 'General Task' && isTaskActive(taskv4) && !isSubtask && (
-                                    <TaskSharingDropdown task={taskv4} />
-                                )}
-                            </Flex>
                             {!isMeetingPreparationTask &&
                                 !isRecurringTaskTemplate &&
                                 task.id_folder &&
