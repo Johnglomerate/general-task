@@ -21,10 +21,10 @@ type User struct {
 	GPTSuggestionsLeft    int                `bson:"gpt_suggestions_left"`
 	GPTLastSuggestionTime primitive.DateTime `bson:"gpt_last_suggestion_time"`
 	// Stripe subscription fields
-	StripeCustomerID           string             `bson:"stripe_customer_id,omitempty"`
-	SubscriptionID             string             `bson:"subscription_id,omitempty"`
-	SubscriptionStatus         string             `bson:"subscription_status,omitempty"`
-	SubscriptionPriceID        string             `bson:"subscription_price_id,omitempty"`
+	StripeCustomerID             string             `bson:"stripe_customer_id,omitempty"`
+	SubscriptionID               string             `bson:"subscription_id,omitempty"`
+	SubscriptionStatus           string             `bson:"subscription_status,omitempty"`
+	SubscriptionPriceID          string             `bson:"subscription_price_id,omitempty"`
 	SubscriptionCurrentPeriodEnd primitive.DateTime `bson:"subscription_current_period_end,omitempty"`
 }
 
@@ -446,29 +446,4 @@ type Note struct {
 	SharedUntil   primitive.DateTime `bson:"shared_until,omitempty"`
 	SharedAccess  *SharedAccess      `bson:"shared_access,omitempty"`
 	IsDeleted     *bool              `bson:"is_deleted,omitempty"`
-}
-
-type DashboardDataPoint struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty"`
-	TeamID       primitive.ObjectID `bson:"team_id,omitempty"`
-	IndividualID primitive.ObjectID `bson:"individual_id,omitempty"`
-	GraphType    string             `bson:"graph_type,omitempty"`
-	Value        int                `bson:"value,omitempty"`
-	Date         primitive.DateTime `bson:"date,omitempty"`
-	CreatedAt    primitive.DateTime `bson:"created_at,omitempty"`
-}
-
-type DashboardTeam struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	UserID    primitive.ObjectID `bson:"user_id,omitempty"`
-	CreatedAt primitive.DateTime `bson:"created_at,omitempty"`
-}
-
-type DashboardTeamMember struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	TeamID    primitive.ObjectID `bson:"team_id,omitempty"`
-	Email     string             `bson:"email,omitempty"`
-	GithubID  string             `bson:"github_id,omitempty"`
-	Name      string             `bson:"name,omitempty"`
-	CreatedAt primitive.DateTime `bson:"created_at,omitempty"`
 }

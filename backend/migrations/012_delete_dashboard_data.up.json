@@ -1,0 +1,29 @@
+[
+    {
+        "delete": "dashboard_data_points",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "dashboard_team_members",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "dashboard_teams",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 0
+            }
+        ]
+    }
+]
