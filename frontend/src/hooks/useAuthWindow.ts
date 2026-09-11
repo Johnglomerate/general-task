@@ -35,7 +35,7 @@ const useAuthWindow = () => {
         closeOnCookieSet = false,
         isGoogleSignIn = false,
     }: OpenAuthWindowOptions) => {
-        if (!url) return false
+        if (!url) return
         if (logEvent) Log(`open_auth_window_${url}`)
         const left = (screen.width - AUTH_WINDOW_WIDTH) / 2
         const top = (screen.height - AUTH_WINDOW_HEIGHT) / 4
@@ -54,23 +54,18 @@ const useAuthWindow = () => {
             onWindowClose?.()
         }
 
-        if (win == null) {
-            return false
+        if (win != null) {
+            setIsAuthWindowOpen(true)
+            const timer = setInterval(() => {
+                if (closeOnCookieSet && Cookie.get(AUTHORIZATION_COOKE)) {
+                    win.close()
+                    onClose(timer)
+                }
+                if (win.closed) {
+                    onClose(timer)
+                }
+            }, SINGLE_SECOND_INTERVAL)
         }
-
-        setIsAuthWindowOpen(true)
-        const timer = setInterval(() => {
-            const hasAuthCookie = !!Cookie.get(AUTHORIZATION_COOKE)
-            if (closeOnCookieSet && hasAuthCookie) {
-                win.close()
-                onClose(timer)
-                return
-            }
-            if (win.closed) {
-                onClose(timer)
-            }
-        }, SINGLE_SECOND_INTERVAL)
-        return true
     }
 
     return {
