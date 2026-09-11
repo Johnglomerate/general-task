@@ -7,9 +7,11 @@ import AuthenticatedRoutes from './src/AuthenticatedRoutes'
 import GoogleAuth from './src/components/screens/GoogleAuthScreen'
 import LandingScreen from './src/components/screens/LandingScreen'
 import SharedNoteUnavailableView from './src/components/views/SharedNoteUnavailableView'
+import SharedTaskUnavailableView from './src/components/views/SharedTaskUnavailableView'
 import {
     GOOGLE_AUTH_ROUTE,
     LEGACY_NOTE_ROUTE,
+    LEGACY_TASK_ROUTE,
     PRIVACY_POLICY_ROUTE,
     TERMS_OF_SERVICE_ROUTE,
 } from './src/constants'
@@ -58,6 +60,9 @@ const App = () => {
                     />
                     <Route path={LEGACY_NOTE_ROUTE} element={<SharedNoteUnavailableView />}>
                         <Route path=":noteId" element={<SharedNoteUnavailableView />} />
+                    </Route>
+                    <Route path={LEGACY_TASK_ROUTE} element={<SharedTaskUnavailableView />}>
+                        <Route path=":taskId" element={<SharedTaskUnavailableView />} />
                     </Route>
                     <Route path={GOOGLE_AUTH_ROUTE} element={<GoogleAuth />} />
                     <Route path="*" element={<AuthenticatedRoutes />} />

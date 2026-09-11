@@ -234,7 +234,3 @@ export const getFolderIdFromTask = (task: TTaskV4, tasks: TTaskV4[], folders: TT
     }
     return folderId
 }
-
-export const isTaskActive = (task: TTaskV4) => {
-    return !task.is_deleted && !task.is_done
-}

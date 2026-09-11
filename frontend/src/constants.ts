@@ -56,6 +56,7 @@ export const TERMS_OF_SERVICE_ROUTE = 'terms-of-service'
 export const PRIVACY_POLICY_ROUTE = 'privacy-policy'
 export const FOCUS_MODE_ROUTE = 'focus-mode'
 export const LEGACY_NOTE_ROUTE = 'note'
+export const LEGACY_TASK_ROUTE = 'task'
 export const GOOGLE_AUTH_ROUTE = 'link/google'
 
 export const NO_TITLE = '(no title)'
