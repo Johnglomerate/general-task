@@ -1,9 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import styled from 'styled-components'
-import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../../constants'
+import { AUTHORIZATION_COOKE } from '../../../constants'
 import getEnvVars from '../../../environment'
-import { useAuthWindow } from '../../../hooks'
 import useAnalyticsEventTracker from '../../../hooks/useAnalyticsEventTracker'
 import { Spacing } from '../../../styles'
 import Flex from '../../atoms/Flex'
@@ -34,7 +33,6 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
     const type = sharedType === 'Notes' ? 'note' : 'task'
     const isLoggedIn = !!Cookies.get(AUTHORIZATION_COOKE)
     const { title, body } = getTitleAndBody(type, isLoggedIn)
-    const { openAuthWindow } = useAuthWindow()
 
     return (
         <Flex column gap={Spacing._16}>
@@ -52,22 +50,7 @@ const NotAvailableMessage = ({ sharedType }: NotAvailableMessageProps) => {
                     />
                 ) : (
                     <>
-                        <NoStyleAnchor
-                            href={LOGIN_URL}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(event) => {
-                                GALog('Button click', 'Sign In to General Task')
-                                const didOpenAuthWindow = openAuthWindow({
-                                    url: LOGIN_URL,
-                                    logEvent: false,
-                                    closeOnCookieSet: true,
-                                })
-                                if (didOpenAuthWindow) {
-                                    event.preventDefault()
-                                }
-                            }}
-                        >
+                        <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_SIGN_UP_URL}>
                             <GTButton styleType="primary" value="Sign In to General Task" />
                         </NoStyleAnchor>
                         <NoStyleAnchor href={getEnvVars().REACT_APP_TRY_BASE_URL}>

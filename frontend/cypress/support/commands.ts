@@ -58,14 +58,6 @@ const stubGeneralTaskApi = () => {
     cy.intercept('GET', `${API}/tasks/fetch/`, {})
     cy.intercept('GET', `${API}/events/*`, [])
     cy.intercept('GET', `${API}/notes/`, [])
-    cy.intercept('GET', `${API}/notes/detail/mobile-unavailable-note/`, {
-        statusCode: 404,
-        body: {},
-    }).as('sharedUnavailableNote')
-    cy.intercept('GET', `${API}/shareable_tasks/detail/mobile-unavailable-task/`, {
-        statusCode: 404,
-        body: {},
-    }).as('sharedUnavailableTask')
     cy.intercept('GET', `${API}/linked_accounts/`, [])
     // Pulled in by the drawer's service list, not just the settings modal.
     cy.intercept('GET', `${API}/linked_accounts/supported_types/`, [])
