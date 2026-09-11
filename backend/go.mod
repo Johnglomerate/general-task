@@ -6,17 +6,11 @@ require (
 	github.com/archdx/zerolog-sentry v1.0.1
 	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/chidiwilliams/flatbson v0.3.0
-	github.com/dghubble/oauth1 v0.7.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/golang-migrate/migrate/v4 v4.14.1
-	github.com/google/go-github/v39 v39.2.0
-	github.com/google/go-github/v45 v45.1.0
 	github.com/google/uuid v1.2.0
 	github.com/joho/godotenv v1.3.0
-	github.com/machinebox/graphql v0.2.2
 	github.com/rs/zerolog v1.26.1
-	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
-	github.com/slack-go/slack v0.10.3
 	github.com/stretchr/testify v1.8.2
 	github.com/swaggo/files v0.0.0-20220610200504-28940afbdbfe
 	github.com/swaggo/gin-swagger v1.5.0
