@@ -55,6 +55,11 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	email := database.NormalizeEmail(params.Email)
 
 	now := api.GetCurrentTime()
+	if err := database.EnsureMagicLinkTokenIndexes(api.DB); err != nil {
+		api.Logger.Error().Err(err).Msg("failed to ensure magic link token indexes")
+		Handle500(c)
+		return
+	}
 	tokenCollection := database.GetMagicLinkTokenCollection(api.DB)
 	cooldownDuration := time.Duration(constants.MAGIC_LINK_COOLDOWN_SECONDS) * time.Second
 	cooldownThreshold := primitive.NewDateTimeFromTime(now.Add(-cooldownDuration))
@@ -180,6 +185,11 @@ func (api *API) LoginEmailCallback(c *gin.Context) {
 		return
 	}
 
+	if err := database.EnsureMagicLinkTokenIndexes(api.DB); err != nil {
+		api.Logger.Error().Err(err).Msg("failed to ensure magic link token indexes")
+		Handle500(c)
+		return
+	}
 	tokenCollection := database.GetMagicLinkTokenCollection(api.DB)
 	var stored database.MagicLinkToken
 	err := tokenCollection.FindOneAndDelete(

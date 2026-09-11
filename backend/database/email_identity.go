@@ -124,3 +124,28 @@ func AttachGoogleIDToEmailUser(db *mongo.Database, email, googleID, name string)
 func GetMagicLinkTokenCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("magic_link_tokens")
 }
+
+func EnsureMagicLinkTokenIndexes(db *mongo.Database) error {
+	_, err := GetMagicLinkTokenCollection(db).Indexes().CreateMany(
+		context.Background(),
+		[]mongo.IndexModel{
+			{
+				Keys:    bson.D{{Key: "token_hash", Value: 1}},
+				Options: options.Index().SetName("magic_link_token_hash"),
+			},
+			{
+				Keys:    bson.D{{Key: "email", Value: 1}, {Key: "created_at", Value: -1}},
+				Options: options.Index().SetName("magic_link_email_created_at"),
+			},
+			{
+				Keys:    bson.D{{Key: "request_ip", Value: 1}, {Key: "created_at", Value: -1}},
+				Options: options.Index().SetName("magic_link_request_ip_created_at"),
+			},
+			{
+				Keys:    bson.D{{Key: "expires_at", Value: 1}},
+				Options: options.Index().SetName("magic_link_expires_at_ttl").SetExpireAfterSeconds(0),
+			},
+		},
+	)
+	return err
+}
