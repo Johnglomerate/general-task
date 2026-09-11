@@ -10,7 +10,7 @@ import { CalendarContextProvider } from './components/calendar/CalendarContext'
 import Toast from './components/molecules/toast/Toast'
 import FocusModeScreen from './components/screens/FocusModeScreen'
 import MainScreen from './components/screens/MainScreen'
-import { FOCUS_MODE_ROUTE, LOGIN_URL } from './constants'
+import { FOCUS_MODE_ROUTE, LOGIN_ROUTE } from './constants'
 import AppContextProvider from './context/AppContextProvider'
 import { useGetUserInfo } from './services/api/user-info.hooks'
 
@@ -25,7 +25,7 @@ const SubscriptionGate = () => {
     }
     // Users in their free trial get full access; the paywall only kicks in once the trial expires
     if (!userInfo?.has_product_access) {
-        window.location.href = LOGIN_URL
+        window.location.href = `/${LOGIN_ROUTE}?subscription=required`
         return null
     }
     return <Outlet />

@@ -6,6 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"html"
+	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/GeneralTask/task-manager/backend/config"
@@ -50,6 +54,43 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	}
 	email := database.NormalizeEmail(params.Email)
 
+	now := api.GetCurrentTime()
+	tokenCollection := database.GetMagicLinkTokenCollection(api.DB)
+	cooldownDuration := time.Duration(constants.MAGIC_LINK_COOLDOWN_SECONDS) * time.Second
+	cooldownThreshold := primitive.NewDateTimeFromTime(now.Add(-cooldownDuration))
+
+	var recentToken database.MagicLinkToken
+	err = tokenCollection.FindOne(
+		context.Background(),
+		bson.M{"email": email, "created_at": bson.M{"$gt": cooldownThreshold}},
+	).Decode(&recentToken)
+	if err == nil {
+		c.JSON(200, gin.H{"detail": "login link sent"})
+		return
+	}
+	if err != mongo.ErrNoDocuments {
+		api.Logger.Error().Err(err).Msg("failed to check recent magic link token")
+		Handle500(c)
+		return
+	}
+
+	requestIP := c.ClientIP()
+	if requestIP != "" {
+		recentIPCount, err := tokenCollection.CountDocuments(
+			context.Background(),
+			bson.M{"request_ip": requestIP, "created_at": bson.M{"$gt": cooldownThreshold}},
+		)
+		if err != nil {
+			api.Logger.Error().Err(err).Msg("failed to check magic link ip cooldown")
+			Handle500(c)
+			return
+		}
+		if recentIPCount >= constants.MAGIC_LINK_IP_REQUEST_LIMIT {
+			c.JSON(200, gin.H{"detail": "login link sent"})
+			return
+		}
+	}
+
 	plaintext, err := generateMagicLinkToken()
 	if err != nil {
 		api.Logger.Error().Err(err).Msg("failed to generate magic link token")
@@ -57,8 +98,6 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 		return
 	}
 
-	now := api.GetCurrentTime()
-	tokenCollection := database.GetMagicLinkTokenCollection(api.DB)
 	_, err = tokenCollection.DeleteMany(context.Background(), bson.M{"email": email})
 	if err != nil {
 		api.Logger.Error().Err(err).Msg("failed to invalidate previous magic link tokens")
@@ -68,6 +107,7 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	_, err = tokenCollection.InsertOne(context.Background(), &database.MagicLinkToken{
 		Email:     email,
 		TokenHash: hashMagicLinkToken(plaintext),
+		RequestIP: requestIP,
 		ExpiresAt: primitive.NewDateTimeFromTime(now.Add(time.Duration(constants.MAGIC_LINK_TTL_SECONDS) * time.Second)),
 		CreatedAt: primitive.NewDateTimeFromTime(now),
 	})
@@ -94,20 +134,49 @@ func (api *API) LoginEmailRequest(c *gin.Context) {
 	c.JSON(200, gin.H{"detail": "login link sent"})
 }
 
+// LoginEmailCallbackRedirect godoc
+// @Summary      Opens email login confirmation
+// @Description  Renders a confirmation form so automated link scanners do not consume the token
+// @Tags         auth
+// @Produce      html
+// @Param        token  query  string  true  "magic link token"
+// @Success      200 {object} string "confirmation page"
+// @Router       /login/email/callback/ [get]
+func (api *API) LoginEmailCallbackRedirect(c *gin.Context) {
+	var params LoginEmailCallbackParams
+	if c.ShouldBind(&params) != nil || params.Token == "" {
+		c.Redirect(http.StatusFound, config.GetConfigValue("HOME_URL"))
+		return
+	}
+	body := []byte(`<!DOCTYPE html>
+<html>
+<head>
+	<title>Sign in to General Task</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+	<form method="post" action="/login/email/callback/">
+		<input type="hidden" name="token" value="` + html.EscapeString(params.Token) + `" />
+		<button type="submit">Sign in</button>
+	</form>
+</body>
+</html>`)
+	c.Data(http.StatusOK, "text/html; charset=utf-8", body)
+}
+
 // LoginEmailCallback godoc
 // @Summary      Completes email login
 // @Description  Consumes a one-time magic link token and sets the authToken cookie
 // @Tags         auth
 // @Produce      json
-// @Param        token  query  string  true  "magic link token"
+// @Param        token  formData  string  true  "magic link token"
 // @Success      302 {object} string "URL redirect"
-// @Failure      400 {object} string "invalid or expired login link"
 // @Failure      500 {object} string "internal server error"
-// @Router       /login/email/callback/ [get]
+// @Router       /login/email/callback/ [post]
 func (api *API) LoginEmailCallback(c *gin.Context) {
 	var params LoginEmailCallbackParams
 	if c.ShouldBind(&params) != nil || params.Token == "" {
-		c.Redirect(302, config.GetConfigValue("HOME_URL"))
+		c.Redirect(http.StatusFound, frontendLoginURL(url.Values{"email_login": {"invalid"}}))
 		return
 	}
 
@@ -121,7 +190,7 @@ func (api *API) LoginEmailCallback(c *gin.Context) {
 		},
 	).Decode(&stored)
 	if err == mongo.ErrNoDocuments {
-		c.JSON(400, gin.H{"detail": "invalid or expired login link"})
+		c.Redirect(http.StatusFound, frontendLoginURL(url.Values{"email_login": {"invalid"}}))
 		return
 	}
 	if err != nil {
@@ -149,6 +218,14 @@ func (api *API) sendLoginEmail(to, subject, body string) error {
 
 func magicLinkCallbackURL(token string) string {
 	return config.GetConfigValue("SERVER_URL") + "login/email/callback/?token=" + token
+}
+
+func frontendLoginURL(values url.Values) string {
+	loginURL := strings.TrimRight(config.GetConfigValue("HOME_URL"), "/") + "/login"
+	if len(values) == 0 {
+		return loginURL
+	}
+	return loginURL + "?" + values.Encode()
 }
 
 func generateMagicLinkToken() (string, error) {

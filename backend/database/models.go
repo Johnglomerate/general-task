@@ -363,6 +363,7 @@ type MagicLinkToken struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	Email     string             `bson:"email"`
 	TokenHash string             `bson:"token_hash"`
+	RequestIP string             `bson:"request_ip,omitempty"`
 	ExpiresAt primitive.DateTime `bson:"expires_at"`
 	CreatedAt primitive.DateTime `bson:"created_at"`
 }

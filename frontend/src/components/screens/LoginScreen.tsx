@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import styled from 'styled-components'
 import { AUTHORIZATION_COOKE, LOGIN_URL } from '../../constants'
@@ -38,10 +38,13 @@ const GoogleImage = styled.div`
 type TLinkStatus = 'idle' | 'sending' | 'sent' | 'error'
 
 const LoginScreen = () => {
+    const [searchParams] = useSearchParams()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<TLinkStatus>('idle')
+    const [hasLinkError, setHasLinkError] = useState(searchParams.get('email_login') === 'invalid')
+    const isSubscriptionLogin = searchParams.get('subscription') === 'required'
 
-    if (Cookies.get(AUTHORIZATION_COOKE)) return <Navigate to="/overview" replace />
+    if (Cookies.get(AUTHORIZATION_COOKE) && !isSubscriptionLogin) return <Navigate to="/overview" replace />
 
     const onSubmit = async (event: FormEvent) => {
         event.preventDefault()
@@ -55,7 +58,14 @@ const LoginScreen = () => {
         }
     }
 
-    const statusMessage = status === 'sent' ? 'Check your email' : status === 'error' ? 'Could not send link' : ''
+    const statusMessage =
+        status === 'sent'
+            ? 'Check your email'
+            : status === 'error'
+              ? 'Could not send link'
+              : hasLinkError
+                ? 'Link expired'
+                : ''
 
     return (
         <Container>
@@ -73,6 +83,7 @@ const LoginScreen = () => {
                             value={email}
                             onChange={(value) => {
                                 setEmail(value)
+                                setHasLinkError(false)
                                 if (status === 'error' || status === 'sent') setStatus('idle')
                             }}
                         />

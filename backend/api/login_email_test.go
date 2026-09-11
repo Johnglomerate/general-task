@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GeneralTask/task-manager/backend/config"
+	"github.com/GeneralTask/task-manager/backend/constants"
 	"github.com/GeneralTask/task-manager/backend/database"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
@@ -78,8 +78,13 @@ func TestLoginEmailRequest(t *testing.T) {
 	t.Run("ReplacesPreviousToken", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
+		start := time.Now().UTC()
+		api.OverrideTime = &start
 		email := createRandomGTEmail()
 		firstURL := requestMagicLink(t, api, email)
+
+		afterCooldown := start.Add(time.Duration(constants.MAGIC_LINK_COOLDOWN_SECONDS+1) * time.Second)
+		api.OverrideTime = &afterCooldown
 		secondURL := requestMagicLink(t, api, email)
 		assert.NotEqual(t, firstURL, secondURL)
 
@@ -88,7 +93,42 @@ func TestLoginEmailRequest(t *testing.T) {
 		assert.Equal(t, int64(1), count)
 
 		recorder := getMagicLinkCallback(api, tokenFromLoginURL(t, firstURL))
-		assert.Equal(t, http.StatusBadRequest, recorder.Code)
+		assert.Equal(t, http.StatusFound, recorder.Code)
+		assert.Equal(t, frontendLoginURL(url.Values{"email_login": {"invalid"}}), recorder.Header().Get("Location"))
+	})
+	t.Run("KeepsRecentToken", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+		email := createRandomGTEmail()
+		firstURL := requestMagicLink(t, api, email)
+
+		response := requestMagicLinkResponse(t, api, email, "")
+		assert.Equal(t, "login link sent", response["detail"])
+		assert.Empty(t, response["login_url"])
+
+		count, err := database.GetMagicLinkTokenCollection(api.DB).CountDocuments(context.Background(), bson.M{"email": email})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), count)
+
+		recorder := getMagicLinkCallback(api, tokenFromLoginURL(t, firstURL))
+		assert.Equal(t, http.StatusFound, recorder.Code)
+	})
+	t.Run("RateLimitsRequestIP", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+		ip := "203.0.113.10"
+
+		for i := 0; i < constants.MAGIC_LINK_IP_REQUEST_LIMIT; i++ {
+			response := requestMagicLinkResponse(t, api, createRandomGTEmail(), ip)
+			assert.NotEmpty(t, response["login_url"])
+		}
+		response := requestMagicLinkResponse(t, api, createRandomGTEmail(), ip)
+		assert.Equal(t, "login link sent", response["detail"])
+		assert.Empty(t, response["login_url"])
+
+		count, err := database.GetMagicLinkTokenCollection(api.DB).CountDocuments(context.Background(), bson.M{"request_ip": ip})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(constants.MAGIC_LINK_IP_REQUEST_LIMIT), count)
 	})
 	t.Run("NormalizesEmail", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
@@ -110,16 +150,31 @@ func TestLoginEmailCallback(t *testing.T) {
 		defer dbCleanup()
 		recorder := getMagicLinkCallback(api, "")
 		assert.Equal(t, http.StatusFound, recorder.Code)
-		assert.Equal(t, config.GetConfigValue("HOME_URL"), recorder.Header().Get("Location"))
+		assert.Equal(t, frontendLoginURL(url.Values{"email_login": {"invalid"}}), recorder.Header().Get("Location"))
 	})
 	t.Run("InvalidToken", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
 		recorder := getMagicLinkCallback(api, "deadbeef")
-		assert.Equal(t, http.StatusBadRequest, recorder.Code)
-		body, err := io.ReadAll(recorder.Body)
+		assert.Equal(t, http.StatusFound, recorder.Code)
+		assert.Equal(t, frontendLoginURL(url.Values{"email_login": {"invalid"}}), recorder.Header().Get("Location"))
+	})
+	t.Run("GetRedirectDoesNotConsume", func(t *testing.T) {
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+		email := createRandomGTEmail()
+		loginURL := requestMagicLink(t, api, email)
+		token := tokenFromLoginURL(t, loginURL)
+
+		redirect := getMagicLinkRedirect(api, token)
+		assert.Equal(t, http.StatusOK, redirect.Code)
+		body, err := io.ReadAll(redirect.Body)
 		assert.NoError(t, err)
-		assert.Equal(t, "{\"detail\":\"invalid or expired login link\"}", string(body))
+		assert.Contains(t, string(body), `method="post"`)
+		assert.Contains(t, string(body), `name="token"`)
+
+		recorder := getMagicLinkCallback(api, token)
+		assert.Equal(t, http.StatusFound, recorder.Code)
 	})
 	t.Run("NewUser", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
@@ -203,7 +258,8 @@ func TestLoginEmailCallback(t *testing.T) {
 		assert.NoError(t, err)
 
 		recorder := getMagicLinkCallback(api, plaintext)
-		assert.Equal(t, http.StatusBadRequest, recorder.Code)
+		assert.Equal(t, http.StatusFound, recorder.Code)
+		assert.Equal(t, frontendLoginURL(url.Values{"email_login": {"invalid"}}), recorder.Header().Get("Location"))
 		count, err := database.GetUserCollection(api.DB).CountDocuments(context.Background(), database.EmailLookupFilter(email))
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), count)
@@ -217,7 +273,8 @@ func TestLoginEmailCallback(t *testing.T) {
 		first := getMagicLinkCallback(api, token)
 		assert.Equal(t, http.StatusFound, first.Code)
 		second := getMagicLinkCallback(api, token)
-		assert.Equal(t, http.StatusBadRequest, second.Code)
+		assert.Equal(t, http.StatusFound, second.Code)
+		assert.Equal(t, frontendLoginURL(url.Values{"email_login": {"invalid"}}), second.Header().Get("Location"))
 	})
 	t.Run("ProdSendUsesInjectedSender", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
@@ -277,6 +334,42 @@ func TestGoogleLoginMergesEmailOnlyUser(t *testing.T) {
 	assert.Equal(t, int64(1), count)
 }
 
+func TestGoogleLoginDoesNotMergeEmailOnlyUserWithUnverifiedEmail(t *testing.T) {
+	api, dbCleanup := GetAPIWithDBCleanup()
+	defer dbCleanup()
+	email := createRandomGTEmail()
+	inserted, err := database.GetUserCollection(api.DB).InsertOne(context.Background(), &database.User{
+		Email:     email,
+		Name:      "Magic",
+		CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC().Add(-time.Hour)),
+	})
+	assert.NoError(t, err)
+
+	stateToken, err := newStateToken(api.DB, "", false)
+	assert.NoError(t, err)
+	recorder := makeLoginCallbackRequestWithEmailVerified(
+		"noice420",
+		email,
+		"From Google",
+		*stateToken,
+		*stateToken,
+		false,
+		true,
+		false,
+	)
+	assert.Equal(t, http.StatusFound, recorder.Code)
+
+	var original database.User
+	err = database.GetUserCollection(api.DB).FindOne(context.Background(), bson.M{"_id": inserted.InsertedID}).Decode(&original)
+	assert.NoError(t, err)
+	assert.Equal(t, "", original.GoogleID)
+	assert.Equal(t, "Magic", original.Name)
+
+	count, err := database.GetUserCollection(api.DB).CountDocuments(context.Background(), database.EmailLookupFilter(email))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), count)
+}
+
 func TestGoogleLoginDoesNotMergeDistinctGoogleUsers(t *testing.T) {
 	api, dbCleanup := GetAPIWithDBCleanup()
 	defer dbCleanup()
@@ -304,21 +397,40 @@ func TestGoogleLoginDoesNotMergeDistinctGoogleUsers(t *testing.T) {
 }
 
 func requestMagicLink(t *testing.T, api *API, email string) string {
-	router := GetRouter(api)
-	payload, err := json.Marshal(map[string]string{"email": email})
-	assert.NoError(t, err)
-	request, _ := http.NewRequest("POST", "/login/email/", bytes.NewBuffer(payload))
-	recorder := httptest.NewRecorder()
-	router.ServeHTTP(recorder, request)
-	assert.Equal(t, http.StatusOK, recorder.Code)
-	var response map[string]string
-	assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	response := requestMagicLinkResponse(t, api, email, "")
 	assert.Equal(t, "login link sent", response["detail"])
 	assert.NotEmpty(t, response["login_url"])
 	return response["login_url"]
 }
 
+func requestMagicLinkResponse(t *testing.T, api *API, email string, remoteIP string) map[string]string {
+	router := GetRouter(api)
+	payload, err := json.Marshal(map[string]string{"email": email})
+	assert.NoError(t, err)
+	request, _ := http.NewRequest("POST", "/login/email/", bytes.NewBuffer(payload))
+	if remoteIP != "" {
+		request.RemoteAddr = remoteIP + ":1234"
+	}
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	var response map[string]string
+	assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+	return response
+}
+
 func getMagicLinkCallback(api *API, token string) *httptest.ResponseRecorder {
+	router := GetRouter(api)
+	form := url.Values{}
+	form.Set("token", token)
+	request, _ := http.NewRequest("POST", "/login/email/callback/", strings.NewReader(form.Encode()))
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	return recorder
+}
+
+func getMagicLinkRedirect(api *API, token string) *httptest.ResponseRecorder {
 	router := GetRouter(api)
 	path := "/login/email/callback/"
 	if token != "" {

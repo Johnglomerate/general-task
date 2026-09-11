@@ -48,9 +48,10 @@ type GoogleService struct {
 
 // GoogleUserInfo ...
 type GoogleUserInfo struct {
-	SUB   string `json:"sub"`
-	EMAIL string `json:"email"`
-	Name  string `json:"name"`
+	SUB           string `json:"sub"`
+	EMAIL         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Name          string `json:"name"`
 }
 
 // GoogleTokenInfo ...
@@ -285,16 +286,25 @@ func (Google GoogleService) HandleSignupCallback(db *mongo.Database, params Call
 
 	userIsNew := false
 	if err == mongo.ErrNoDocuments {
-		attached, attachErr := database.AttachGoogleIDToEmailUser(db, userInfo.EMAIL, userInfo.SUB, userInfo.Name)
-		if attachErr != nil {
-			logger.Error().Err(attachErr).Msg("error attaching google id to email user")
-			return primitive.NilObjectID, nil, nil, attachErr
+		var attached *database.User
+		if userInfo.EmailVerified {
+			var attachErr error
+			attached, attachErr = database.AttachGoogleIDToEmailUser(db, userInfo.EMAIL, userInfo.SUB, userInfo.Name)
+			if attachErr != nil {
+				logger.Error().Err(attachErr).Msg("error attaching google id to email user")
+				return primitive.NilObjectID, nil, nil, attachErr
+			}
 		}
 		if attached != nil {
 			user = *attached
 		} else {
 			userIsNew = true
-			userNew := &database.User{GoogleID: userInfo.SUB, Email: userInfo.EMAIL, Name: userInfo.Name, CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC())}
+			userNew := &database.User{
+				GoogleID:  userInfo.SUB,
+				Email:     userInfo.EMAIL,
+				Name:      userInfo.Name,
+				CreatedAt: primitive.NewDateTimeFromTime(time.Now().UTC()),
+			}
 
 			log.Debug().Msgf("userNew: %+v", userNew)
 			userCollection.FindOneAndUpdate(context.Background(),
