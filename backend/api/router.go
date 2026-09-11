@@ -147,11 +147,6 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	// Add subscription middleware. Endpoints below this require an active subscription
 	router.Use(SubscriptionMiddleware(handlers.DB))
-	router.GET("/dashboard/data/", handlers.DashboardData)
-	router.GET("/dashboard/team_members/", handlers.DashboardTeamMembersList)
-	router.POST("/dashboard/team_members/", handlers.DashboardTeamMemberCreate)
-	router.DELETE("/dashboard/team_members/:team_member_id/", handlers.DashboardTeamMemberDelete)
-	router.GET("/dashboard/data/fetch/", handlers.DashboardFetch)
 	router.GET("/ping_subscribed/", handlers.Ping)
 
 	return router

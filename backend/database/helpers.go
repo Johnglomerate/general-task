@@ -1151,76 +1151,6 @@ func UpdateUserSetting(db *mongo.Database, userID primitive.ObjectID, fieldKey s
 	return nil
 }
 
-func GetOrCreateDashboardTeam(db *mongo.Database, userID primitive.ObjectID) (*DashboardTeam, error) {
-	teamCollection := GetDashboardTeamCollection(db)
-
-	var dashboardTeam DashboardTeam
-	err := teamCollection.FindOneAndUpdate(
-		context.Background(),
-		bson.M{"user_id": userID},
-		bson.M{"$setOnInsert": DashboardTeam{
-			UserID:    userID,
-			CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
-		}},
-		options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
-	).Decode(&dashboardTeam)
-	if err != nil {
-		logging.GetSentryLogger().Error().Err(err).Msg("failed to find and update dashboard team")
-		return nil, err
-	}
-	return &dashboardTeam, nil
-}
-
-func GetDashboardTeamMembers(db *mongo.Database, teamID primitive.ObjectID) (*[]DashboardTeamMember, error) {
-	teamMemberCollection := GetDashboardTeamMemberCollection(db)
-	cursor, err := teamMemberCollection.Find(
-		context.Background(),
-		bson.M{"team_id": teamID},
-	)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to fetch team members")
-		return nil, err
-	}
-
-	var teamMembers []DashboardTeamMember
-	err = cursor.All(context.Background(), &teamMembers)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to load team members")
-		return nil, err
-	}
-	return &teamMembers, nil
-}
-
-func GetDashboardDataPoints(db *mongo.Database, teamID primitive.ObjectID, now time.Time, lookbackDays int) (*[]DashboardDataPoint, error) {
-	dataPointCollection := GetDashboardDataPointCollection(db)
-	cursor, err := dataPointCollection.Find(
-		context.Background(),
-		bson.M{"$and": []bson.M{
-			// this timestamp is approximate for now, will refine as needed
-			{"date": bson.M{"$gte": now.Add(-time.Hour * 24 * time.Duration(lookbackDays))}},
-			{"$or": []bson.M{
-				{"team_id": teamID},
-				{"team_id": bson.M{"$exists": false}},
-			}}}},
-	)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to fetch data points")
-		return nil, err
-	}
-
-	var dataPoints []DashboardDataPoint
-	err = cursor.All(context.Background(), &dataPoints)
-	if err != nil {
-		logger := logging.GetSentryLogger()
-		logger.Error().Err(err).Msg("failed to load data points")
-		return nil, err
-	}
-	return &dataPoints, nil
-}
-
 func GetServerRequestCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("server_requests")
 }
@@ -1309,20 +1239,8 @@ func GetRecurringTaskTemplateCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("recurring_task_templates")
 }
 
-func GetDashboardDataPointCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("dashboard_data_points")
-}
-
 func GetJobLocksCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("job_locks")
-}
-
-func GetDashboardTeamCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("dashboard_teams")
-}
-
-func GetDashboardTeamMemberCollection(db *mongo.Database) *mongo.Collection {
-	return db.Collection("dashboard_team_members")
 }
 
 func HasUserGrantedMultiCalendarScope(scopes []string) bool {

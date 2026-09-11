@@ -10,12 +10,7 @@ func GetScheduler() (*gocron.Scheduler, error) {
 	s := gocron.NewScheduler(time.UTC)
 
 	// job schedules
-	_, err := s.Every(1).Day().At("08:00").Do(githubIndustryJob)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = s.Every(1).Day().At("08:00").Do(dripCampaignJob)
+	_, err := s.Every(1).Day().At("08:00").Do(dripCampaignJob)
 	if err != nil {
 		return nil, err
 	}

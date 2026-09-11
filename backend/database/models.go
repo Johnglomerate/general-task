@@ -444,28 +444,3 @@ type Note struct {
 	SharedAccess  *SharedAccess      `bson:"shared_access,omitempty"`
 	IsDeleted     *bool              `bson:"is_deleted,omitempty"`
 }
-
-type DashboardDataPoint struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty"`
-	TeamID       primitive.ObjectID `bson:"team_id,omitempty"`
-	IndividualID primitive.ObjectID `bson:"individual_id,omitempty"`
-	GraphType    string             `bson:"graph_type,omitempty"`
-	Value        int                `bson:"value,omitempty"`
-	Date         primitive.DateTime `bson:"date,omitempty"`
-	CreatedAt    primitive.DateTime `bson:"created_at,omitempty"`
-}
-
-type DashboardTeam struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	UserID    primitive.ObjectID `bson:"user_id,omitempty"`
-	CreatedAt primitive.DateTime `bson:"created_at,omitempty"`
-}
-
-type DashboardTeamMember struct {
-	ID        primitive.ObjectID `bson:"_id,omitempty"`
-	TeamID    primitive.ObjectID `bson:"team_id,omitempty"`
-	Email     string             `bson:"email,omitempty"`
-	GithubID  string             `bson:"github_id,omitempty"`
-	Name      string             `bson:"name,omitempty"`
-	CreatedAt primitive.DateTime `bson:"created_at,omitempty"`
-}
