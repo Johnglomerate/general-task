@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
