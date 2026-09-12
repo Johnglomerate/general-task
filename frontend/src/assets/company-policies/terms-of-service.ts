@@ -283,7 +283,7 @@ const TermsOfServiceHTML = `
 
 </head>
 
-<body lang=EN-US link=blue vlink=purple style='word-wrap:break-word'>
+<body lang=EN-US link=blue vlink=blue style='word-wrap:break-word'>
 
 	<div class=WordSection1>
 		<p class=MsoNormal><i><span style='font-size:11.0pt;font-family:"Calibri",sans-serif'>Last
