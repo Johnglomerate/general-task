@@ -8,7 +8,7 @@ import useQueryContext from '../../context/QueryContext'
 import { useGTLocalStorage, useSetting } from '../../hooks'
 import { TLogoImage } from '../../styles/images'
 import apiClient from '../../utils/api'
-import { TCalendar, TCalendarAccount, TEvent, TOverviewView, TPullRequest, TTaskV4 } from '../../utils/types'
+import { TCalendar, TCalendarAccount, TEvent, TOverviewView, TTaskV4 } from '../../utils/types'
 import { getBackgroundQueryOptions, useGTMutation, useGTQueryClient } from '../queryUtils'
 
 interface TEventAttendee {
@@ -29,7 +29,6 @@ interface TCreateEventPayload {
     add_conference_call?: boolean
     task_id?: string
     view_id?: string
-    pr_id?: string
 }
 interface TModifyEventPayload {
     account_id: string
@@ -47,7 +46,6 @@ interface TCreateEventParams {
     date: DateTime
     linkedTask?: TTaskV4
     linkedView?: TOverviewView
-    linkedPullRequest?: TPullRequest
     optimisticId: string
 }
 interface TCreateEventResponse {
@@ -144,14 +142,7 @@ export const useCreateEvent = () => {
         tag: 'events',
         invalidateTagsOnSettled: ['events'],
         errorMessage: 'create event',
-        onMutate: ({
-            createEventPayload,
-            date,
-            linkedTask,
-            linkedView,
-            linkedPullRequest,
-            optimisticId,
-        }: TCreateEventParams) => {
+        onMutate: ({ createEventPayload, date, linkedTask, linkedView, optimisticId }: TCreateEventParams) => {
             const { events, blockStartTime } = queryClient.getCurrentEvents(
                 date,
                 createEventPayload.datetime_start,
@@ -166,8 +157,6 @@ export const useCreateEvent = () => {
             let logo: TLogoImage
             if (linkedTask?.source.logo) {
                 logo = linkedTask?.source.logo
-            } else if (linkedPullRequest) {
-                logo = 'github'
             } else {
                 logo = 'gcal'
             }
@@ -192,7 +181,6 @@ export const useCreateEvent = () => {
                 },
                 linked_task_id: linkedTask?.id ?? '',
                 linked_view_id: linkedView?.id ?? '',
-                linked_pull_request_id: linkedPullRequest?.id ?? '',
             }
 
             const newEvents = produce(events, (draft) => {

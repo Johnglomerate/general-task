@@ -9,7 +9,7 @@ import useQueryContext from '../../context/QueryContext'
 import { useGTLocalStorage, useNavigateToTask } from '../../hooks'
 import apiClient from '../../utils/api'
 import navigateToNextItemAfterOverviewCompletion from '../../utils/navigateToNextItemAfterOverviewCompletion'
-import { TExternalStatus, TOverviewView, TTaskFolder, TTaskSharedAccess, TTaskV4, TUserInfo } from '../../utils/types'
+import { TOverviewView, TTaskFolder, TTaskSharedAccess, TTaskV4 } from '../../utils/types'
 import { resetOrderingIds, sleep } from '../../utils/utils'
 import { GTQueryClient, getBackgroundQueryOptions, useGTMutation, useGTQueryClient } from '../queryUtils'
 
@@ -30,22 +30,15 @@ export interface TModifyTaskData {
     title?: string
     dueDate?: string
     body?: string
-    external_priority_id?: string
     priorityNormalized?: number
-    status?: TExternalStatus
     recurringTaskTemplateId?: string
     shared_access?: TTaskSharedAccess
     shared_until?: string
 }
 
-interface TExternalPriority {
-    external_id: string
-}
 interface TTaskModifyRequestBody {
     task: {
-        external_priority?: TExternalPriority
         priority_normalized?: number
-        status?: TExternalStatus
         recurring_task_template_id?: string
     }
     id_task_section?: string
@@ -77,7 +70,6 @@ export interface TReorderTaskData {
     dropSectionId: string
     orderingId: number
     dragSectionId?: string
-    isJiraTask?: boolean
 }
 interface TReorderTaskRequestBody {
     id_task_section: string
@@ -85,12 +77,6 @@ interface TReorderTaskRequestBody {
     is_completed?: boolean
     is_deleted?: boolean
 }
-export interface TPostCommentData {
-    id: string
-    body: string
-    optimisticId: string
-}
-
 interface TSharedTaskResponse {
     task: TTaskV4
     subtasks: TTaskV4[]
@@ -259,7 +245,6 @@ export const createTask = async (data: TCreateTaskData) => {
     }
 }
 
-const COMPLETED_TASK_TYPES = ['completed', 'canceled', 'done']
 
 const optimisticallyUpdateTask = async (queryClient: GTQueryClient, data: TModifyTaskData, queryKey: QueryKey) => {
     const queryData = queryClient.getImmutableQueryData<TTaskV4[]>(queryKey)
@@ -276,17 +261,9 @@ const optimisticallyUpdateTask = async (queryClient: GTQueryClient, data: TModif
         }
         task.body = data.body ?? task.body
         task.priority_normalized = data.priorityNormalized ?? task.priority_normalized
-        task.external_status = data.status ?? task.external_status
-        task.is_done = COMPLETED_TASK_TYPES.includes(data.status?.type ?? '') ?? task.is_done
         task.recurring_task_template_id = data.recurringTaskTemplateId ?? task.recurring_task_template_id
         task.shared_access = data.shared_access ?? task.shared_access
         task.shared_until = data.shared_until ?? task.shared_until
-        if (data.external_priority_id) {
-            const newPriority = task.all_priorities?.find(
-                (priority) => priority.external_id === data.external_priority_id
-            )
-            if (newPriority) task.priority = newPriority
-        }
         task.updated_at = DateTime.utc().toISO()
     })
     queryClient.setQueryData(queryKey, updatedTasks)
@@ -310,29 +287,6 @@ export const useModifyTask = (useQueueing = true) => {
                 ])
                 optimisticallyUpdateTask(queryClient, data, 'tasks_v4')
                 optimisticallyUpdateTask(queryClient, data, 'meeting_preparation_tasks')
-
-                if (!COMPLETED_TASK_TYPES.includes(data.status?.type ?? '')) return
-                const folders = queryClient.getImmutableQueryData<TTaskFolder[]>('folders')
-                if (!folders) return
-                const updatedFolders = produce(folders, (draft) => {
-                    const currentFolder = draft.find((folder) => folder.task_ids.includes(data.id))
-                    const doneFolder = draft.find((folder) => folder.id === DONE_FOLDER_ID)
-                    if (!currentFolder || !doneFolder) return
-                    currentFolder.task_ids = currentFolder.task_ids.filter((id) => id !== data.id)
-                    doneFolder.task_ids.unshift(data.id)
-                })
-                queryClient.setQueryData('folders', updatedFolders)
-
-                const lists = queryClient.getImmutableQueryData<TOverviewView[]>('overview')
-                if (!lists) return
-                const updatedLists = produce(lists, (draft) => {
-                    const currentLists = draft.filter((list) => list.view_item_ids.includes(data.id))
-                    if (!currentLists) return
-                    for (const list of currentLists) {
-                        list.view_item_ids = list.view_item_ids.filter((id) => id !== data.id)
-                    }
-                })
-                queryClient.setQueryData('overview', updatedLists)
             },
         },
         useQueueing
@@ -347,14 +301,7 @@ const modifyTask = async (data: TModifyTaskData) => {
     if (data.title !== undefined) requestBody.title = data.title
     if (data.dueDate !== undefined) requestBody.due_date = data.dueDate
     if (data.body !== undefined) requestBody.body = data.body
-    if (data.external_priority_id !== undefined) {
-        if (!requestBody.task.external_priority)
-            requestBody.task.external_priority = {
-                external_id: data.external_priority_id,
-            }
-    }
     if (data.priorityNormalized !== undefined) requestBody.task.priority_normalized = data.priorityNormalized
-    if (data.status !== undefined) requestBody.task.status = data.status
     if (data.recurringTaskTemplateId !== undefined)
         requestBody.task.recurring_task_template_id = data.recurringTaskTemplateId
     if (data.shared_access !== undefined) requestBody.shared_access = data.shared_access
@@ -593,56 +540,10 @@ export const reorderTask = async (data: TReorderTaskData) => {
             id_ordering: data.orderingId,
             is_completed: data.isSubtask ? undefined : data.dropSectionId === DONE_FOLDER_ID,
         }
-        if (data.isJiraTask) {
-            requestBody.is_deleted = data.dropSectionId === TRASH_FOLDER_ID
-        }
         const res = await apiClient.patch(`/tasks/modify/${data.id}/`, requestBody)
         return castImmutable(res.data)
     } catch {
         throw 'reorderTask failed'
-    }
-}
-
-export const usePostComment = () => {
-    const queryClient = useGTQueryClient()
-
-    return useGTMutation((data: TPostCommentData) => postComment(data), {
-        tag: 'tasks_v4',
-        invalidateTagsOnSettled: ['tasks_v4'],
-        errorMessage: 'post comment',
-        onMutate: async (data: TPostCommentData) => {
-            await queryClient.cancelQueries('tasks_v4')
-
-            const userInfo = queryClient.getImmutableQueryData<TUserInfo>('user_info')
-
-            const tasks = queryClient.getImmutableQueryData<TTaskV4[]>('tasks_v4')
-            if (tasks) {
-                const updatedTasks = produce(tasks, (draft) => {
-                    const task = draft.find((task) => task.id === data.id)
-                    if (!task) return
-                    task.comments?.unshift({
-                        body: data.body,
-                        created_at: DateTime.local().toISO(),
-                        user: {
-                            DisplayName: userInfo?.linear_display_name ?? 'You',
-                            Email: '',
-                            ExternalID: data.optimisticId,
-                            Name: userInfo?.linear_name ?? 'You',
-                        },
-                    })
-                })
-
-                queryClient.setQueryData('tasks_v4', updatedTasks)
-            }
-        },
-    })
-}
-const postComment = async (data: TPostCommentData) => {
-    try {
-        const res = await apiClient.post(`/tasks/${data.id}/comments/add/`, data)
-        return castImmutable(res.data)
-    } catch {
-        throw 'postComment failed'
     }
 }
 
@@ -672,9 +573,5 @@ export const createNewTaskV4Helper = (data: Partial<TTaskV4> & { optimisticId: s
         id_parent: data.id_parent,
         subtask_ids: data.subtask_ids,
         meeting_preparation_params: data.meeting_preparation_params,
-        slack_message_params: data.slack_message_params,
-        comments: data.comments,
-        external_status: data.external_status,
-        all_statuses: data.all_statuses,
     }
 }

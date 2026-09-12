@@ -13,7 +13,5 @@ type TaskService interface {
 }
 
 type CallbackParams struct {
-	Oauth1Token    *string
-	Oauth1Verifier *string
-	Oauth2Code     *string
+	Oauth2Code *string
 }

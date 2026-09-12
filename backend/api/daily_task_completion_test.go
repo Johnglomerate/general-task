@@ -35,12 +35,12 @@ func TestGetDailyTaskCompletionList(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	// Insert complete Linear task
+	// Insert completed task
 	_, err = taskCollection.InsertOne(context.Background(), database.Task{
 		UserID:      userID,
 		IsCompleted: &completedTrue,
 		CompletedAt: primitive.NewDateTimeFromTime(testTime),
-		SourceID:    external.TASK_SOURCE_ID_LINEAR,
+		SourceID:    external.TASK_SOURCE_ID_GT_TASK,
 	})
 	assert.NoError(t, err)
 
@@ -94,7 +94,7 @@ func TestGetDailyTaskCompletionList(t *testing.T) {
 						Count:    1,
 					},
 					{
-						SourceID: external.TASK_SOURCE_ID_LINEAR,
+						SourceID: external.TASK_SOURCE_ID_GT_TASK,
 						Count:    1,
 					},
 				},

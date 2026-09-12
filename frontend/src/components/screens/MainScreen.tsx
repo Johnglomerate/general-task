@@ -6,7 +6,6 @@ import { OverviewContextProvider } from '../../context/OverviewContextProvider'
 import { useEventBanners, usePageFocus } from '../../hooks'
 import { useGetFolders } from '../../services/api/folders.hooks'
 import { useGetOverviewViews } from '../../services/api/overview.hooks'
-import { useFetchPullRequests } from '../../services/api/pull-request.hooks'
 import { useFetchExternalTasks } from '../../services/api/tasks.hooks'
 import { useGetTasksV4 } from '../../services/api/tasks.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
@@ -15,12 +14,8 @@ import { CalendarContextProvider } from '../calendar/CalendarContext'
 import DragLayer from '../molecules/DragLayer'
 import DefaultTemplate from '../templates/DefaultTemplate'
 import DailyOverviewView from '../views/DailyOverviewView'
-import JiraView from '../views/JiraView'
-import LinearView from '../views/LinearView'
 import NoteListView from '../views/NoteListView'
-import PullRequestsView from '../views/PullRequestsView'
 import RecurringTasksView from '../views/RecurringTasksView'
-import SlackTasksView from '../views/SlackTasksView'
 import TaskSection from '../views/TaskSectionView'
 
 const MainScreen = () => {
@@ -29,7 +24,6 @@ const MainScreen = () => {
     useGetTasksV4()
     useGetFolders()
     useGetOverviewViews()
-    useFetchPullRequests()
     useFetchExternalTasks()
     useEventBanners(DateTime.now())
     usePageFocus(true)
@@ -48,14 +42,6 @@ const MainScreen = () => {
                 return <NoteListView />
             case 'tasks':
                 return <TaskSection />
-            case 'pull-requests':
-                return <PullRequestsView />
-            case 'linear':
-                return <LinearView />
-            case 'slack':
-                return <SlackTasksView />
-            case 'jira':
-                return <JiraView />
             default:
                 return (
                     <OverviewContextProvider>

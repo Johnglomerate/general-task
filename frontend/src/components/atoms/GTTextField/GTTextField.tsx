@@ -70,7 +70,7 @@ const GTTextField = forwardRef((props: GTTextFieldProps, ref) => {
     const getEditor = () => {
         if (props.type === 'plaintext') {
             return <PlainTextEditor ref={ref} {...props} />
-        } else if (props.type === 'markdown' || props.type === 'atlassian') {
+        } else if (props.type === 'markdown') {
             return <AtlassianEditor {...props} />
         }
     }

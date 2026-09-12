@@ -23,25 +23,24 @@ type EventListParams struct {
 }
 
 type EventResult struct {
-	ID                  primitive.ObjectID   `json:"id"`
-	AccountID           string               `json:"account_id"`
-	CalendarID          string               `json:"calendar_id"`
-	ColorID             string               `json:"color_id"`
-	Deeplink            string               `json:"deeplink"`
-	Title               string               `json:"title"`
-	Body                string               `json:"body"`
-	Location            string               `json:"location"`
-	CanModify           bool                 `json:"can_modify"`
-	ConferenceCall      utils.ConferenceCall `json:"conference_call"`
-	DatetimeEnd         primitive.DateTime   `json:"datetime_end,omitempty"`
-	DatetimeStart       primitive.DateTime   `json:"datetime_start,omitempty"`
-	LinkedTaskID        string               `json:"linked_task_id"`
-	LinkedViewID        string               `json:"linked_view_id"`
-	LinkedPullRequestID string               `json:"linked_pull_request_id"`
-	LinkedNoteID        string               `json:"linked_note_id,omitempty"`
-	Logo                string               `json:"logo"`
-	ColorBackground     string               `json:"color_background,omitempty"`
-	ColorForeground     string               `json:"color_foreground,omitempty"`
+	ID              primitive.ObjectID   `json:"id"`
+	AccountID       string               `json:"account_id"`
+	CalendarID      string               `json:"calendar_id"`
+	ColorID         string               `json:"color_id"`
+	Deeplink        string               `json:"deeplink"`
+	Title           string               `json:"title"`
+	Body            string               `json:"body"`
+	Location        string               `json:"location"`
+	CanModify       bool                 `json:"can_modify"`
+	ConferenceCall  utils.ConferenceCall `json:"conference_call"`
+	DatetimeEnd     primitive.DateTime   `json:"datetime_end,omitempty"`
+	DatetimeStart   primitive.DateTime   `json:"datetime_start,omitempty"`
+	LinkedTaskID    string               `json:"linked_task_id"`
+	LinkedViewID    string               `json:"linked_view_id"`
+	LinkedNoteID    string               `json:"linked_note_id,omitempty"`
+	Logo            string               `json:"logo"`
+	ColorBackground string               `json:"color_background,omitempty"`
+	ColorForeground string               `json:"color_foreground,omitempty"`
 }
 
 func (api *API) EventsList(c *gin.Context) {
@@ -145,6 +144,7 @@ func (api *API) calendarEventToResult(event *database.CalendarEvent, userID prim
 	taskSourceResult, err := api.ExternalConfig.GetSourceResult(event.SourceID)
 	if err != nil {
 		api.Logger.Error().Err(err).Msgf("could not find task source: %s for event: %+v", event.SourceID, event)
+		return EventResult{}, err
 	}
 
 	logo := taskSourceResult.Details.LogoV2
@@ -152,8 +152,12 @@ func (api *API) calendarEventToResult(event *database.CalendarEvent, userID prim
 	if event.LinkedTaskID != primitive.NilObjectID {
 		linkedTaskID = event.LinkedTaskID.Hex()
 		if event.LinkedSourceID != "" {
-			taskSourceResult, _ = api.ExternalConfig.GetSourceResult(event.LinkedSourceID)
-			logo = taskSourceResult.Details.LogoV2
+			taskSourceResult, err = api.ExternalConfig.GetSourceResult(event.LinkedSourceID)
+			if err != nil {
+				api.Logger.Info().Err(err).Str("source_id", event.LinkedSourceID).Str("event_id", event.ID.Hex()).Msg("skipping retired linked task source")
+			} else {
+				logo = taskSourceResult.Details.LogoV2
+			}
 		} else {
 			api.Logger.Error().Err(err).Msg("linked task source ID is empty")
 		}
@@ -161,16 +165,6 @@ func (api *API) calendarEventToResult(event *database.CalendarEvent, userID prim
 	var linkedViewID string
 	if event.LinkedViewID != primitive.NilObjectID {
 		linkedViewID = event.LinkedViewID.Hex()
-	}
-	var linkedPRID string
-	if event.LinkedPullRequestID != primitive.NilObjectID {
-		linkedPRID = event.LinkedPullRequestID.Hex()
-		if event.LinkedSourceID != "" {
-			taskSourceResult, _ = api.ExternalConfig.GetSourceResult(event.LinkedSourceID)
-			logo = taskSourceResult.Details.LogoV2
-		} else {
-			api.Logger.Error().Err(err).Msg("linked task source ID is empty")
-		}
 	}
 	linkedNoteID := api.getLinkedNoteID(event.ID, userID)
 	return EventResult{
@@ -190,13 +184,12 @@ func (api *API) calendarEventToResult(event *database.CalendarEvent, userID prim
 			Platform: event.CallPlatform,
 			URL:      event.CallURL,
 		},
-		Logo:                logo,
-		LinkedTaskID:        linkedTaskID,
-		LinkedViewID:        linkedViewID,
-		LinkedPullRequestID: linkedPRID,
-		LinkedNoteID:        linkedNoteID,
-		ColorBackground:     event.ColorBackground,
-		ColorForeground:     event.ColorForeground,
+		Logo:            logo,
+		LinkedTaskID:    linkedTaskID,
+		LinkedViewID:    linkedViewID,
+		LinkedNoteID:    linkedNoteID,
+		ColorBackground: event.ColorBackground,
+		ColorForeground: event.ColorForeground,
 	}, nil
 }
 

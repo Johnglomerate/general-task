@@ -312,13 +312,8 @@ const ProductVideo = styled.video`
     display: block;
     object-fit: cover;
     border-radius: 9px;
-    box-shadow:
-        0 1px 1px rgba(0, 0, 0, 0.03),
-        0 1px 2px rgba(0, 0, 0, 0.04),
-        0 3px 3.5px rgba(0, 0, 0, 0.06),
-        0 5px 6.5px rgba(0, 0, 0, 0.07),
-        0 7px 12.12px rgba(0, 0, 0, 0.08),
-        0 12px 29px rgba(0, 0, 0, 0.11);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04), 0 3px 3.5px rgba(0, 0, 0, 0.06),
+        0 5px 6.5px rgba(0, 0, 0, 0.07), 0 7px 12.12px rgba(0, 0, 0, 0.08), 0 12px 29px rgba(0, 0, 0, 0.11);
 
     @media (max-width: 767px) {
         width: 100%;
@@ -638,7 +633,8 @@ const LandingScreen = () => {
                                 <div>
                                     <Heading>Set time aside for what you need to do.</Heading>
                                     <FeatureText>
-                                        Drag any task to your calendar, and an event will be created on your Google Calendar.
+                                        Drag any task to your calendar, and an event will be created on your Google
+                                        Calendar.
                                     </FeatureText>
                                 </div>
                                 <FeatureImage src={assets.taskToCalendar} alt="Task to Calendar" />
@@ -653,10 +649,8 @@ const LandingScreen = () => {
                                 <div>
                                     <Heading>All your most important tasks at a glance.</Heading>
                                     <FeatureText>
-                                        Our integrations stay in sync with all of your actionable items: PRs from{' '}
-                                        <strong>GitHub</strong>, tasks from <strong>Linear</strong> and <strong>Jira</strong>,
-                                        meetings from <strong>Google Calendar</strong>, and even <strong>Slack</strong>{' '}
-                                        messages.
+                                        Plan your work around <strong>Google Calendar</strong>, keep your tasks
+                                        organized, and make space for what matters next.
                                     </FeatureText>
                                 </div>
                             </Split>
@@ -671,8 +665,9 @@ const LandingScreen = () => {
                                     Forget multitasking - this is <em>singletasking</em>.
                                 </Heading>
                                 <FeatureText>
-                                    A single distraction can take up to <strong>23 minutes</strong> to fully recover from.
-                                    With Focus Mode, you can devote all your attention to one task or topic at a time.
+                                    A single distraction can take up to <strong>23 minutes</strong> to fully recover
+                                    from. With Focus Mode, you can devote all your attention to one task or topic at a
+                                    time.
                                 </FeatureText>
                             </div>
                         </SplitContainer>
@@ -685,8 +680,8 @@ const LandingScreen = () => {
                                 Software should help you, not get in your way.
                                 <br />
                                 <br />
-                                We strongly believe that the interfaces we use each day should be as efficient and comfortable
-                                as possible.
+                                We strongly believe that the interfaces we use each day should be as efficient and
+                                comfortable as possible.
                                 <br />
                                 <br />A great example is Quick Command, which lets you take shortcuts with a few simple
                                 keystrokes.
@@ -698,7 +693,8 @@ const LandingScreen = () => {
                         <BottomCard>
                             <BottomHeading>Get started below.</BottomHeading>
                             <BottomText>
-                                General Task is a paid consumer productivity app. Start with a {SUBSCRIPTION_TRIAL_OFFER}.
+                                General Task is a paid consumer productivity app. Start with a{' '}
+                                {SUBSCRIPTION_TRIAL_OFFER}.
                             </BottomText>
                             <LargeCTA href={LOGIN_URL} target="_self">
                                 Start free trial

@@ -6,10 +6,6 @@ import apiClient from '../../utils/api'
 import { TCalendarAccount, TLinkedAccount, TSetting, TSupportedType } from '../../utils/types'
 import { useGTMutation, useGTQueryClient } from '../queryUtils'
 
-export type GHSortPreference = `${string}github_sorting_preference${string}`
-export type GHSortDirection = `${string}github_sorting_direction${string}`
-export type GHFilterPreference = `${string}github_filtering_preference${string}`
-
 export type TaskSortPreference = `${string}task_sorting_preference${string}`
 export type TaskSortDirection = `${string}task_sorting_direction${string}`
 export type TaskFilterPreference = `${string}task_filtering_preference${string}`
@@ -18,29 +14,15 @@ export type NoteSortPreference = `${string}note_sorting_preference${string}`
 export type NoteSortDirection = `${string}note_sorting_direction${string}`
 export type NoteFilterPreference = `${string}note_filtering_preference${string}`
 
-export type LinearSortPreference = `${string}linear_task_sorting_preference${string}`
-export type LinearSortDirection = `${string}linear_task_sorting_direction${string}`
-export type LinearFilterPreference = `${string}linear_task_filtering_preference${string}`
-
 export type TSettingsKey =
     | 'calendar_account_id_for_new_tasks'
     | 'calendar_calendar_id_for_new_tasks'
-    | GHFilterPreference
-    | GHSortPreference
-    | GHSortDirection
     | TaskSortPreference
     | TaskSortDirection
     | TaskFilterPreference
     | NoteSortPreference
     | NoteSortDirection
     | NoteFilterPreference
-    | LinearSortPreference
-    | LinearSortDirection
-    | LinearFilterPreference
-    | 'sidebar_linear_preference'
-    | 'sidebar_github_preference'
-    | 'sidebar_slack_preference'
-    | 'sidebar_jira_preference'
     | 'has_dismissed_multical_prompt'
 
 type TUpdateSettingsData = {

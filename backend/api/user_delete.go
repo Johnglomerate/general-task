@@ -93,13 +93,9 @@ func (api *API) userScopedCollections() []*mongo.Collection {
 		database.GetTaskSectionCollection(api.DB),
 		database.GetRecurringTaskTemplateCollection(api.DB),
 		database.GetViewCollection(api.DB),
-		database.GetPullRequestCollection(api.DB),
-		database.GetRepositoryCollection(api.DB),
 		// Settings
 		database.GetUserSettingsCollection(api.DB),
 		database.GetDefaultSectionSettingsCollection(api.DB),
-		database.GetJiraSitesCollection(api.DB),
-		database.GetJiraPrioritiesCollection(api.DB),
 		// Logs and support records
 		database.GetFeedbackItemCollection(api.DB),
 		database.GetLogEventsCollection(api.DB),

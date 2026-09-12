@@ -8,7 +8,6 @@ import {
     GENERAL_TASK_SOURCE_NAME,
     NO_TITLE,
     SINGLE_SECOND_INTERVAL,
-    SLACK_SOURCE_NAME,
     SYNC_MESSAGES,
 } from '../../constants'
 import { useInterval, useKeyboardShortcut, useNavigateToTask } from '../../hooks'
@@ -35,24 +34,18 @@ import ExternalLinkButton from '../atoms/buttons/ExternalLinkButton'
 import GTButton from '../atoms/buttons/GTButton'
 import NoStyleButton from '../atoms/buttons/NoStyleButton'
 import { BodySmall } from '../atoms/typography/Typography'
-import CreateLinearComment from '../molecules/CreateLinearComment'
 import FolderSelector from '../molecules/FolderSelector'
 import GTDatePicker from '../molecules/GTDatePicker'
-import LinearCycle from '../molecules/LinearCycle'
 import TaskSharingDropdown from '../molecules/TaskSharingDropdown'
 import DeleteRecurringTaskTemplateButton from '../molecules/recurring-tasks/DeleteRecurringTaskTemplateButton'
 import RecurringTaskDetailsBanner from '../molecules/recurring-tasks/RecurringTaskDetailsBanner'
 import RecurringTaskTemplateDetailsBanner from '../molecules/recurring-tasks/RecurringTaskTemplateDetailsBanner'
 import RecurringTaskTemplateScheduleButton from '../molecules/recurring-tasks/RecurringTaskTemplateScheduleButton'
 import SubtaskList from '../molecules/subtasks/SubtaskList'
-import JiraPriorityDropdown from '../radix/JiraPriorityDropdown'
 import PriorityDropdown from '../radix/PriorityDropdown'
-import StatusDropdown from '../radix/StatusDropdown'
 import TaskActionsDropdown from '../radix/TaskActionsDropdown'
 import DetailsViewTemplate from '../templates/DetailsViewTemplate'
 import TaskBody from './TaskBody'
-import CommentList from './comments/CommentList'
-import SlackMessage from './slack/SlackMessage'
 
 const TITLE_MAX_HEIGHT = 208
 
@@ -82,11 +75,6 @@ const MeetingPreparationTimeContainer = styled.div`
     ${Typography.body.small};
     ${Typography.bold};
 `
-const CommentContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: ${Spacing._24};
-`
 const BackButtonContainer = styled(NoStyleButton)`
     display: flex;
     align-items: center;
@@ -101,7 +89,7 @@ const BackButtonText = styled(BodySmall)`
     color: inherit;
 `
 
-const SOURCES_ALLOWED_WITH_SUBTASKS = [GENERAL_TASK_SOURCE_NAME, SLACK_SOURCE_NAME]
+const SOURCES_ALLOWED_WITH_SUBTASKS = [GENERAL_TASK_SOURCE_NAME]
 
 interface TaskDetailsProps {
     task: Partial<TTaskV4> & Partial<TRecurringTaskTemplate> & { id: string; title: string }
@@ -317,23 +305,15 @@ const TaskDetails = ({ task, isRecurringTaskTemplate }: TaskDetailsProps) => {
                 </MeetingPreparationTimeContainer>
             )}
             <TaskStatusContainer>
-                {task.source?.name === 'Jira' && task.priority && task.all_priorities ? (
-                    <JiraPriorityDropdown
-                        taskId={task.id}
-                        currentPriority={task.priority}
-                        allPriorities={task.all_priorities}
-                    />
-                ) : (
-                    <PriorityDropdown
-                        value={task.priority_normalized ?? 0}
-                        onChange={(priority) =>
-                            isRecurringTaskTemplate
-                                ? modifyRecurringTask({ id: task.id, priority_normalized: priority }, task.optimisticId)
-                                : modifyTask({ id: task.id, priorityNormalized: priority }, task.optimisticId)
-                        }
-                        disabled={task.is_deleted}
-                    />
-                )}
+                <PriorityDropdown
+                    value={task.priority_normalized ?? 0}
+                    onChange={(priority) =>
+                        isRecurringTaskTemplate
+                            ? modifyRecurringTask({ id: task.id, priority_normalized: priority }, task.optimisticId)
+                            : modifyTask({ id: task.id, priorityNormalized: priority }, task.optimisticId)
+                    }
+                    disabled={task.is_deleted}
+                />
                 {!isRecurringTaskTemplate && (
                     <GTDatePicker
                         initialDate={DateTime.fromISO(task.due_date ?? '')}
@@ -353,15 +333,6 @@ const TaskDetails = ({ task, isRecurringTaskTemplate }: TaskDetailsProps) => {
                         />
                     )
                 )}
-                <Flex alignItems="center" gap={Spacing._8} marginLeftAuto>
-                    {task.linear_cycle && <LinearCycle cycle={task.linear_cycle} />}
-                    {!isRecurringTaskTemplate &&
-                        task.external_status &&
-                        task.all_statuses &&
-                        (task.source?.name === 'Linear' || task.source?.name === 'Jira') && (
-                            <StatusDropdown task={taskv4} disabled={task.is_deleted} />
-                        )}
-                </Flex>
             </TaskStatusContainer>
             {task.optimisticId ? (
                 <Spinner />
@@ -378,7 +349,7 @@ const TaskDetails = ({ task, isRecurringTaskTemplate }: TaskDetailsProps) => {
                     <TaskBody
                         id={task.id}
                         body={task.body ?? ''}
-                        contentType={task.source?.name === 'Jira' ? 'atlassian' : 'markdown'}
+                        contentType="markdown"
                         onChange={(val) => onEdit({ id: task.id, body: val })}
                         disabled={task.is_deleted}
                         nux_number_id={task.id_nux_number}
@@ -386,18 +357,6 @@ const TaskDetails = ({ task, isRecurringTaskTemplate }: TaskDetailsProps) => {
                     {SOURCES_ALLOWED_WITH_SUBTASKS.includes(task.source?.name ?? '') &&
                         !task.is_deleted &&
                         isTaskParentTask(taskv4) && <SubtaskList parentTask={taskv4} />}
-                    {task.external_status && task.source && (
-                        <CommentContainer>
-                            <Divider color={Colors.background.border} />
-                            <CommentList comments={task.comments ?? EMPTY_ARRAY} sourceName={task.source.name} />
-                        </CommentContainer>
-                    )}
-                    {task.source?.name !== 'Jira' && task.external_status && !task.is_deleted && (
-                        <CreateLinearComment taskId={task.id} numComments={task.comments?.length ?? 0} />
-                    )}
-                    {task.slack_message_params && task.sender && (
-                        <SlackMessage sender={task.sender} slack_message_params={task.slack_message_params} />
-                    )}
                 </>
             )}
         </DetailsViewTemplate>

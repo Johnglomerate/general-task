@@ -39,9 +39,9 @@ func (api *API) MeetingBanner(c *gin.Context) {
 		}},
 		Actions: []meetingBannerAction{
 			{
-				Logo:  "github",
-				Title: "Review PR: Email reply v0",
-				Link:  "https://github.com/GeneralTask/task-manager/pull/1027",
+				Logo:  "gcal",
+				Title: "Plan tomorrow's launch prep",
+				Link:  "https://calendar.google.com/",
 			},
 			{
 				Logo:  "gmail",
@@ -49,8 +49,8 @@ func (api *API) MeetingBanner(c *gin.Context) {
 				Link:  "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 			},
 			{
-				Logo:  "slack",
-				Title: "Unread messages from john",
+				Logo:  "generaltask",
+				Title: "Prioritize today's task list",
 				Link:  "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 			},
 		},

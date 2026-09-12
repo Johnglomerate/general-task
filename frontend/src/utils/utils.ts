@@ -2,7 +2,7 @@ import { DateTime, Duration, DurationUnit } from 'luxon'
 import { DONE_FOLDER_ID, GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME, TRASH_FOLDER_ID } from '../constants'
 import KEYBOARD_SHORTCUTS from '../constants/shortcuts'
 import { TTextColor } from '../styles/colors'
-import { TLinkedAccount, TLinkedAccountName, TParentTask, TTaskFolder, TTaskV4 } from './types'
+import { TLinkedAccount, TParentTask, TTaskFolder, TTaskV4 } from './types'
 
 // https://github.com/sindresorhus/array-move/blob/main/index.js
 export function arrayMoveInPlace<T>(array: Array<T>, fromIndex: number, toIndex: number) {
@@ -45,27 +45,9 @@ export const getHumanTimeSinceDateTime = (date: DateTime) => {
     }
     return `just now`
 }
-export const isGithubLinked = (linkedAccounts: TLinkedAccount[]) => {
-    return linkedAccounts.some((account) => account.name === 'GitHub')
-}
 export const isGoogleCalendarLinked = (linkedAccounts: TLinkedAccount[]) => {
     return linkedAccounts.some((account) => account.name === GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME)
 }
-export const isSlackLinked = (linkedAccounts: TLinkedAccount[]) => {
-    return linkedAccounts.some((account) => account.name === 'Slack')
-}
-export const isJiraLinked = (linkedAccounts: TLinkedAccount[]) => {
-    return linkedAccounts.some((account) => account.name === 'Jira')
-}
-export const isLinearLinked = (linkedAccounts: TLinkedAccount[]) => {
-    return linkedAccounts.some((account) => account.name === 'Linear')
-}
-export const doesAccountNeedRelinking = (linkedAccounts: TLinkedAccount[], accountName: TLinkedAccountName) => {
-    return linkedAccounts
-        .filter((linkedAccount) => linkedAccount.name === accountName)
-        .some((account) => account.has_bad_token)
-}
-
 export const getHumanDateTime = (date: DateTime) => {
     const { days } = DateTime.now().endOf('day').diff(date, ['milliseconds', 'days'])
 

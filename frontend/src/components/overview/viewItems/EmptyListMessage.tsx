@@ -20,12 +20,6 @@ const emptyListMessage = (list: TOverviewView) => {
             return `Create new tasks to see them here.`
         case 'meeting_preparation':
             return 'Tasks will appear here when you have upcoming meetings.'
-        case 'linear':
-            return 'Issues assigned to you will appear here.'
-        case 'github':
-            return 'Your pull requests will appear here.'
-        case 'slack':
-            return 'Saved messages will appear here.'
         case 'due_today':
             return 'Tasks which are due today will appear here.'
         default:

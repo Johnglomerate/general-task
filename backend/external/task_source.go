@@ -12,23 +12,20 @@ import (
 type TaskSource interface {
 	GetEvents(db *mongo.Database, userID primitive.ObjectID, accountID string, startTime time.Time, endTime time.Time, scopes []string, result chan<- CalendarResult)
 	GetTasks(db *mongo.Database, userID primitive.ObjectID, accountID string, result chan<- TaskResult)
-	GetPullRequests(db *mongo.Database, userID primitive.ObjectID, accountID string, result chan<- PullRequestResult)
 	CreateNewTask(db *mongo.Database, userID primitive.ObjectID, accountID string, task TaskCreationObject) (primitive.ObjectID, error)
 	ModifyTask(db *mongo.Database, userID primitive.ObjectID, accountID string, issueID string, updateFields *database.Task, task *database.Task) error
 	CreateNewEvent(db *mongo.Database, userID primitive.ObjectID, accountID string, event EventCreateObject) error
 	ModifyEvent(db *mongo.Database, userID primitive.ObjectID, accountID string, eventID string, updateFields *EventModifyObject) error
 	DeleteEvent(db *mongo.Database, userID primitive.ObjectID, accountID string, externalID string, calendarID string) error
-	AddComment(db *mongo.Database, userID primitive.ObjectID, accountID string, comment database.Comment, task *database.Task) error
 }
 
 type TaskCreationObject struct {
-	Title              string
-	Body               string
-	DueDate            *time.Time
-	TimeAllocation     *int64
-	IDTaskSection      primitive.ObjectID
-	ParentTaskID       primitive.ObjectID
-	SlackMessageParams database.SlackMessageParams
+	Title          string
+	Body           string
+	DueDate        *time.Time
+	TimeAllocation *int64
+	IDTaskSection  primitive.ObjectID
+	ParentTaskID   primitive.ObjectID
 }
 
 type Attendee struct {
@@ -37,20 +34,19 @@ type Attendee struct {
 }
 
 type EventCreateObject struct {
-	ID                  primitive.ObjectID `json:"id,omitempty"`
-	AccountID           string             `json:"account_id" binding:"required"`
-	CalendarID          string             `json:"calendar_id"`
-	Summary             string             `json:"summary,omitempty"`
-	Location            string             `json:"location,omitempty"`
-	Description         string             `json:"description,omitempty"`
-	TimeZone            string             `json:"time_zone,omitempty"`
-	DatetimeStart       *time.Time         `json:"datetime_start" binding:"required"`
-	DatetimeEnd         *time.Time         `json:"datetime_end" binding:"required"`
-	Attendees           []Attendee         `json:"attendees,omitempty"`
-	AddConferenceCall   bool               `json:"add_conference_call,omitempty"`
-	LinkedTaskID        primitive.ObjectID `json:"task_id,omitempty"`
-	LinkedViewID        primitive.ObjectID `json:"view_id,omitempty"`
-	LinkedPullRequestID primitive.ObjectID `json:"pr_id,omitempty"`
+	ID                primitive.ObjectID `json:"id,omitempty"`
+	AccountID         string             `json:"account_id" binding:"required"`
+	CalendarID        string             `json:"calendar_id"`
+	Summary           string             `json:"summary,omitempty"`
+	Location          string             `json:"location,omitempty"`
+	Description       string             `json:"description,omitempty"`
+	TimeZone          string             `json:"time_zone,omitempty"`
+	DatetimeStart     *time.Time         `json:"datetime_start" binding:"required"`
+	DatetimeEnd       *time.Time         `json:"datetime_end" binding:"required"`
+	Attendees         []Attendee         `json:"attendees,omitempty"`
+	AddConferenceCall bool               `json:"add_conference_call,omitempty"`
+	LinkedTaskID      primitive.ObjectID `json:"task_id,omitempty"`
+	LinkedViewID      primitive.ObjectID `json:"view_id,omitempty"`
 }
 
 type EventModifyObject struct {

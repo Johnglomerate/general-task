@@ -15,13 +15,6 @@ type TaskResult struct {
 	AccountID string
 }
 
-type PullRequestResult struct {
-	PullRequests   []*database.PullRequest
-	Error          error
-	SourceID       string
-	SuppressSentry bool
-}
-
 func emptyCalendarResult(err error) CalendarResult {
 	return CalendarResult{
 		CalendarEvents: []*database.CalendarEvent{},
@@ -33,20 +26,5 @@ func emptyTaskResult(err error) TaskResult {
 	return TaskResult{
 		Tasks: []*database.Task{},
 		Error: err,
-	}
-}
-
-func emptyTaskResultWithSource(err error, sourceID string) TaskResult {
-	result := emptyTaskResult(err)
-	result.SourceID = sourceID
-	return result
-}
-
-func emptyPullRequestResult(err error, suppressSentry bool) PullRequestResult {
-	return PullRequestResult{
-		PullRequests:   []*database.PullRequest{},
-		Error:          err,
-		SourceID:       TASK_SOURCE_ID_GITHUB_PR,
-		SuppressSentry: suppressSentry,
 	}
 }
