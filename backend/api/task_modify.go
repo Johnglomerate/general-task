@@ -42,9 +42,19 @@ type TaskItemChangeableFields struct {
 }
 
 type TaskModifyParams struct {
-	IDOrdering    *int    `json:"id_ordering"`
-	IDTaskSection *string `json:"id_task_section"`
+	IDOrdering         *int                `json:"id_ordering"`
+	IDTaskSection      *string             `json:"id_task_section"`
+	LegacySharedUntil  *primitive.DateTime `json:"shared_until,omitempty"`
+	LegacySharedAccess *string             `json:"shared_access,omitempty"`
 	TaskItemChangeableFields
+}
+
+func (params TaskModifyParams) hasOnlyLegacyShareFields() bool {
+	paramsWithoutLegacyShareFields := params
+	paramsWithoutLegacyShareFields.LegacySharedUntil = nil
+	paramsWithoutLegacyShareFields.LegacySharedAccess = nil
+	return paramsWithoutLegacyShareFields == (TaskModifyParams{}) &&
+		(params.LegacySharedUntil != nil || params.LegacySharedAccess != nil)
 }
 
 // dueDate must be of form 2006-03-02T15:04:05Z
@@ -76,6 +86,11 @@ func (api *API) TaskModify(c *gin.Context) {
 	task, err := database.GetTask(api.DB, taskID, userID)
 	if err != nil {
 		c.JSON(404, gin.H{"detail": "task not found.", "taskId": taskID})
+		return
+	}
+
+	if modifyParams.hasOnlyLegacyShareFields() {
+		c.JSON(200, gin.H{})
 		return
 	}
 

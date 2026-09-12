@@ -1323,6 +1323,28 @@ func TestEditFields(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "{\"detail\":\"task changes missing\"}", string(body))
 	})
+	t.Run("Legacy share-only fields are ignored", func(t *testing.T) {
+		expectedTask := sampleTask
+		expectedTask.UserID = userID
+		insertResult, err := taskCollection.InsertOne(
+			context.Background(),
+			expectedTask,
+		)
+		assert.NoError(t, err)
+		insertedTaskID := insertResult.InsertedID.(primitive.ObjectID)
+
+		api, dbCleanup := GetAPIWithDBCleanup()
+		defer dbCleanup()
+		router := GetRouter(api)
+		request, _ := http.NewRequest(
+			"PATCH",
+			"/tasks/modify/"+insertedTaskID.Hex()+"/",
+			bytes.NewBuffer([]byte(`{"shared_access":"public","shared_until":"2021-01-01T00:00:00Z"}`)))
+		request.Header.Add("Authorization", "Bearer "+authToken)
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, request)
+		assert.Equal(t, http.StatusOK, recorder.Code)
+	})
 	t.Run("Assign to other General Task user", func(t *testing.T) {
 		api, dbCleanup := GetAPIWithDBCleanup()
 		defer dbCleanup()
