@@ -8,8 +8,7 @@ const ENV = {
     prod: {
         REACT_APP_API_BASE_URL: 'https://api.generaltask.com',
         REACT_APP_FRONTEND_BASE_URL: 'https://generaltask.com',
-        REACT_APP_TRY_BASE_URL: 'https://try.generaltask.com',
-        REACT_APP_TRY_SIGN_UP_URL: 'https://try.generaltask.com/sign-up',
+        REACT_APP_TRY_BASE_URL: 'https://generaltask.com',
         COOKIE_DOMAIN: '.generaltask.com',
     },
 }
