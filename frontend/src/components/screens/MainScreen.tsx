@@ -10,7 +10,7 @@ import { useFetchPullRequests } from '../../services/api/pull-request.hooks'
 import { useFetchExternalTasks } from '../../services/api/tasks.hooks'
 import { useGetTasksV4 } from '../../services/api/tasks.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
-import { focusModeBackground, noteBackground } from '../../styles/images'
+import { focusModeBackground } from '../../styles/images'
 import { CalendarContextProvider } from '../calendar/CalendarContext'
 import DragLayer from '../molecules/DragLayer'
 import DefaultTemplate from '../templates/DefaultTemplate'
@@ -68,7 +68,6 @@ const MainScreen = () => {
     return (
         <CalendarContextProvider>
             <link rel="preload" as="image" href={focusModeBackground} />
-            <link rel="preload" as="image" href={noteBackground} />
             <DefaultTemplate>{currentPage()}</DefaultTemplate>
             <DragLayer />
         </CalendarContextProvider>

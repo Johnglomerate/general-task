@@ -103,7 +103,6 @@ import {
 
 export const logos = Object.freeze({
     generaltask_single_color: 'images/gt-logo-single-color.svg',
-    generaltask_black_on_white: 'images/gt-logo-black-on-white.svg',
     generaltask: '/images/generaltask.svg',
     generaltask_beta_yellow: '/images/GT-beta-logo.png',
     generaltask_beta_blue: '/images/GT-beta-logo-blue.png',
@@ -256,8 +255,6 @@ export const externalStatusIcons = Object.freeze({
 })
 
 export const focusModeBackground = '/images/focus_mode_background.jpg'
-export const noteBackground = '/images/note_background.jpg'
-export const checkBig = '/images/check_big.svg'
 
 export type TLogoImage = keyof typeof logos
 export type TIconImage = keyof typeof icons

@@ -8,7 +8,6 @@ export const {
     REACT_APP_API_BASE_URL,
     REACT_APP_FRONTEND_BASE_URL,
     COOKIE_DOMAIN,
-    REACT_APP_TASK_BASE_URL,
 } = getEnvVars()
 
 // API Constants
@@ -57,8 +56,8 @@ export const TERMS_OF_SERVICE_ROUTE = 'terms-of-service'
 export const PRIVACY_POLICY_ROUTE = 'privacy-policy'
 export const FOCUS_MODE_ROUTE = 'focus-mode'
 export const LEGACY_NOTE_ROUTE = 'note'
+export const LEGACY_TASK_ROUTE = 'task'
 export const GOOGLE_AUTH_ROUTE = 'link/google'
-export const SHAREABLE_TASK_ROUTE = 'task'
 
 export const NO_TITLE = '(no title)'
 export const EMPTY_MONGO_OBJECT_ID = '000000000000000000000000'
@@ -97,5 +96,3 @@ export const SYNC_MESSAGES = {
     ERROR: 'There was an error syncing with our servers',
     COMPLETE: '',
 }
-
-export const SHARED_ITEM_INDEFINITE_DATE = '9999-10-31T00:00:00Z'

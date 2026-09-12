@@ -39,14 +39,22 @@ type TaskItemChangeableFields struct {
 	CompletedAt    primitive.DateTime `json:"completed_at,omitempty" bson:"completed_at"`
 	IsDeleted      *bool              `json:"is_deleted,omitempty" bson:"is_deleted,omitempty"`
 	DeletedAt      primitive.DateTime `json:"deleted_at,omitempty" bson:"deleted_at"`
-	SharedAccess   *string            `json:"shared_access,omitempty" bson:"shared_access,omitempty"`
-	SharedUntil    primitive.DateTime `json:"shared_until,omitempty" bson:"shared_until,omitempty"`
 }
 
 type TaskModifyParams struct {
-	IDOrdering    *int    `json:"id_ordering"`
-	IDTaskSection *string `json:"id_task_section"`
+	IDOrdering         *int                `json:"id_ordering"`
+	IDTaskSection      *string             `json:"id_task_section"`
+	LegacySharedUntil  *primitive.DateTime `json:"shared_until,omitempty"`
+	LegacySharedAccess *string             `json:"shared_access,omitempty"`
 	TaskItemChangeableFields
+}
+
+func (params TaskModifyParams) hasOnlyLegacyShareFields() bool {
+	paramsWithoutLegacyShareFields := params
+	paramsWithoutLegacyShareFields.LegacySharedUntil = nil
+	paramsWithoutLegacyShareFields.LegacySharedAccess = nil
+	return paramsWithoutLegacyShareFields == (TaskModifyParams{}) &&
+		(params.LegacySharedUntil != nil || params.LegacySharedAccess != nil)
 }
 
 // dueDate must be of form 2006-03-02T15:04:05Z
@@ -78,6 +86,11 @@ func (api *API) TaskModify(c *gin.Context) {
 	task, err := database.GetTask(api.DB, taskID, userID)
 	if err != nil {
 		c.JSON(404, gin.H{"detail": "task not found.", "taskId": taskID})
+		return
+	}
+
+	if modifyParams.hasOnlyLegacyShareFields() {
+		c.JSON(200, gin.H{})
 		return
 	}
 
@@ -125,7 +138,6 @@ func (api *API) TaskModify(c *gin.Context) {
 			CompletedAt:        modifyParams.TaskItemChangeableFields.CompletedAt,
 			IsDeleted:          modifyParams.TaskItemChangeableFields.IsDeleted,
 			DeletedAt:          modifyParams.TaskItemChangeableFields.DeletedAt,
-			SharedUntil:        modifyParams.TaskItemChangeableFields.SharedUntil,
 			UpdatedAt:          primitive.NewDateTimeFromTime(time.Now()),
 			PriorityNormalized: modifyParams.TaskItemChangeableFields.Task.PriorityNormalized,
 			ExternalPriority:   modifyParams.TaskItemChangeableFields.Task.ExternalPriority,
@@ -146,23 +158,6 @@ func (api *API) TaskModify(c *gin.Context) {
 				return
 			}
 			updateTask.RecurringTaskTemplateID = recurring_task_template_id
-		}
-
-		if task.SourceID != external.TASK_SOURCE_ID_GT_TASK && (modifyParams.TaskItemChangeableFields.SharedUntil != 0 || modifyParams.TaskItemChangeableFields.SharedAccess != nil) {
-			c.JSON(400, gin.H{"detail": "only General Task tasks can be shared"})
-			return
-		}
-		if modifyParams.TaskItemChangeableFields.SharedAccess != nil {
-			if *modifyParams.TaskItemChangeableFields.SharedAccess == constants.StringSharedAccessPublic {
-				sharedAccessPublic := database.SharedAccessPublic
-				updateTask.SharedAccess = &sharedAccessPublic
-			} else if *modifyParams.TaskItemChangeableFields.SharedAccess == constants.StringSharedAccessDomain {
-				sharedAccessDomain := database.SharedAccessDomain
-				updateTask.SharedAccess = &sharedAccessDomain
-			} else {
-				c.JSON(400, gin.H{"detail": "invalid shared access token"})
-				return
-			}
 		}
 
 		err = taskSourceResult.Source.ModifyTask(api.DB, userID, task.SourceAccountID, task.IDExternal, &updateTask, task)
