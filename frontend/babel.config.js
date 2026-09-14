@@ -1,10 +1,13 @@
 // eslint-disable-next-line no-undef
 module.exports = function (api) {
-  api.cache(true)
-  return {
-    presets: [],
-    plugins: [
-      'babel-plugin-styled-components',
-    ],
-  }
+    api.cache(true)
+    return {
+        presets: [],
+        plugins: ['babel-plugin-styled-components'],
+        env: {
+            test: {
+                presets: ['@babel/preset-env', '@babel/preset-typescript'],
+            },
+        },
+    }
 }

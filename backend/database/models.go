@@ -165,6 +165,60 @@ type RecurringTaskTemplate struct {
 	UpdatedAt primitive.DateTime `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
 }
 
+type GoalContributor struct {
+	Kind  string `bson:"kind" json:"kind"`
+	Label string `bson:"label" json:"label"`
+}
+
+type GoalContribution struct {
+	Title  string `bson:"title" json:"title"`
+	Date   string `bson:"date" json:"date"`
+	Source string `bson:"source" json:"source"`
+}
+
+type GoalPhase struct {
+	Name          string  `bson:"name" json:"name"`
+	CadenceLabel  string  `bson:"cadence_label" json:"cadenceLabel"`
+	WeeklyHours   float64 `bson:"weekly_hours" json:"weeklyHours"`
+	DateSpanLabel string  `bson:"date_span_label" json:"dateSpanLabel"`
+	Weeks         int     `bson:"weeks" json:"weeks"`
+}
+
+type Goal struct {
+	ID             primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	UserID         primitive.ObjectID `bson:"user_id,omitempty" json:"-"`
+	Title          string             `bson:"title" json:"title"`
+	Why            string             `bson:"why" json:"why"`
+	TimeframeLabel string             `bson:"timeframe_label" json:"timeframeLabel"`
+	TargetLabel    string             `bson:"target_label" json:"targetLabel"`
+	PaceLabel      string             `bson:"pace_label" json:"paceLabel"`
+	Progress       float64            `bson:"progress" json:"progress"`
+	ProgressLabel  string             `bson:"progress_label" json:"progressLabel"`
+	Status         string             `bson:"status" json:"status"`
+	ProgressMode   string             `bson:"progress_mode" json:"progressMode"`
+	GoalType       string             `bson:"goal_type,omitempty" json:"goalType,omitempty"`
+	Phases         []GoalPhase        `bson:"phases,omitempty" json:"phases,omitempty"`
+	ContractLine   string             `bson:"contract_line,omitempty" json:"contractLine,omitempty"`
+	WeekLabel      string             `bson:"week_label,omitempty" json:"weekLabel,omitempty"`
+	Contributors   []GoalContributor  `bson:"contributors" json:"contributors"`
+	StartDate      string             `bson:"start_date,omitempty" json:"startDate,omitempty"`
+	AsOf           string             `bson:"as_of,omitempty" json:"asOf,omitempty"`
+	Weeks          []string           `bson:"weeks,omitempty" json:"weeks,omitempty"`
+	Recent         []GoalContribution `bson:"recent" json:"recent"`
+	Footnote       string             `bson:"footnote,omitempty" json:"footnote,omitempty"`
+	CreatedAt      primitive.DateTime `bson:"created_at,omitempty" json:"created_at,omitempty"`
+	UpdatedAt      primitive.DateTime `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
+}
+
+type GoalTaskLink struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	UserID    primitive.ObjectID `bson:"user_id,omitempty" json:"-"`
+	TaskID    primitive.ObjectID `bson:"task_id" json:"task_id"`
+	GoalID    primitive.ObjectID `bson:"goal_id" json:"goal_id"`
+	CreatedAt primitive.DateTime `bson:"created_at,omitempty" json:"created_at,omitempty"`
+	UpdatedAt primitive.DateTime `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
+}
+
 type PullRequest struct {
 	ID                primitive.ObjectID   `bson:"_id,omitempty"`
 	UserID            primitive.ObjectID   `bson:"user_id,omitempty"`

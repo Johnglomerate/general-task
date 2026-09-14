@@ -1239,6 +1239,14 @@ func GetRecurringTaskTemplateCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("recurring_task_templates")
 }
 
+func GetGoalCollection(db *mongo.Database) *mongo.Collection {
+	return db.Collection("goals")
+}
+
+func GetGoalTaskLinkCollection(db *mongo.Database) *mongo.Collection {
+	return db.Collection("goal_task_links")
+}
+
 func GetJobLocksCollection(db *mongo.Database) *mongo.Collection {
 	return db.Collection("job_locks")
 }

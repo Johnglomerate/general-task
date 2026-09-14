@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * shadcn/ui semantic tokens, bridged to the Nimble visual language (zinc palette, matched to Figma 2026-09).
+ * Vars hold OKLCH components (L C H) mirroring src/styles/colors.ts — Tailwind
+ * wraps them as `oklch(var(--x) / <alpha-value>)` so opacity modifiers keep
+ * working. The two styling systems (styled-components tokens + Tailwind
+ * utilities) share one palette. See design/NIMBLE-VISUAL-SPEC.md.
+ */
+@layer base {
+    /*
+     * Minimal preflight substitute: full preflight is disabled to avoid
+     * fighting styled-components/@atlaskit/css-reset, but Tailwind border
+     * utilities require these defaults to render at all.
+     */
+    *,
+    ::before,
+    ::after {
+        border-width: 0;
+        border-style: solid;
+        border-color: oklch(var(--border));
+    }
+    /* Preflight also clears the UA button face; without it every unstyled <button> paints gray. */
+    button {
+        background-color: transparent;
+    }
+
+    :root {
+        --background: 1 0 0; /* Colors.background.white */
+        --foreground: 0.21 0.006 285.9; /* Colors.text.title */
+
+        --card: 0.985 0 0; /* Colors.background.base */
+        --card-foreground: 0.21 0.006 285.9;
+
+        --popover: 1 0 0;
+        --popover-foreground: 0.21 0.006 285.9;
+
+        --primary: 0.21 0.006 285.9; /* Colors.control.primary.bg — near-black mono */
+        --primary-foreground: 0.985 0 0; /* Colors.control.primary.label */
+        --primary-hover: 0.32 0.01 285.8; /* Colors.control.primary.hover */
+        --primary-highlight: 0.4 0.01 285.8; /* Colors.control.primary.highlight */
+
+        --secondary: 0.967 0.001 286.4; /* Colors.background.sub */
+        --secondary-foreground: 0.37 0.012 285.8; /* Colors.text.base */
+
+        --muted: 0.967 0.001 286.4; /* Colors.background.sub */
+        --muted-foreground: 0.552 0.014 285.9; /* Colors.text.muted */
+
+        --accent: 0.967 0.001 286.4;
+        --accent-foreground: 0.21 0.006 285.9;
+
+        --destructive: 0.507 0.203 27.1; /* Colors.control.destructive.bg */
+        --destructive-foreground: 0.985 0 0; /* Colors.control.destructive.label */
+        --destructive-hover: 0.44 0.19 27; /* Colors.control.destructive.hover */
+
+        --border: 0.92 0.004 286.3; /* Colors.background.border */
+        --input: 0.92 0.004 286.3;
+        --ring: 0.21 0.006 285.9; /* focus ring = primary */
+
+        --hairline: 0.955 0.001 286.4; /* Colors.background.hairline — #f0f0f1 dividers */
+        --gt-pink: 0.593 0.217 360; /* Colors.accent.pink — #db2979 */
+
+        --radius: 10px; /* Border.radius.medium — Nimble base radius */
+    }
+}

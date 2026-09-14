@@ -23,11 +23,15 @@
     "noUnusedParameters": true, // Report errors on unused parameters
     "incremental": true, // Enable incremental compilation by reading/writing information from prior compilations to a file on disk
     "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement
-    "types": ["node", "cypress", "@testing-library/cypress"]
+    "types": ["node", "cypress", "@testing-library/cypress"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": [
     "src/**/*", // *** The files TypeScript should type check ***
     "cypress/**/*.ts", "cypress/tsconfig.json", // *** The files TypeScript should type check ***
   ],
-  "exclude": ["node_modules", "build", "dist"] // *** The files to not type check ***
+  "exclude": ["node_modules", "build", "dist", "src/**/*.test.ts", "src/**/*.test.tsx"] // *** The files to not type check ***
 }
