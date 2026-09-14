@@ -5,7 +5,6 @@ import Footer from './Footer'
 import Hero from './Hero'
 import Nav from './Nav'
 import ProblemSolution from './ProblemSolution'
-import Testimonials from './Testimonials'
 import { LandingGlobalStyle, LandingRoot } from './styles'
 import { useLandingEffects } from './useLandingEffects'
 
@@ -20,7 +19,6 @@ const LandingPage = () => {
             <main>
                 <Hero />
                 <ProblemSolution />
-                <Testimonials />
                 <Features />
                 <Closing />
             </main>
