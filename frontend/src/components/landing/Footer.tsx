@@ -29,24 +29,14 @@ const Footer = () => (
                     <a href="#pricing" target="_self">
                         Pricing
                     </a>
-                    <a href="#" target="_self">
-                        Help center
-                    </a>
-                    <a href="#" target="_self">
-                        Changelog
-                    </a>
-                    <a href="#" target="_self">
-                        Status
-                    </a>
+                    <span>Help center</span>
+                    <span>Changelog</span>
+                    <span>Status</span>
                 </div>
                 <div className="footer__col">
                     <b className="mono">Company</b>
-                    <a href="#" target="_self">
-                        Blog
-                    </a>
-                    <a href="#" target="_self">
-                        About
-                    </a>
+                    <span>Blog</span>
+                    <span>About</span>
                     <a href={`/${PRIVACY_POLICY_ROUTE}`} target="_self">
                         Privacy Policy
                     </a>

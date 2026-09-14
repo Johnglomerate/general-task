@@ -202,7 +202,7 @@ const Sundial = ({ onDateChange }: SundialProps) => {
         }
 
         const tick = () => {
-            cur += (target - cur) * (reduce ? 1 : 0.12)
+            cur += (target - cur) * 0.12
             place(cur)
             if (Math.abs(target - cur) > 1e-4) raf = requestAnimationFrame(tick)
             else raf = 0
@@ -218,11 +218,13 @@ const Sundial = ({ onDateChange }: SundialProps) => {
         }
 
         place(f0)
-        window.addEventListener('scroll', onScroll, { passive: true })
-        onScroll()
+        if (!reduce) {
+            window.addEventListener('scroll', onScroll, { passive: true })
+            onScroll()
+        }
 
         return () => {
-            window.removeEventListener('scroll', onScroll)
+            if (!reduce) window.removeEventListener('scroll', onScroll)
             if (raf) cancelAnimationFrame(raf)
             while (svg.firstChild) svg.removeChild(svg.firstChild)
         }

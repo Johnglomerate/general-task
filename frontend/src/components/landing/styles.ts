@@ -594,7 +594,8 @@ const landingCss = css`
         font-weight: 500;
         color: ${Colors.text.ink};
     }
-    .footer__col a {
+    .footer__col a,
+    .footer__col span {
         color: ${Colors.text.secondary};
     }
     .footer__legal {
