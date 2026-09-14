@@ -49,7 +49,8 @@ export const useLandingEffects = (rootRef: RefObject<HTMLElement>) => {
 
         const stagger = root.querySelectorAll('[data-stagger]')
         stagger.forEach((el, i) => {
-            ;(el as HTMLElement).style.setProperty('--delay', `${reduce ? 0 : 0.08 + i * 0.09}s`)
+            const node = el as HTMLElement
+            node.style.setProperty('--delay', `${reduce ? 0 : 0.08 + i * 0.09}s`)
         })
         let raf2 = 0
         const raf1 = requestAnimationFrame(() => {

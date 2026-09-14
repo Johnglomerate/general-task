@@ -53,7 +53,8 @@ const Sundial = ({ onDateChange }: SundialProps) => {
         el(gradient, 'stop', { offset: '0%', 'stop-color': YELLOW, 'stop-opacity': 0.9 })
         el(gradient, 'stop', { offset: '45%', 'stop-color': YELLOW, 'stop-opacity': 0.35 })
         el(gradient, 'stop', { offset: '100%', 'stop-color': YELLOW, 'stop-opacity': 0 })
-        ;[R + 40, R - 28].forEach((r, i) =>
+        const guideRadii = [R + 40, R - 28]
+        guideRadii.forEach((r, i) =>
             el(svg, 'path', {
                 d: arcPath(r),
                 stroke: INK,
@@ -116,14 +117,13 @@ const Sundial = ({ onDateChange }: SundialProps) => {
             })
             dateLabel.textContent = `${month[0]}${month.slice(1).toLowerCase()} 1`
         })
-        ;(
-            [
-                [2, 20, 'EQUINOX'],
-                [5, 21, 'SOLSTICE'],
-                [8, 22, 'EQUINOX'],
-                [11, 21, 'SOLSTICE'],
-            ] as const
-        ).forEach(([m, d, label]) => {
+        const markers = [
+            [2, 20, 'EQUINOX'],
+            [5, 21, 'SOLSTICE'],
+            [8, 22, 'EQUINOX'],
+            [11, 21, 'SOLSTICE'],
+        ] as const
+        markers.forEach(([m, d, label]) => {
             const f = fracFor(new Date(year, m, d))
             const [x, y] = pt(f, R)
             el(svg, 'circle', { cx: x, cy: y, r: 2.5, fill: PAGE, stroke: INK, 'stroke-width': 0.9, opacity: 0.7 })
