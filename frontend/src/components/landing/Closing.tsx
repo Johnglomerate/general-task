@@ -16,6 +16,7 @@ const Closing = () => (
                     See pricing
                 </a>
             </div>
+            <p className="fine">No card at signup.</p>
         </div>
     </section>
 )

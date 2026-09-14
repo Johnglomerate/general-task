@@ -319,6 +319,11 @@ const landingCss = css`
         gap: 12px;
         flex-wrap: wrap;
     }
+    .fine {
+        font-family: ${Typography.fontFamily.mono};
+        font-size: 14px;
+        color: ${Colors.text.secondary};
+    }
     .hero__shot {
         min-width: 0;
         width: 788px;
@@ -562,6 +567,9 @@ const landingCss = css`
         line-height: 1.5;
         color: ${Colors.text.secondary};
         max-width: 560px;
+    }
+    .closing .fine {
+        font-size: 14px;
     }
     .footer {
         background: ${Colors.background.white};
