@@ -42,28 +42,8 @@ const App = () => {
     return (
         <QueryClientProvider client={queryClient}>
             <Helmet>
-                <meta charSet="utf-8" />
-                <title>General Task (beta)</title>
-                <link rel="icon" href="/images/favicon.png" />
                 <script src="https://kit.fontawesome.com/ad8a57c09f.js" crossOrigin="anonymous"></script>
                 <base target="_blank" />
-                <meta
-                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
-                    name="description"
-                />
-                <meta content="General Task (beta) - Focused productivity for builders" property="og:title" />
-                <meta
-                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
-                    property="og:description"
-                />
-                <meta content="General Task (beta) - Focused productivity for builders" property="twitter:title" />
-                <meta
-                    content="Plan focused work across tasks, calendar, pull requests, and integrations."
-                    property="twitter:description"
-                />
-                <meta property="og:type" content="website" />
-                <meta property="og:image" content="/images/futureman.png" />
-                <meta content="summary_large_image" name="twitter:card" />
             </Helmet>
             <BrowserRouter>
                 <GlobalStyle />

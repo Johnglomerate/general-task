@@ -46,7 +46,7 @@ const Page = styled.main`
     overflow-x: hidden;
     background: #f0f3f7;
     color: #222721;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
 `

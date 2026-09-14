@@ -51,6 +51,11 @@ export const LOG_EVENTS_URL = REACT_APP_API_BASE_URL + '/log_events/'
 export const FEEDBACK_URL = REACT_APP_API_BASE_URL + '/feedback/'
 export const EVENTS_URL = REACT_APP_API_BASE_URL + '/events/'
 
+// Subscription copy
+export const SUBSCRIPTION_PRICE = '$2/month'
+export const SUBSCRIPTION_TRIAL_DAYS = 67
+export const SUBSCRIPTION_TRIAL_OFFER = `${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}`
+
 // Routes
 export const TERMS_OF_SERVICE_ROUTE = 'terms-of-service'
 export const PRIVACY_POLICY_ROUTE = 'privacy-policy'
