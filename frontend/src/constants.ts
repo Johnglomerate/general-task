@@ -1,6 +1,5 @@
 import { TIconType } from './components/atoms/Icon'
 import getEnvVars from './environment'
-import marketingCopy from './marketingCopy'
 import { TIconColor } from './styles/colors'
 import { icons } from './styles/images'
 
@@ -52,6 +51,11 @@ export const LOG_EVENTS_URL = REACT_APP_API_BASE_URL + '/log_events/'
 export const FEEDBACK_URL = REACT_APP_API_BASE_URL + '/feedback/'
 export const EVENTS_URL = REACT_APP_API_BASE_URL + '/events/'
 
+// Subscription copy
+export const SUBSCRIPTION_PRICE = '$2/month'
+export const SUBSCRIPTION_TRIAL_DAYS = 67
+export const SUBSCRIPTION_TRIAL_OFFER = `${SUBSCRIPTION_TRIAL_DAYS}-day free trial, then ${SUBSCRIPTION_PRICE}`
+
 // Routes
 export const TERMS_OF_SERVICE_ROUTE = 'terms-of-service'
 export const PRIVACY_POLICY_ROUTE = 'privacy-policy'
@@ -88,9 +92,6 @@ export const TASK_PRIORITIES: TTaskPriority[] = [
 export const GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME = 'Google Calendar'
 export const GENERAL_TASK_SOURCE_NAME = 'General Task'
 export const SLACK_SOURCE_NAME = 'Slack'
-export const SUBSCRIPTION_PRICE = marketingCopy.SUBSCRIPTION_PRICE
-export const SUBSCRIPTION_TRIAL_DAYS = marketingCopy.SUBSCRIPTION_TRIAL_DAYS
-export const SUBSCRIPTION_TRIAL_OFFER = marketingCopy.SUBSCRIPTION_TRIAL_OFFER
 
 export const SYNC_MESSAGES = {
     SYNCING: 'Syncing...',

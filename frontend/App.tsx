@@ -1,9 +1,10 @@
-import { lazy } from 'react'
+import { Suspense, lazy } from 'react'
 import ReactGA from 'react-ga4'
 import { Helmet } from 'react-helmet'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AuthenticatedRoutes from './src/AuthenticatedRoutes'
+import Spinner from './src/components/atoms/Spinner'
 import GoogleAuth from './src/components/screens/GoogleAuthScreen'
 import LandingScreen from './src/components/screens/LandingScreen'
 import SharedNoteUnavailableView from './src/components/views/SharedNoteUnavailableView'
@@ -47,27 +48,29 @@ const App = () => {
             <BrowserRouter>
                 <GlobalStyle />
 
-                <Routes>
-                    <Route index element={<LandingScreen />} />
-                    <Route path="sign-up" element={<LandingScreen />} />
-                    <Route
-                        path={TERMS_OF_SERVICE_ROUTE}
-                        element={<CompanyPolicyView page={CompanyPolicyPages.TermsOfService} />}
-                    />
-                    <Route
-                        path={PRIVACY_POLICY_ROUTE}
-                        element={<CompanyPolicyView page={CompanyPolicyPages.PrivacyPolicy} />}
-                    />
-                    <Route path={LEGACY_NOTE_ROUTE} element={<SharedNoteUnavailableView />}>
-                        <Route path=":noteId" element={<SharedNoteUnavailableView />} />
-                    </Route>
-                    <Route path={GOOGLE_AUTH_ROUTE} element={<GoogleAuth />} />
-                    <Route path={SHAREABLE_TASK_ROUTE} element={<SharedTaskView />}>
-                        <Route path=":taskId" element={<SharedTaskView />} />
-                    </Route>
-                    <Route path="*" element={<AuthenticatedRoutes />} />
-                    <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
+                <Suspense fallback={<Spinner />}>
+                    <Routes>
+                        <Route index element={<LandingScreen />} />
+                        <Route path="sign-up" element={<LandingScreen />} />
+                        <Route
+                            path={TERMS_OF_SERVICE_ROUTE}
+                            element={<CompanyPolicyView page={CompanyPolicyPages.TermsOfService} />}
+                        />
+                        <Route
+                            path={PRIVACY_POLICY_ROUTE}
+                            element={<CompanyPolicyView page={CompanyPolicyPages.PrivacyPolicy} />}
+                        />
+                        <Route path={LEGACY_NOTE_ROUTE} element={<SharedNoteUnavailableView />}>
+                            <Route path=":noteId" element={<SharedNoteUnavailableView />} />
+                        </Route>
+                        <Route path={GOOGLE_AUTH_ROUTE} element={<GoogleAuth />} />
+                        <Route path={SHAREABLE_TASK_ROUTE} element={<SharedTaskView />}>
+                            <Route path=":taskId" element={<SharedTaskView />} />
+                        </Route>
+                        <Route path="*" element={<AuthenticatedRoutes />} />
+                        <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                </Suspense>
             </BrowserRouter>
         </QueryClientProvider>
     )
