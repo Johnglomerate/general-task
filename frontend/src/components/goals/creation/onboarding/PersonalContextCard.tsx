@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { Quote, Sparkles } from 'lucide-react'
-import { PERSONA_CONTEXT } from '../shared/scenario'
+import { PERSONA_CONTEXT } from '../lab/demoPersona'
 
 interface PersonalContextCardProps {
     /** Collapsed one-line quote treatment for embedding inside an active flow. */

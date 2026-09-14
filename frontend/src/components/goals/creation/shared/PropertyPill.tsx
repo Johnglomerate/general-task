@@ -3,8 +3,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown } from 'lucide-react'
 
-/** Canned alternatives — this is a scripted prototype; every option is on rails. */
-export const TIMEFRAME_OPTIONS = ['Jul 14 – Oct 31', 'Jul 14 – Dec 31', 'Aug 1 – Sep 30']
+/** Canned alternatives for the manual goal draft. */
+export const TIMEFRAME_OPTIONS = ['This month', 'This quarter', 'This year']
 export const CAPACITY_OPTIONS = ['~6 hrs / week', '~4 hrs / week', '~10 hrs / week']
 
 interface PropertyPillProps {

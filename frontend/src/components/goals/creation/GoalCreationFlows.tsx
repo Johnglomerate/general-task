@@ -1,11 +1,11 @@
 import { Toaster } from 'react-hot-toast'
 import CoachFlow from './coach/CoachFlow'
-import { DETECTED_NOTE, MIRROR_DRAFT } from './mirror/mirrorDraft'
+import { DETECTED_NOTE, MIRROR_DRAFT } from './lab/demoPersona'
 import InferredGoalsList from './onboarding/InferredGoalsList'
 import { OnboardingFrame } from './onboarding/OnboardingFrame'
 import ScaffoldFlow from './scaffold/ScaffoldFlow'
 import CreationModal from './shared/CreationModal'
-import { useGoalCreation } from './shared/GoalCreationContext'
+import { isLabMode, useGoalCreation } from './shared/GoalCreationContext'
 import { IterationSwitcher } from './shared/IterationSwitcher'
 import ReviewScreen from './shared/ReviewScreen'
 
@@ -34,14 +34,15 @@ const MirrorFlow = () => {
 
 const GoalCreationFlows = () => {
     const { iteration, isFlowOpen, isOnboarding } = useGoalCreation()
+    const activeIteration = isLabMode ? iteration : 'scaffold'
 
     // Each iteration owns its own surface.
     const flow =
-        isFlowOpen && iteration === 'coach' ? (
+        isFlowOpen && activeIteration === 'coach' ? (
             <CoachFlow />
-        ) : isFlowOpen && iteration === 'scaffold' ? (
+        ) : isFlowOpen && activeIteration === 'scaffold' ? (
             <ScaffoldFlow />
-        ) : isFlowOpen && iteration === 'mirror' ? (
+        ) : isFlowOpen && activeIteration === 'mirror' ? (
             <MirrorFlow />
         ) : null
 

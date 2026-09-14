@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
-import { DETECTED_NOTE, MIRROR_DRAFT } from '../mirror/mirrorDraft'
+import { DETECTED_NOTE, MIRROR_DRAFT } from '../lab/demoPersona'
 import { useGoalCreation } from '../shared/GoalCreationContext'
 import ReviewScreen from '../shared/ReviewScreen'
 
