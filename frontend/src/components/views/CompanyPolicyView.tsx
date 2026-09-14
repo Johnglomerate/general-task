@@ -1,5 +1,5 @@
 import styled from 'styled-components'
-import { Spacing } from '../../styles'
+import { Colors, Spacing } from '../../styles'
 import { icons } from '../../styles/images'
 import { CompanyPolicyPages } from '../../utils/enums'
 import { PrivacyPolicy, TermsOfService } from '../atoms/CompanyPoliciesHTML'
@@ -16,6 +16,12 @@ const CompanyPolicyContainer = styled.div`
 const Body = styled.div`
     max-width: 800px;
     margin: ${Spacing._32} 0px;
+`
+const PolicyContent = styled.div`
+    a,
+    a:visited {
+        color: ${Colors.semantic.blue.base};
+    }
 `
 const PolicyHeader = styled.div`
     display: flex;
@@ -37,10 +43,10 @@ const CompanyPolicyView = ({ page }: CompanyPolicyViewProps) => {
             <UnauthorizedHeader />
             <Body>
                 <PolicyHeader>
-                    <Icon size="large" icon={icons.check_circle_wavy} />
+                    <Icon size="large" icon={icons.check_circle_wavy} color="black" />
                     <HeadlineLarge>{pageTitle}</HeadlineLarge>
                 </PolicyHeader>
-                {pageContent}
+                <PolicyContent>{pageContent}</PolicyContent>
             </Body>
             <UnauthorizedFooter />
         </CompanyPolicyContainer>
