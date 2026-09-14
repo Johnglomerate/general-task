@@ -1,5 +1,10 @@
 import { css } from 'styled-components'
 
+export const fontFamily = {
+    sans: '"Geist", system-ui, -apple-system, "Segoe UI", sans-serif',
+    mono: '"Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+}
+
 export const bold = css`
     font-weight: 510;
 `

@@ -102,6 +102,7 @@ import {
 } from '@fortawesome/pro-solid-svg-icons'
 
 export const logos = Object.freeze({
+    generaltask_mark: '/images/gt-mark.svg',
     generaltask_single_color: 'images/gt-logo-single-color.svg',
     generaltask_black_on_white: 'images/gt-logo-black-on-white.svg',
     generaltask: '/images/generaltask.svg',

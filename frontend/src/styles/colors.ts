@@ -48,6 +48,7 @@ export type TStatusColors = keyof typeof status
 export const accent = {
     pink: '#DB2979',
     yellow: '#FBDD40',
+    yellowStroke: '#D9BD2E',
 }
 
 export const background = {
@@ -56,6 +57,11 @@ export const background = {
     sub: '#F4F4F5',
     border: '#E4E4E7',
     hover: '#D4D4D8',
+    panel: '#FAFAFA',
+    hairline: '#F0F0F1',
+    page: '#F7F5F2',
+    band: '#DCECF5',
+    divider: '#B6B6B6',
 }
 export type TBackgroundColor = keyof typeof background
 
@@ -63,6 +69,8 @@ export const text = {
     title: '#18181B',
     base: '#3F3F46',
     muted: '#71717A',
+    ink: '#222721',
+    secondary: '#585858',
 
     // deprecated
     black: '#000000',
