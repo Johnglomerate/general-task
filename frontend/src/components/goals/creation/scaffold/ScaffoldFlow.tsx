@@ -11,10 +11,17 @@ import { TGoalDraft, TScenarioPath } from '../shared/scenario'
 
 type TStep = 1 | 2 | 3 | 4
 
-const DEFAULT_TIMEFRAME_LABEL = 'No timeframe'
-const DEFAULT_CAPACITY_LABEL = 'No capacity'
+const DEFAULT_TIMEFRAME_LABEL = 'This quarter'
+const DEFAULT_CAPACITY_LABEL = '~4 hrs / week'
 
 const draftGoalPaths = async (_draft: TGoalDraft): Promise<TScenarioPath[]> => []
+
+const buildScaffoldReviewDraft = (draft: TGoalDraft, paths: TScenarioPath[]): TGoalDraft => ({
+    ...draft,
+    items: paths[0]?.items ?? [],
+    phases: paths[0]?.phases,
+    goalType: paths[0]?.type,
+})
 
 const StepHeading = ({ title, subtitle }: { title: string; subtitle: string }) => (
     <div
@@ -49,15 +56,8 @@ const ScaffoldFlow = () => {
     const whyRef = useRef<HTMLTextAreaElement>(null)
 
     const reviewDraft = useCallback(
-        (): TGoalDraft => ({
-            title: outcome,
-            why,
-            timeframeLabel,
-            capacityLabel,
-            items: draftedPaths[0]?.items ?? [],
-            phases: draftedPaths[0]?.phases,
-            goalType: draftedPaths[0]?.type,
-        }),
+        (): TGoalDraft =>
+            buildScaffoldReviewDraft({ title: outcome, why, timeframeLabel, capacityLabel, items: [] }, draftedPaths),
         [capacityLabel, draftedPaths, outcome, timeframeLabel, why]
     )
 
@@ -266,4 +266,4 @@ const ScaffoldFlow = () => {
 }
 
 export default ScaffoldFlow
-export { ScaffoldFlow, draftGoalPaths }
+export { ScaffoldFlow, buildScaffoldReviewDraft, draftGoalPaths }
