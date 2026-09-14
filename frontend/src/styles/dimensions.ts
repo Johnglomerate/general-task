@@ -41,6 +41,14 @@ export const BREAKPOINTS = {
     tablet: 1024,
 } as const
 
+// Landing page (v2 mockup). Independent of the app-shell breakpoints above.
+export const LANDING_CONTAINER_WIDTH = '1120px'
+export const LANDING_BREAKPOINTS = {
+    wide: 1100,
+    medium: 820,
+    small: 520,
+} as const
+
 // Subtracting 0.02 keeps `max-width` and `min-width` queries from both matching on displays that
 // report fractional widths (zoom, scaled DPI).
 const below = (px: number) => `@media (max-width: ${px - 0.02}px)`
