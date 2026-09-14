@@ -37,9 +37,13 @@ module.exports = {
             },
             {
                 test: /\.css$/,
+                use: ['style-loader', 'css-loader', 'postcss-loader'],
+                include: [path.resolve(__dirname, 'src')],
+            },
+            {
+                test: /\.css$/,
                 use: ['style-loader', 'css-loader'],
                 include: [
-                    path.resolve(__dirname, 'src'),
                     path.resolve(__dirname, 'node_modules/react-toastify'),
                     path.resolve(__dirname, 'node_modules/animate.css'),
                     path.resolve(__dirname, 'node_modules/@remirror'),
@@ -51,6 +55,9 @@ module.exports = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
+        alias: {
+            '@': path.resolve(__dirname, 'src'),
+        },
         fallback: {
             buffer: require.resolve('buffer/'),
             assert: require.resolve('assert/'),

@@ -49,6 +49,8 @@ const stubGeneralTaskApi = () => {
     cy.intercept('GET', `${API}/overview/views*`, overviewViews).as('overviewViews')
     cy.intercept('GET', `${API}/settings/`, settings).as('settings')
     cy.intercept('GET', `${API}/calendars/`, calendars).as('calendars')
+    cy.intercept('GET', `${API}/goals/`, []).as('goals')
+    cy.intercept('GET', `${API}/goals/task_links/`, {}).as('goalTaskLinks')
 
     // Everything the shell polls on boot but this spec does not exercise. `/settings/` and the list
     // endpoints must be arrays — settings.hooks.ts calls `.find` on the payload.

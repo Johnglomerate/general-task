@@ -12,9 +12,11 @@ import { useGetTasksV4 } from '../../services/api/tasks.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
 import { focusModeBackground, noteBackground } from '../../styles/images'
 import { CalendarContextProvider } from '../calendar/CalendarContext'
+import { GoalCreationProvider } from '../goals/creation/shared/GoalCreationContext'
 import DragLayer from '../molecules/DragLayer'
 import DefaultTemplate from '../templates/DefaultTemplate'
 import DailyOverviewView from '../views/DailyOverviewView'
+import GoalsView from '../views/GoalsView'
 import JiraView from '../views/JiraView'
 import LinearView from '../views/LinearView'
 import NoteListView from '../views/NoteListView'
@@ -42,6 +44,8 @@ const MainScreen = () => {
                         <DailyOverviewView />
                     </OverviewContextProvider>
                 )
+            case 'goals':
+                return <GoalsView />
             case 'recurring-tasks':
                 return <RecurringTasksView />
             case 'notes':
@@ -69,7 +73,9 @@ const MainScreen = () => {
         <CalendarContextProvider>
             <link rel="preload" as="image" href={focusModeBackground} />
             <link rel="preload" as="image" href={noteBackground} />
-            <DefaultTemplate>{currentPage()}</DefaultTemplate>
+            <GoalCreationProvider>
+                <DefaultTemplate>{currentPage()}</DefaultTemplate>
+            </GoalCreationProvider>
             <DragLayer />
         </CalendarContextProvider>
     )

@@ -142,6 +142,13 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	router.GET("/daily_task_completion/", handlers.DailyTaskCompletionList)
 
+	router.GET("/goals/", handlers.GoalsList)
+	router.POST("/goals/", handlers.GoalCreate)
+	router.PATCH("/goals/:goal_id/", handlers.GoalModify)
+	router.POST("/goals/:goal_id/recent/", handlers.GoalRecentAdd)
+	router.GET("/goals/task_links/", handlers.GoalTaskLinksList)
+	router.PATCH("/goals/task_links/:task_id/", handlers.GoalTaskLinkModify)
+
 	// Subscription management endpoints
 	router.GET("/subscriptions/status/", handlers.SubscriptionStatus)
 

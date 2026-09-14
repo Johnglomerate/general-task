@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/react'
 import App from '../App'
 import { isDevelopmentMode } from './environment'
 import './jank-mode'
+import './styles/globals.css'
 
 if (!isDevelopmentMode) {
     Sentry.init({

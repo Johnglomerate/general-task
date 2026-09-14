@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import 'react-loading-skeleton/dist/skeleton.css'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import { v4 as uuidv4 } from 'uuid'
 import { DEFAULT_FOLDER_ID } from '../../constants'
@@ -48,6 +48,7 @@ const NavigationSectionLinks = () => {
 
     const { data: folders, isLoading: isFoldersLoading } = useGetFolders()
     const { section: sectionId } = useParams()
+    const location = useLocation()
 
     const onKeyChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSectionName(e.target.value)
@@ -141,6 +142,12 @@ const NavigationSectionLinks = () => {
     return (
         <>
             <IntegrationLinks />
+            <NavigationLink
+                link="/goals"
+                title="Goals"
+                icon={icons.check_circle_wavy}
+                isCurrentPage={location.pathname === '/goals'}
+            />
             <NavigationHeader
                 title="Folders"
                 rightContent={
