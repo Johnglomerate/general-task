@@ -62,7 +62,7 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	// Middlware for endpoints that can be reached by authorized and unauthorized users
 	router.Use(UserTokenMiddleware(handlers.DB))
-	router.GET("/shareable_tasks/detail/:task_id/", handlers.ShareableTaskDetails)
+	// Legacy shared-task routes fail closed without exposing task content.
 	router.GET("/shareable_tasks/:task_id/", handlers.ShareableTaskPreview)
 	// Legacy shared-note routes fail closed without exposing note content.
 	router.GET("/notes/detail/:note_id/", handlers.NoteDetails)
