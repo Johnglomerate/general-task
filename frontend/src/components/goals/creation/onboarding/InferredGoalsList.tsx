@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Sparkles } from 'lucide-react'
-import { DETECTED_NOTE, MIRROR_DRAFT } from '../mirror/mirrorDraft'
-import { useGoalCreation } from '../shared/GoalCreationContext'
+import { DETECTED_NOTE, MIRROR_DRAFT } from '../lab/scenarioDemo'
+import { isLabMode, useGoalCreation } from '../shared/GoalCreationContext'
 import ReviewScreen from '../shared/ReviewScreen'
 
 interface TInferredCard {
@@ -54,6 +54,8 @@ const InferredGoalsList = () => {
     const dismissTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
     useEffect(() => () => dismissTimers.current.forEach((timer) => clearTimeout(timer)), [])
+
+    if (!isLabMode) return null
 
     const dismiss = (id: string) => {
         setLeaving((l) => [...l, id])

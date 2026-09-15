@@ -3,8 +3,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown } from 'lucide-react'
 
-/** Canned alternatives — this is a scripted prototype; every option is on rails. */
-export const TIMEFRAME_OPTIONS = ['Jul 14 – Oct 31', 'Jul 14 – Dec 31', 'Aug 1 – Sep 30']
+/** Canned alternatives for goal setup; callers may pass their own list for row-level fields. */
+export const TIMEFRAME_OPTIONS = ['Next 30 days', 'Next 90 days', 'This year']
 export const CAPACITY_OPTIONS = ['~6 hrs / week', '~4 hrs / week', '~10 hrs / week']
 
 interface PropertyPillProps {
@@ -20,7 +20,7 @@ interface PropertyPillProps {
 }
 
 /**
- * A Badge-style trigger opening a popover of 3–4 canned options — shared by
+ * A Badge-style trigger opening a popover of 3-4 canned options - shared by
  * ScaffoldFlow's step 3 and ReviewScreen's property row (and per-cadence
  * frequency picker). Reports open state up via the optional `onOpenChange`.
  */

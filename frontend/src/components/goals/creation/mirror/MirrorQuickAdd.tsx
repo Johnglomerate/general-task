@@ -4,8 +4,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { Check, Plus, Sparkles, X } from 'lucide-react'
+import { MIRROR_DRAFT } from '../lab/scenarioDemo'
 import { useGoalCreation } from '../shared/GoalCreationContext'
-import { MIRROR_DRAFT } from './mirrorDraft'
 
 /** The scripted quick-add — a single task the Mirror will offer to route. */
 const QUICK_ADD_PREFILL = 'Email Sarah about the rebrand gig'
