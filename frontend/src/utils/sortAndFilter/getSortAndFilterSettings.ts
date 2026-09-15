@@ -6,7 +6,7 @@ const getSortAndFilterSettings = <T>(
     settings: TSetting[],
     config: SortAndFilterSettingsConfig<T>,
     groupId?: string,
-    suffix?: '_main' | '_overview' | '_linear_page' // main if a folder, overview if the overview page
+    suffix?: '_main' | '_overview' // main if a folder, overview if the overview page
 ) => {
     const settingPrefix = groupId ? `${groupId}_` : ''
     const settingSuffix = suffix ?? ''

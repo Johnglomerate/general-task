@@ -20,8 +20,9 @@ func TestMigrate012(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
+	collections := []string{"dashboard_data_points", "dashboard_team_members", "dashboard_teams"}
+
 	t.Run("MigrateUp", func(t *testing.T) {
-		collections := []string{"dashboard_data_points", "dashboard_team_members", "dashboard_teams"}
 		for _, collection := range collections {
 			_, err = db.Collection(collection).InsertOne(context.Background(), bson.M{"stale_dashboard_data": true})
 			assert.NoError(t, err)
@@ -36,7 +37,6 @@ func TestMigrate012(t *testing.T) {
 			assert.Equal(t, int64(0), count)
 		}
 	})
-
 	t.Run("MigrateDown", func(t *testing.T) {
 		err = migrator.Steps(-1)
 		assert.NoError(t, err)

@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import styled from 'styled-components'
 import { useTernaryDarkMode } from 'usehooks-ts'
 import { GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME } from '../../constants'
-import { useGTLocalStorage, usePreviewMode, useSetting } from '../../hooks'
+import { useGTLocalStorage, usePreviewMode } from '../../hooks'
 import { useAuthWindow } from '../../hooks'
 import useRefetchStaleQueries from '../../hooks/useRefetchStaleQueries'
 import { useGetCalendars } from '../../services/api/events.hooks'
@@ -15,7 +15,6 @@ import { TLinkedAccount } from '../../utils/types'
 import Flex from '../atoms/Flex'
 import GTCheckbox from '../atoms/GTCheckbox'
 import { Icon } from '../atoms/Icon'
-import NoStyleAnchor from '../atoms/NoStyleAnchor'
 import { Divider } from '../atoms/SectionDivider'
 import GTButton from '../atoms/buttons/GTButton'
 import { BodyLarge, BodyMedium, BodySmall } from '../atoms/typography/Typography'
@@ -86,49 +85,11 @@ const SettingsModal = ({ isOpen, setIsOpen, defaultTabIndex }: SettingsModalProp
     }
 
     const serviceDetails = {
-        Slack: 'Turn any Slack message into an actionable task.',
         'Google Calendar': 'See your upcoming events and schedule tasks by dragging them onto your calendar.',
-        Linear: 'See, update, and schedule the issues assigned to you.',
-        GitHub: 'See pull requests from the repos that matter to you.',
-        Jira: 'See, update, and schedule the issues assigned to you.',
     }
 
     const { isDarkMode, toggleTernaryDarkMode } = useTernaryDarkMode()
     const [resizableDetails, setResizableDetails] = useGTLocalStorage('resizableDetails', false)
-
-    const showGitHubSetting = useSetting('sidebar_github_preference')
-    const showLinearSetting = useSetting('sidebar_linear_preference')
-    const showSlackSetting = useSetting('sidebar_slack_preference')
-    const showJiraSetting = useSetting('sidebar_jira_preference')
-
-    const nameToSetting = {
-        GitHub: {
-            setting: showGitHubSetting,
-            show: showGitHubSetting.field_value === 'true',
-        },
-        Linear: {
-            setting: showLinearSetting,
-            show: showLinearSetting.field_value === 'true',
-        },
-        Slack: {
-            setting: showSlackSetting,
-            show: showSlackSetting.field_value === 'true',
-        },
-        Jira: {
-            setting: showJiraSetting,
-            show: showJiraSetting.field_value === 'true',
-        },
-    }
-    type TNameToSetting = keyof typeof nameToSetting
-
-    const VisibilityButton = ({ accountName }: { accountName: TNameToSetting }) => (
-        <GTButton
-            styleType="icon"
-            icon={nameToSetting[accountName].show ? icons.eye : icons.eye_slash}
-            onClick={() => nameToSetting[accountName].setting.updateSetting(!nameToSetting[accountName].show)}
-            tooltipText={`${nameToSetting[accountName].show ? 'Hide' : 'Show'} ${accountName} in sidebar`}
-        />
-    )
 
     const getEnableAllCalendarsButton = (account: TLinkedAccount) => {
         if (account.name !== GOOGLE_CALENDAR_SUPPORTED_TYPE_NAME || !calendars) return
@@ -187,20 +148,6 @@ const SettingsModal = ({ isOpen, setIsOpen, defaultTabIndex }: SettingsModalProp
                                             </div>
                                         </Service>
                                     ))}
-                                <Service>
-                                    <Icon icon={logos.slack} />
-                                    <BodyMedium>Slack (workspace)</BodyMedium>
-                                    <ServiceDetails>
-                                        Add General Task to your Slack workspace. This is only required once per
-                                        workspace.
-                                    </ServiceDetails>
-                                    <NoStyleAnchor
-                                        href="https://slack.com/oauth/v2/authorize?client_id=1734323190625.3674283101555&scope=commands,chat:write&user_scope=users:read"
-                                        onClick={() => Log(`add_to_slack`)}
-                                    >
-                                        <GTButton styleType="secondary" value="Add to Slack" icon={icons.slack} />
-                                    </NoStyleAnchor>
-                                </Service>
                             </ServicesContainer>
                             <Divider color={Colors.background.border} />
                             <BodyLarge>My integrations</BodyLarge>
@@ -215,9 +162,6 @@ const SettingsModal = ({ isOpen, setIsOpen, defaultTabIndex }: SettingsModalProp
                                             </Flex>
                                         </Flex>
                                         <Flex gap={Spacing._8} alignItems="center">
-                                            {account.name in nameToSetting && (
-                                                <VisibilityButton accountName={account.name as TNameToSetting} />
-                                            )}
                                             {account.has_bad_token ? (
                                                 <GTButton
                                                     onClick={() => onRelink(account.name)}

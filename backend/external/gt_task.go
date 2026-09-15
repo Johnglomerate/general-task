@@ -42,10 +42,6 @@ func (generalTask GeneralTaskTaskSource) GetTasks(db *mongo.Database, userID pri
 	result <- TaskResult{Tasks: tasks, ServiceID: TASK_SERVICE_ID_GT, AccountID: accountID}
 }
 
-func (generalTask GeneralTaskTaskSource) GetPullRequests(db *mongo.Database, userID primitive.ObjectID, accountID string, result chan<- PullRequestResult) {
-	result <- emptyPullRequestResult(nil, false)
-}
-
 func (generalTask GeneralTaskTaskSource) CreateNewTask(db *mongo.Database, userID primitive.ObjectID, accountID string, task TaskCreationObject) (primitive.ObjectID, error) {
 	taskSection := constants.IDTaskSectionDefault
 	if task.IDTaskSection != primitive.NilObjectID {
@@ -97,9 +93,5 @@ func (generalTask GeneralTaskTaskSource) ModifyTask(db *mongo.Database, userID p
 }
 
 func (generalTask GeneralTaskTaskSource) ModifyEvent(db *mongo.Database, userID primitive.ObjectID, accountID string, eventID string, updateFields *EventModifyObject) error {
-	return errors.New("has not been implemented yet")
-}
-
-func (generalTask GeneralTaskTaskSource) AddComment(db *mongo.Database, userID primitive.ObjectID, accountID string, comment database.Comment, task *database.Task) error {
 	return errors.New("has not been implemented yet")
 }

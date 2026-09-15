@@ -5,8 +5,7 @@ import showdown from 'showdown'
 import { v4 as uuidv4 } from 'uuid'
 import { useSetting } from '../../../hooks'
 import { useCreateEvent, useGetCalendars } from '../../../services/api/events.hooks'
-import { TOverviewView, TPullRequest, TTaskV4 } from '../../../utils/types'
-import adf2md from '../../atoms/GTTextField/AtlassianEditor/adfToMd'
+import { TOverviewView, TTaskV4 } from '../../../utils/types'
 import { NuxTaskBodyStatic } from '../../details/NUXTaskBody'
 import useConnectGoogleAccountToast from './useConnectGoogleAccountToast'
 
@@ -19,10 +18,6 @@ const getEventDescription = (body: string, task?: TTaskV4) => {
         return renderToString(<NuxTaskBodyStatic nux_number_id={task.id_nux_number} renderSettingsModal={false} />)
     }
     let description = body
-    // convert ADF to markdown (if originally ADF)
-    if (task?.source.name === 'Jira' && description !== '') {
-        description = adf2md.convert(JSON.parse(description)).result
-    }
     // then convert markdown to HTML
     description = new showdown.Converter().makeHtml(description)
     if (description !== '') {
@@ -36,14 +31,13 @@ interface ScheduleOnCalendarArgs {
     start: DateTime
     durationInMinutes?: number
     task?: TTaskV4
-    pullRequest?: TPullRequest
     view?: TOverviewView
     // the calendar day whose event cache should be updated — defaults to the day of `start`
     date?: DateTime
 }
 
 /*
- * The single path for turning a task, pull request, or list header into a calendar event.
+ * The single path for turning a task or list header into a calendar event.
  * Dragging onto the calendar and the explicit "Schedule" action both call this, so the two
  * cannot drift apart. Returns false when there is no calendar to schedule onto (a toast
  * prompting the user to connect Google has already been shown in that case).
@@ -60,7 +54,6 @@ const useScheduleTask = () => {
             start,
             durationInMinutes = DEFAULT_EVENT_DURATION_IN_MINUTES,
             task,
-            pullRequest,
             view,
             date,
         }: ScheduleOnCalendarArgs) => {
@@ -71,22 +64,19 @@ const useScheduleTask = () => {
                 return false
             }
             const end = start.plus({ minutes: durationInMinutes })
-            const droppableItem = task ?? pullRequest
-            if (droppableItem) {
+            if (task) {
                 createEvent({
                     createEventPayload: {
                         account_id: taskToCalAccount,
                         calendar_id: taskToCalCalendar,
                         datetime_start: start.toISO(),
                         datetime_end: end.toISO(),
-                        summary: droppableItem.title,
-                        description: getEventDescription(droppableItem.body, task),
-                        task_id: task?.id ?? '',
-                        pr_id: pullRequest?.id ?? '',
+                        summary: task.title,
+                        description: getEventDescription(task.body, task),
+                        task_id: task.id,
                     },
                     date: date ?? start,
                     linkedTask: task,
-                    linkedPullRequest: pullRequest,
                     optimisticId: uuidv4(),
                 })
                 return true

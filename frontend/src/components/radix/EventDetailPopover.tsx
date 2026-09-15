@@ -5,7 +5,7 @@ import { DateTime } from 'luxon'
 import sanitizeHtml from 'sanitize-html'
 import { v4 as uuidv4 } from 'uuid'
 import { EVENT_UNDO_TIMEOUT, NO_TITLE } from '../../constants'
-import { useKeyboardShortcut, useNavigateToPullRequest, useNavigateToTask, usePreviewMode, useToast } from '../../hooks'
+import { useKeyboardShortcut, useNavigateToTask, usePreviewMode, useToast } from '../../hooks'
 import { useDeleteEvent, useGetCalendars, useModifyEvent } from '../../services/api/events.hooks'
 import { useCreateNote, useGetNotes } from '../../services/api/notes.hooks'
 import { useGetUserInfo } from '../../services/api/user-info.hooks'
@@ -41,7 +41,6 @@ const EventDetailPopover = ({ event, date, hidePopover = false, children }: Even
     const startTimeString = eventStart.toFormat('h:mm')
     const endTimeString = eventEnd.toFormat('h:mm a')
     const navigateToTask = useNavigateToTask()
-    const navigateToPullRequest = useNavigateToPullRequest()
     const { data: notes } = useGetNotes()
     const { mutate: createNote } = useCreateNote()
     const { data: userInfo } = useGetUserInfo()
@@ -276,17 +275,6 @@ const EventDetailPopover = ({ event, date, hidePopover = false, children }: Even
                         onClick={() => {
                             setIsOpen(false)
                             navigateToTask({ taskId: event.linked_task_id })
-                        }}
-                    />
-                )}
-                {event.linked_pull_request_id && (
-                    <GTButton
-                        styleType="secondary"
-                        value="View PR details"
-                        fitContent={false}
-                        onClick={() => {
-                            setIsOpen(false)
-                            navigateToPullRequest(event.linked_pull_request_id)
                         }}
                     />
                 )}

@@ -30,7 +30,7 @@ func TestMigrate(t *testing.T) {
 			IsUnlinkable:   false,
 		})
 		externalTokenCollection.InsertOne(context.Background(), database.ExternalAPIToken{
-			ServiceID:      external.TASK_SERVICE_ID_SLACK,
+			ServiceID:      "slack",
 			IsPrimaryLogin: true,
 			IsUnlinkable:   false,
 		})

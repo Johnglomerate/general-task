@@ -17,8 +17,6 @@ type UserInfo struct {
 	IsEmployee         bool   `json:"is_employee"`
 	Email              string `json:"email"`
 	IsCompanyEmail     bool   `json:"is_company_email"`
-	LinearName         string `json:"linear_name,omitempty"`
-	LinearDisplayName  string `json:"linear_display_name,omitempty"`
 	SubscriptionStatus string `json:"subscription_status,omitempty"`
 	IsSubscribed       bool   `json:"is_subscribed"`
 	IsInTrial          bool   `json:"is_in_trial"`
@@ -49,8 +47,6 @@ func (api *API) UserInfoGet(c *gin.Context) {
 		IsEmployee:         strings.HasSuffix(strings.ToLower(userObject.Email), "@generaltask.com"),
 		Email:              userObject.Email,
 		IsCompanyEmail:     isCompanyEmail(userObject.Email),
-		LinearName:         userObject.LinearName,
-		LinearDisplayName:  userObject.LinearDisplayName,
 		SubscriptionStatus: userObject.SubscriptionStatus,
 		IsSubscribed:       isUserSubscribed(&userObject),
 		IsInTrial:          isUserInFreeTrial(&userObject),

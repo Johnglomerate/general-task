@@ -10,7 +10,7 @@ const LandingScreen = () => {
     return (
         <>
             <Helmet>
-                <title>General Task — Where your short-term tasks meet your long-term goals.</title>
+                <title>General Task - Where your short-term tasks meet your long-term goals.</title>
                 <meta
                     name="description"
                     content="General Task uses AI to break down your big goals into actionable, shorter-term actions, and helps you keep track of your progress."

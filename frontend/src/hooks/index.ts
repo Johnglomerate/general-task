@@ -9,7 +9,6 @@ import useIsDragging from './useIsDragging'
 import useIsMobile from './useIsMobile'
 import useItemSelectionController from './useItemSelectionController'
 import useKeyboardShortcut from './useKeyboardShortcut'
-import useNavigateToPullRequest from './useNavigateToPullRequest'
 import useNavigateToTask from './useNavigateToTask'
 import useMobileDetailRouteFallback from './useMobileDetailRouteFallback'
 import usePageFocus from './usePageFocus'
@@ -31,7 +30,6 @@ export {
     useItemSelectionController,
     useKeyboardShortcut,
     useMobileDetailRouteFallback,
-    useNavigateToPullRequest,
     useNavigateToTask,
     usePreviewMode,
     useSetting,

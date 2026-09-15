@@ -1,0 +1,198 @@
+[
+    {
+        "update": "tasks",
+        "updates": [
+            {
+                "q": {
+                    "source_id": "slack"
+                },
+                "u": {
+                    "$set": {
+                        "source_id": "gt_task",
+                        "source_account_id": "default",
+                        "deeplink": "",
+                        "sender": ""
+                    },
+                    "$unset": {
+                        "slack_message_params": ""
+                    }
+                },
+                "multi": true
+            }
+        ]
+    },
+    {
+        "delete": "tasks",
+        "deletes": [
+            {
+                "q": {
+                    "source_id": {
+                        "$in": [
+                            "asana_task",
+                            "jira",
+                            "linear_task"
+                        ]
+                    }
+                },
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "pull_requests",
+        "deletes": [
+            {
+                "q": {
+                    "source_id": "github_pr"
+                },
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "repositories",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "update": "calendar_events",
+        "updates": [
+            {
+                "q": {
+                    "linked_task_source_id": {
+                        "$in": [
+                            "asana_task",
+                            "github_pr",
+                            "jira",
+                            "linear_task"
+                        ]
+                    }
+                },
+                "u": {
+                    "$unset": {
+                        "linked_task_id": "",
+                        "linked_pull_request_id": "",
+                        "linked_task_source_id": ""
+                    }
+                },
+                "multi": true
+            },
+            {
+                "q": {
+                    "linked_task_source_id": "slack"
+                },
+                "u": {
+                    "$set": {
+                        "linked_task_source_id": "gt_task"
+                    }
+                },
+                "multi": true
+            },
+            {
+                "q": {
+                    "linked_pull_request_id": {
+                        "$exists": true
+                    }
+                },
+                "u": {
+                    "$unset": {
+                        "linked_pull_request_id": ""
+                    }
+                },
+                "multi": true
+            }
+        ]
+    },
+    {
+        "delete": "views",
+        "deletes": [
+            {
+                "q": {
+                    "type": {
+                        "$in": [
+                            "github",
+                            "jira",
+                            "linear",
+                            "slack"
+                        ]
+                    }
+                },
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "external_api_tokens",
+        "deletes": [
+            {
+                "q": {
+                    "service_id": {
+                        "$in": [
+                            "asana",
+                            "atlassian",
+                            "github",
+                            "linear",
+                            "slack",
+                            "slack_app"
+                        ]
+                    }
+                },
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "jira_sites",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "jira_priorities",
+        "deletes": [
+            {
+                "q": {},
+                "limit": 0
+            }
+        ]
+    },
+    {
+        "delete": "user_settings",
+        "deletes": [
+            {
+                "q": {
+                    "$or": [
+                        {
+                            "field_key": {
+                                "$in": [
+                                    "github_filtering_preference",
+                                    "github_sorting_direction",
+                                    "github_sorting_preference",
+                                    "linear_task_filtering_preference_overview",
+                                    "linear_task_filtering_preference_linear_page",
+                                    "sidebar_github_preference",
+                                    "sidebar_jira_preference",
+                                    "sidebar_linear_preference",
+                                    "sidebar_slack_preference"
+                                ]
+                            }
+                        },
+                        {
+                            "field_key": {
+                                "$regex": "github_(filtering_preference|sorting_direction|sorting_preference)$"
+                            }
+                        }
+                    ]
+                },
+                "limit": 0
+            }
+        ]
+    }
+]

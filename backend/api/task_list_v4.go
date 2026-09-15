@@ -18,35 +18,28 @@ type TaskSourceV4 struct {
 }
 
 type TaskResultV4 struct {
-	ID                       primitive.ObjectID           `json:"id"`
-	IDOrdering               int                          `json:"id_ordering"`
-	IDFolder                 string                       `json:"id_folder,omitempty"`
-	IDParent                 string                       `json:"id_parent,omitempty"`
-	Source                   TaskSourceV4                 `json:"source"`
-	Deeplink                 string                       `json:"deeplink"`
-	Title                    string                       `json:"title"`
-	Body                     string                       `json:"body"`
-	DueDate                  string                       `json:"due_date"`
-	PriorityNormalized       float64                      `json:"priority_normalized"`
-	IsDone                   bool                         `json:"is_done"`
-	IsDeleted                bool                         `json:"is_deleted"`
-	RecurringTaskTemplateID  primitive.ObjectID           `json:"recurring_task_template_id,omitempty"`
-	ExternalStatus           *externalStatus              `json:"external_status,omitempty"`
-	AllStatuses              []*externalStatus            `json:"all_statuses,omitempty"`
-	ExternalPriority         *externalPriority            `json:"priority,omitempty"`
-	AllExternalPriorities    []*externalPriority          `json:"all_priorities,omitempty"`
-	Comments                 *[]database.Comment          `json:"comments,omitempty"`
-	SlackMessageParams       *database.SlackMessageParams `json:"slack_message_params,omitempty"`
-	MeetingPreparationParams *MeetingPreparationParams    `json:"meeting_preparation_params,omitempty"`
-	SubTaskIDs               []primitive.ObjectID         `json:"subtask_ids,omitempty"`
-	NUXNumber                int                          `json:"id_nux_number,omitempty"`
-	LinearCycle              *database.LinearCycle        `json:"linear_cycle,omitempty"`
-	CreatedAt                string                       `json:"created_at,omitempty"`
-	UpdatedAt                string                       `json:"updated_at,omitempty"`
-	CompletedAt              string                       `json:"completed_at,omitempty"`
-	DeletedAt                string                       `json:"deleted_at,omitempty"`
-	SharedAccess             string                       `json:"shared_access,omitempty"`
-	SharedUntil              string                       `json:"shared_until,omitempty"`
+	ID                       primitive.ObjectID        `json:"id"`
+	IDOrdering               int                       `json:"id_ordering"`
+	IDFolder                 string                    `json:"id_folder,omitempty"`
+	IDParent                 string                    `json:"id_parent,omitempty"`
+	Source                   TaskSourceV4              `json:"source"`
+	Deeplink                 string                    `json:"deeplink"`
+	Title                    string                    `json:"title"`
+	Body                     string                    `json:"body"`
+	DueDate                  string                    `json:"due_date"`
+	PriorityNormalized       float64                   `json:"priority_normalized"`
+	IsDone                   bool                      `json:"is_done"`
+	IsDeleted                bool                      `json:"is_deleted"`
+	RecurringTaskTemplateID  primitive.ObjectID        `json:"recurring_task_template_id,omitempty"`
+	MeetingPreparationParams *MeetingPreparationParams `json:"meeting_preparation_params,omitempty"`
+	SubTaskIDs               []primitive.ObjectID      `json:"subtask_ids,omitempty"`
+	NUXNumber                int                       `json:"id_nux_number,omitempty"`
+	CreatedAt                string                    `json:"created_at,omitempty"`
+	UpdatedAt                string                    `json:"updated_at,omitempty"`
+	CompletedAt              string                    `json:"completed_at,omitempty"`
+	DeletedAt                string                    `json:"deleted_at,omitempty"`
+	SharedAccess             string                    `json:"shared_access,omitempty"`
+	SharedUntil              string                    `json:"shared_until,omitempty"`
 }
 
 func (api *API) TasksListV4(c *gin.Context) {
@@ -218,7 +211,6 @@ func (api *API) taskToTaskResultV4(t *database.Task) *TaskResultV4 {
 		PriorityNormalized: priority,
 		IsDone:             completed,
 		IsDeleted:          deleted,
-		Comments:           t.Comments,
 		NUXNumber:          t.NUXNumber,
 		CreatedAt:          t.CreatedAtExternal.Time().UTC().Format(time.RFC3339),
 		UpdatedAt:          t.UpdatedAt.Time().UTC().Format(time.RFC3339),
@@ -234,36 +226,6 @@ func (api *API) taskToTaskResultV4(t *database.Task) *TaskResultV4 {
 		taskResult.IDFolder = ""
 	}
 
-	if t.Status != nil && *t.Status != (database.ExternalTaskStatus{}) {
-		taskResult.ExternalStatus = &externalStatus{
-			IDExternal: t.Status.ExternalID,
-			State:      t.Status.State,
-			Type:       t.Status.Type,
-		}
-	}
-	if t.AllStatuses != nil {
-		allStatuses := []*externalStatus{}
-		for _, status := range t.AllStatuses {
-			allStatuses = append(allStatuses, &externalStatus{
-				IDExternal:        status.ExternalID,
-				State:             status.State,
-				Type:              status.Type,
-				Color:             status.Color,
-				IsValidTransition: status.IsValidTransition,
-			})
-		}
-		taskResult.AllStatuses = allStatuses
-	}
-
-	if t.SlackMessageParams != nil && *t.SlackMessageParams != (database.SlackMessageParams{}) {
-		taskResult.SlackMessageParams = &database.SlackMessageParams{
-			Channel: t.SlackMessageParams.Channel,
-			User:    t.SlackMessageParams.User,
-			Team:    t.SlackMessageParams.Team,
-			Message: t.SlackMessageParams.Message,
-		}
-	}
-
 	if t.MeetingPreparationParams != nil && *t.MeetingPreparationParams != (database.MeetingPreparationParams{}) && t.IsMeetingPreparationTask {
 		taskResult.MeetingPreparationParams = &MeetingPreparationParams{
 			DatetimeStart:       t.MeetingPreparationParams.DatetimeStart.Time().UTC().Format(time.RFC3339),
@@ -272,36 +234,8 @@ func (api *API) taskToTaskResultV4(t *database.Task) *TaskResultV4 {
 		}
 	}
 
-	if t.ExternalPriority != nil && *t.ExternalPriority != (database.ExternalTaskPriority{}) {
-		taskResult.ExternalPriority = &externalPriority{
-			IDExternal:         t.ExternalPriority.ExternalID,
-			Name:               t.ExternalPriority.Name,
-			PriorityNormalized: t.ExternalPriority.PriorityNormalized,
-			Color:              t.ExternalPriority.Color,
-			IconURL:            t.ExternalPriority.IconURL,
-		}
-	}
-
-	if len(t.AllExternalPriorities) > 0 {
-		allPriorities := []*externalPriority{}
-		for _, priority := range t.AllExternalPriorities {
-			allPriorities = append(allPriorities, &externalPriority{
-				IDExternal:         priority.ExternalID,
-				Name:               priority.Name,
-				PriorityNormalized: priority.PriorityNormalized,
-				Color:              priority.Color,
-				IconURL:            priority.IconURL,
-			})
-		}
-		taskResult.AllExternalPriorities = allPriorities
-	}
-
 	if t.RecurringTaskTemplateID != primitive.NilObjectID {
 		taskResult.RecurringTaskTemplateID = t.RecurringTaskTemplateID
-	}
-
-	if t.LinearCycle.ID != "" {
-		taskResult.LinearCycle = &t.LinearCycle
 	}
 
 	return taskResult
