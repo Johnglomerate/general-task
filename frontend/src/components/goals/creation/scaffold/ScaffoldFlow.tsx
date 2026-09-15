@@ -3,30 +3,22 @@ import { Button } from '@/components/ui/button'
 import { GTDialog, GTDialogBody, GTDialogFooter, GTDialogHeading, GTDialogSteps } from '@/components/ui/gt-dialog'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { ArrowRight, CalendarRange, Gauge, RotateCcw, Sparkles, TriangleAlert } from 'lucide-react'
-import { TGoalType } from '../../goalTypes'
+import { ArrowRight, CalendarRange, Gauge } from 'lucide-react'
 import { useGoalCreation } from '../shared/GoalCreationContext'
 import PropertyPill, { CAPACITY_OPTIONS, TIMEFRAME_OPTIONS } from '../shared/PropertyPill'
 import ReviewScreen from '../shared/ReviewScreen'
-import {
-    REALISM_TRIGGER_CAPACITY,
-    REALISM_WARNING,
-    SCENARIO_DRAFT,
-    SCENARIO_PATHS,
-    TScenarioPath,
-} from '../shared/scenario'
+import { TGoalDraft, TScenarioPath } from '../shared/scenario'
 
 type TStep = 1 | 2 | 3 | 4
 
-/** Step 1 starts with a rougher outcome; the AI chip sharpens it to the scenario title. */
-const OUTCOME_PREFILL = 'Rebuild my portfolio and get more clients'
-const SUGGESTED_OUTCOME = SCENARIO_DRAFT.title // 'Rebuild my portfolio and land 3 freelance clients'
-const SUGGESTION_LABEL = `Sharper: "${SUGGESTED_OUTCOME}"`
+const OUTCOME_PREFILL = ''
+const WHY_PREFILL = ''
+const NEUTRAL_TIMEFRAME_LABEL = 'Set timeframe'
+const NEUTRAL_CAPACITY_LABEL = 'Set capacity'
 
-/** Skeleton sweep for the step-4 drafting beat — opacity + transform, never a visibility toggle. */
-const SHIMMER_KEYFRAMES = `@keyframes scaffold-shimmer {
-    100% { transform: translateX(100%); }
-}`
+type TDraftGoalInput = Pick<TGoalDraft, 'title' | 'why' | 'timeframeLabel' | 'capacityLabel'>
+
+export const draftGoalPaths = async (_draft: TDraftGoalInput): Promise<TScenarioPath[]> => []
 
 /** A short heading + supporting line shared by steps 1–3 (GTDialogHeading + the step's enter animation). */
 const StepHeading = ({ title, subtitle }: { title: string; subtitle: string }) => (
@@ -38,161 +30,6 @@ const StepHeading = ({ title, subtitle }: { title: string; subtitle: string }) =
     </div>
 )
 
-const SkeletonBar = ({ className }: { className?: string }) => (
-    <div className={cn('relative overflow-hidden rounded-md bg-muted', className)}>
-        <div
-            className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/[0.07] to-transparent"
-            style={{ animation: 'scaffold-shimmer 1.4s ease-in-out infinite' }}
-        />
-    </div>
-)
-
-/** Step 4's error state — AI unreachable. Retry re-runs the draft; manual falls back to an empty, editable plan. */
-const ErrorBeat = ({ onRetry, onManual }: { onRetry: () => void; onManual: () => void }) => (
-    <>
-        <GTDialogBody className="items-center justify-center gap-1 py-6 text-center animate-in fade-in-0 duration-300">
-            <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-destructive/10">
-                <TriangleAlert className="size-5 text-destructive" />
-            </div>
-            <h2 className="text-title-sm text-foreground">Couldn’t draft your plan</h2>
-            <p className="max-w-[320px] text-body-sm leading-relaxed text-muted-foreground">
-                The AI didn’t respond. Retry, or build the plan yourself — your answers are saved and everything stays
-                editable either way.
-            </p>
-        </GTDialogBody>
-        <GTDialogFooter onCancel={onManual} cancelLabel="Build it manually" onConfirm={onRetry} confirmLabel="Retry">
-            <RotateCcw className="sr-only" />
-        </GTDialogFooter>
-    </>
-)
-
-/** Step 4's 600ms "Drafting your plan…" beat — a skeleton that echoes ReviewScreen's shape. */
-const DraftingBeat = () => (
-    <>
-        <style>{SHIMMER_KEYFRAMES}</style>
-        <GTDialogBody className="gap-5">
-            <div className="space-y-2.5">
-                <SkeletonBar className="h-6 w-3/4" />
-                <div className="flex gap-2 pt-0.5">
-                    <SkeletonBar className="h-7 w-32" />
-                    <SkeletonBar className="h-7 w-28" />
-                </div>
-            </div>
-            <div className="space-y-2">
-                <SkeletonBar className="h-3 w-20" />
-                {[0, 1, 2].map((i) => (
-                    <SkeletonBar key={i} className="h-8 w-full" />
-                ))}
-            </div>
-        </GTDialogBody>
-        <GTDialogFooter
-            start={
-                <span className="flex items-center gap-2 text-body-sm text-muted-foreground">
-                    <Sparkles className="size-4 animate-pulse text-primary" />
-                    Drafting your plan…
-                </span>
-            }
-        />
-    </>
-)
-
-type TRealismFix = typeof REALISM_WARNING.fixes[number]
-
-const PATH_TYPE_LABELS: Record<TGoalType, string> = { consistency: 'Consistency', time: 'Time-based' }
-
-/**
- * Step 4's path-choice beat — the mock decompose call returned 1–2 typed paths,
- * each shaped within stated capacity. Picking one flows its items + phases +
- * type into the review draft. The realism banner is advice, not a blocker:
- * paths stay choosable while it shows.
- */
-const PathsBeat = ({
-    showWarning,
-    onApplyFix,
-    onPick,
-    onBack,
-}: {
-    showWarning: boolean
-    onApplyFix: (fix: TRealismFix) => void
-    onPick: (path: TScenarioPath) => void
-    onBack: () => void
-}) => (
-    <>
-        <GTDialogBody className="gap-4">
-            <StepHeading
-                title="Two ways to shape this"
-                subtitle="Pick the one that fits your life — the plan stays editable either way."
-            />
-
-            {showWarning && (
-                <div
-                    style={{ animationDelay: '40ms', animationFillMode: 'both' }}
-                    className="rounded-lg border border-gt-gold/40 bg-gt-gold/10 px-3.5 py-3 animate-in fade-in-0 slide-in-from-bottom-1 duration-300"
-                >
-                    <div className="flex items-start gap-2.5">
-                        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-gt-gold" />
-                        <div className="min-w-0 space-y-2">
-                            <p className="text-body-sm leading-relaxed text-foreground">{REALISM_WARNING.message}</p>
-                            <div className="flex flex-wrap gap-2">
-                                {REALISM_WARNING.fixes.map((fix) => (
-                                    <button
-                                        key={fix.id}
-                                        type="button"
-                                        onClick={() => onApplyFix(fix)}
-                                        className={cn(
-                                            'inline-flex h-7 items-center rounded-md border border-gt-gold/40 bg-background px-2.5 text-body-sm font-medium text-foreground',
-                                            'transition-[background-color,transform] duration-150 hover:bg-muted active:scale-[0.96]',
-                                            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                                        )}
-                                    >
-                                        {fix.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="space-y-2">
-                {SCENARIO_PATHS.map((path, i) => (
-                    <button
-                        key={path.id}
-                        type="button"
-                        onClick={() => onPick(path)}
-                        style={{ animationDelay: `${80 + i * 80}ms`, animationFillMode: 'both' }}
-                        className={cn(
-                            'w-full rounded-lg border border-border px-4 py-3 text-left',
-                            'animate-in fade-in-0 slide-in-from-bottom-1 duration-300',
-                            'transition-[background-color,transform] duration-150 hover:bg-muted active:scale-[0.96]',
-                            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
-                        )}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="text-title-sm text-foreground">{path.label}</span>
-                            <span className="rounded-full border border-border px-2 py-0.5 text-label-md uppercase tracking-wider text-muted-foreground">
-                                {PATH_TYPE_LABELS[path.type]}
-                            </span>
-                        </div>
-                        <p className="mt-0.5 text-body-sm font-medium text-secondary-foreground">{path.shapeLabel}</p>
-                        <p className="mt-1 text-body-sm leading-relaxed text-muted-foreground">{path.rationale}</p>
-                        <p className="mt-2 truncate text-body-sm text-muted-foreground/70">
-                            {path.phases.map((p) => `${p.name} · ${p.cadenceLabel}`).join('  →  ')}
-                        </p>
-                    </button>
-                ))}
-            </div>
-        </GTDialogBody>
-        <GTDialogFooter
-            start={
-                <Button variant="ghost" size="sm" onClick={onBack} className="text-muted-foreground">
-                    Back
-                </Button>
-            }
-        />
-    </>
-)
-
 /**
  * Iteration 2 — The Scaffold. A four-step guided stepper (Outcome → Why →
  * Timeframe & capacity → Plan) that lands on the same ReviewScreen the Coach
@@ -200,11 +37,8 @@ const PathsBeat = ({
  * (step indicator in the header's meta slot) in normal mode, or renders the same
  * body/footer inline inside `OnboardingFrame` (isOnboarding) — GoalCreationFlows supplies that frame.
  */
-/** Step 4's sub-states: drafting shimmer → path choice → plan review, or → error when the AI is unreachable. */
-type TDraftPhase = 'drafting' | 'error' | 'paths' | 'review'
-
 const ScaffoldFlow = () => {
-    const { isOnboarding, closeFlow, createGoal, aiOffline } = useGoalCreation()
+    const { isOnboarding, closeFlow, createGoal } = useGoalCreation()
 
     // Rendered step + a brief "exiting" window so the outgoing step softens out
     // before the next one crossfades in.
@@ -213,20 +47,10 @@ const ScaffoldFlow = () => {
     const busyRef = useRef(false)
 
     const [outcome, setOutcome] = useState(OUTCOME_PREFILL)
-    const [suggestionOpen, setSuggestionOpen] = useState(true)
-    const [suggestionMounted, setSuggestionMounted] = useState(true)
-    const [why, setWhy] = useState(SCENARIO_DRAFT.why)
-    const [timeframeLabel, setTimeframeLabel] = useState(SCENARIO_DRAFT.timeframeLabel)
-    const [capacityLabel, setCapacityLabel] = useState(SCENARIO_DRAFT.capacityLabel)
-    const [phase, setPhase] = useState<TDraftPhase>('drafting')
-    const [manual, setManual] = useState(false)
-    const [selectedPath, setSelectedPath] = useState<TScenarioPath | null>(null)
-    // "Extend to Dec 31" resolves the warning without changing capacity, so
-    // dismissal is tracked explicitly rather than derived from the trigger alone.
-    const [realismResolved, setRealismResolved] = useState(false)
-    const draftTimer = useRef<number>()
-    const aiOfflineRef = useRef(aiOffline)
-    aiOfflineRef.current = aiOffline
+    const [why, setWhy] = useState(WHY_PREFILL)
+    const [timeframeLabel, setTimeframeLabel] = useState(NEUTRAL_TIMEFRAME_LABEL)
+    const [capacityLabel, setCapacityLabel] = useState(NEUTRAL_CAPACITY_LABEL)
+    const [draftPaths, setDraftPaths] = useState<TScenarioPath[]>([])
     const openPopovers = useRef(0)
 
     const inputRef = useRef<HTMLInputElement>(null)
@@ -254,34 +78,20 @@ const ScaffoldFlow = () => {
         if (render > 1) goTo((render - 1) as TStep)
     }, [render, goTo])
 
-    // The drafting beat: shimmer, then the path choice — or the error state when
-    // the AI is "offline". A failed attempt runs longer (a timeout should feel like one).
-    const runDraft = useCallback(() => {
-        setPhase('drafting')
-        window.clearTimeout(draftTimer.current)
-        const willFail = aiOfflineRef.current
-        draftTimer.current = window.setTimeout(() => setPhase(willFail ? 'error' : 'paths'), willFail ? 1100 : 600)
-    }, [])
-
-    // Step 4 opens with the drafting beat; leaving it resets the sub-state.
+    // Step 4 already renders manual review. This seam is where real drafting can be added later.
     useEffect(() => {
         if (render !== 4) {
-            window.clearTimeout(draftTimer.current)
-            setPhase('drafting')
-            setManual(false)
-            setSelectedPath(null)
-            setRealismResolved(false)
+            setDraftPaths([])
             return
         }
-        runDraft()
-        return () => window.clearTimeout(draftTimer.current)
-    }, [render, runDraft])
-
-    const applyRealismFix = (fix: TRealismFix) => {
-        if (fix.capacityLabel !== undefined) setCapacityLabel(fix.capacityLabel)
-        else if (fix.timeframeLabel !== undefined) setTimeframeLabel(fix.timeframeLabel)
-        setRealismResolved(true)
-    }
+        let canceled = false
+        void draftGoalPaths({ title: outcome, why, timeframeLabel, capacityLabel }).then((paths) => {
+            if (!canceled) setDraftPaths(paths)
+        })
+        return () => {
+            canceled = true
+        }
+    }, [render, outcome, why, timeframeLabel, capacityLabel])
 
     // Focus the step's primary field once it has settled in.
     useEffect(() => {
@@ -306,85 +116,29 @@ const ScaffoldFlow = () => {
         return () => window.removeEventListener('keydown', onKey, true)
     }, [render, advance])
 
-    const dismissSuggestion = useCallback(() => {
-        setSuggestionOpen(false)
-        window.setTimeout(() => setSuggestionMounted(false), 220)
-    }, [])
-
-    const acceptSuggestion = () => {
-        setOutcome(SUGGESTED_OUTCOME)
-        dismissSuggestion()
-    }
-
     const trackPopover = (open: boolean) => {
         openPopovers.current = Math.max(0, openPopovers.current + (open ? 1 : -1))
     }
 
-    // Esc dismisses the suggestion chip only — not the modal / onboarding frame.
-    // A capture-phase native listener runs ahead of (and stops) Radix's and the
-    // OnboardingFrame's own document/window Escape handlers.
-    useEffect(() => {
-        if (render !== 1 || !suggestionOpen) return
-        const onKey = (e: globalThis.KeyboardEvent) => {
-            if (e.key !== 'Escape') return
-            e.preventDefault()
-            e.stopImmediatePropagation()
-            dismissSuggestion()
-        }
-        document.addEventListener('keydown', onKey, true)
-        return () => document.removeEventListener('keydown', onKey, true)
-    }, [render, suggestionOpen, dismissSuggestion])
-
     const renderStep = () => {
         if (render === 4) {
-            if (phase === 'drafting') return <DraftingBeat />
-            if (phase === 'error')
-                return (
-                    <ErrorBeat
-                        onRetry={runDraft}
-                        onManual={() => {
-                            setManual(true)
-                            setPhase('review')
-                        }}
-                    />
-                )
-            if (phase === 'paths')
-                return (
-                    <PathsBeat
-                        showWarning={capacityLabel === REALISM_TRIGGER_CAPACITY && !realismResolved}
-                        onApplyFix={applyRealismFix}
-                        onPick={(path) => {
-                            setSelectedPath(path)
-                            setPhase('review')
-                        }}
-                        onBack={back}
-                    />
-                )
-            // Title reflects step 1's final value; step-3 picks flow through too.
-            // The chosen path's items + phases + type shape the draft.
-            // Manual fallback: same review surface, but the plan starts empty.
-            const chosen = selectedPath ?? SCENARIO_PATHS[0]
+            const draftedPath = draftPaths[0]
+            const draft: TGoalDraft = {
+                title: outcome,
+                why,
+                timeframeLabel,
+                capacityLabel,
+                items: draftedPath?.items ?? [],
+                phases: draftedPath?.phases,
+                goalType: draftedPath?.type,
+            }
             return (
                 <ReviewScreen
-                    draft={
-                        manual
-                            ? { title: outcome, why, timeframeLabel, capacityLabel, items: [] }
-                            : {
-                                  ...SCENARIO_DRAFT,
-                                  title: outcome,
-                                  why,
-                                  timeframeLabel,
-                                  capacityLabel,
-                                  items: chosen.items,
-                                  phases: chosen.phases,
-                                  goalType: chosen.type,
-                              }
-                    }
-                    showTypePicker={manual}
-                    provenanceNote={manual ? undefined : `Drafted by AI from your goal · sized to ${capacityLabel}`}
+                    key={draftedPath?.id ?? 'manual'}
+                    draft={draft}
+                    showTypePicker={!draftedPath}
                     onConfirm={createGoal}
-                    // AI drafts step back to the path choice; the manual fallback (no paths beat) goes to step 3.
-                    onBack={manual ? back : () => setPhase('paths')}
+                    onBack={back}
                     layout="dialog"
                 />
             )
@@ -404,25 +158,10 @@ const ScaffoldFlow = () => {
                                     ref={inputRef}
                                     value={outcome}
                                     onChange={(e) => setOutcome(e.target.value)}
+                                    placeholder="Goal outcome"
                                     aria-label="Goal outcome"
                                     className="h-11 rounded-lg text-body-md"
                                 />
-                                {suggestionMounted && (
-                                    <button
-                                        type="button"
-                                        onClick={acceptSuggestion}
-                                        className={cn(
-                                            'inline-flex max-w-full items-center gap-2 rounded-full bg-muted py-1.5 pl-2.5 pr-3.5 text-left text-body-sm text-secondary-foreground',
-                                            'origin-left transition-[opacity,transform] duration-200 ease-out hover:bg-muted/80 active:scale-[0.96]',
-                                            suggestionOpen
-                                                ? 'opacity-100 scale-100'
-                                                : 'pointer-events-none opacity-0 scale-95'
-                                        )}
-                                    >
-                                        <Sparkles className="size-3.5 shrink-0 text-primary" />
-                                        <span className="truncate">{SUGGESTION_LABEL}</span>
-                                    </button>
-                                )}
                             </div>
                         </div>
                     )}
@@ -441,6 +180,7 @@ const ScaffoldFlow = () => {
                                     ref={whyRef}
                                     value={why}
                                     onChange={(e) => setWhy(e.target.value)}
+                                    placeholder="Why this matters"
                                     rows={3}
                                     aria-label="Why this goal matters"
                                     className="flex w-full resize-none rounded-lg border border-input bg-transparent px-3 py-2.5 text-body-md leading-relaxed transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"

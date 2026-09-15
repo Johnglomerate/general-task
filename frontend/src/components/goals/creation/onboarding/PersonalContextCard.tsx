@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import { Quote, Sparkles } from 'lucide-react'
-import { PERSONA_CONTEXT } from '../shared/scenario'
+import { PERSONA_CONTEXT } from '../lab/scenarioDemo'
+import { isLabMode } from '../shared/GoalCreationContext'
 
 interface PersonalContextCardProps {
     /** Collapsed one-line quote treatment for embedding inside an active flow. */
@@ -13,6 +14,8 @@ interface PersonalContextCardProps {
  * single-line quote used mid-flow to *show* the assistant already knows the persona.
  */
 const PersonalContextCard = ({ compact }: PersonalContextCardProps) => {
+    if (!isLabMode) return null
+
     if (compact) {
         return (
             <div className="flex items-center gap-2.5 rounded-lg border border-border/70 bg-muted/40 px-3 py-2">

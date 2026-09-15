@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { icons } from '../../styles/images'
 import { Icon } from '../atoms/Icon'
+import { MIRROR_DRAFT } from './creation/lab/scenarioDemo'
 import { ConsolidationCard } from './creation/mirror/ConsolidationCard'
 import { MirrorQuickAdd } from './creation/mirror/MirrorQuickAdd'
-import { MIRROR_DRAFT } from './creation/mirror/mirrorDraft'
-import { useGoalCreation } from './creation/shared/GoalCreationContext'
+import { isLabMode, useGoalCreation } from './creation/shared/GoalCreationContext'
 import { GOAL_STATUS_LABEL, TGoal, TGoalStatus } from './goalTypes'
 
 export const GoalStatusBadge = ({ status }: { status: TGoalStatus }) => (
@@ -76,9 +76,10 @@ const GoalsList = ({ selectedGoalId, onSelect, hideSectionHeader }: GoalsListPro
     // The Mirror's created goal (tracked by id; survives reset by simply vanishing
     // from createdGoals). Its presence gates the consolidation card off and the
     // quick-add on. Falls back to a title match in case the id was somehow never set.
-    const mirrorGoal =
-        createdGoals.find((g) => g.id === mirrorGoalId) ?? createdGoals.find((g) => g.title === MIRROR_DRAFT.title)
-    const isMirror = iteration === 'mirror'
+    const isMirror = isLabMode && iteration === 'mirror'
+    const mirrorGoal = isMirror
+        ? createdGoals.find((g) => g.id === mirrorGoalId) ?? createdGoals.find((g) => g.title === MIRROR_DRAFT.title)
+        : undefined
     const showConsolidation = isMirror && !mirrorGoal && !consolidationDismissed
     const showQuickAdd = isMirror && mirrorGoal != null
 
@@ -87,7 +88,7 @@ const GoalsList = ({ selectedGoalId, onSelect, hideSectionHeader }: GoalsListPro
             {!hideSectionHeader && (
                 <div className="mb-2 flex items-center justify-between">
                     <span className="text-label-md uppercase tracking-wider text-muted-foreground">Goals</span>
-                    {iteration !== 'mirror' && (
+                    {!isMirror && (
                         <Button
                             variant="ghost"
                             size="sm"

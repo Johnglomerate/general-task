@@ -48,8 +48,6 @@ export const IterationSwitcher = () => {
         setIsOnboarding,
         freshAccount,
         setFreshAccount,
-        aiOffline,
-        setAiOffline,
         resetDemo,
     } = useGoalCreation()
 
@@ -90,12 +88,6 @@ export const IterationSwitcher = () => {
                         tooltip="Simulate a fresh account with no goals"
                         active={freshAccount}
                         onClick={() => setFreshAccount(!freshAccount)}
-                    />
-                    <DemoToggle
-                        label="AI off"
-                        tooltip="Simulate the AI being unreachable"
-                        active={aiOffline}
-                        onClick={() => setAiOffline(!aiOffline)}
                     />
 
                     <Separator />

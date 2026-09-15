@@ -31,9 +31,6 @@ interface TGoalCreation {
     /** Lab switch: show the empty-account path without deleting persisted goals. */
     freshAccount: boolean
     setFreshAccount: (b: boolean) => void
-    /** Demo switch: simulate the AI service being unreachable — step-4 drafting fails. */
-    aiOffline: boolean
-    setAiOffline: (b: boolean) => void
     createdGoals: TGoal[]
     allGoals: TGoal[]
     createGoal: (draft: TGoalDraft) => TGoal
@@ -85,7 +82,6 @@ export const GoalCreationProvider = ({ children }: { children: ReactNode }) => {
     const [iteration, setIteration] = useState<TIteration>('scaffold')
     const [isOnboarding, setIsOnboarding] = useState(false)
     const [freshAccount, setFreshAccount] = useState(false)
-    const [aiOffline, setAiOffline] = useState(false)
     const [createdGoalIds, setCreatedGoalIds] = useState<string[]>([])
     const [isFlowOpen, setIsFlowOpen] = useState(false)
     const [consolidationDismissed, setConsolidationDismissed] = useState(false)
@@ -185,7 +181,6 @@ export const GoalCreationProvider = ({ children }: { children: ReactNode }) => {
         setIsFlowOpen(false)
         setIsOnboarding(false)
         setFreshAccount(false)
-        setAiOffline(false)
         setConsolidationDismissed(false)
         setMirrorGoalId(null)
         setRepairGoalId(null)
@@ -203,8 +198,6 @@ export const GoalCreationProvider = ({ children }: { children: ReactNode }) => {
             setIsOnboarding,
             freshAccount,
             setFreshAccount,
-            aiOffline,
-            setAiOffline,
             createdGoals,
             allGoals: freshAccount ? createdGoals : persistedGoals,
             createGoal,
@@ -235,7 +228,6 @@ export const GoalCreationProvider = ({ children }: { children: ReactNode }) => {
             iteration,
             isOnboarding,
             freshAccount,
-            aiOffline,
             createdGoals,
             isFlowOpen,
             consolidationDismissed,

@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ArrowRight, X } from 'lucide-react'
-import { useGoalCreation } from '../shared/GoalCreationContext'
+import { isLabMode, useGoalCreation } from '../shared/GoalCreationContext'
 import PersonalContextCard from './PersonalContextCard'
 
 interface OnboardingFrameProps {
@@ -84,15 +84,20 @@ const OnboardingFrame = ({ children }: OnboardingFrameProps) => {
                             </h1>
                         </div>
 
-                        <div
-                            style={{ animationDelay: `${STAGGER_MS}ms`, animationFillMode: 'both' }}
-                            className="animate-in fade-in-0 slide-in-from-bottom-1 duration-500"
-                        >
-                            <PersonalContextCard />
-                        </div>
+                        {isLabMode && (
+                            <div
+                                style={{ animationDelay: `${STAGGER_MS}ms`, animationFillMode: 'both' }}
+                                className="animate-in fade-in-0 slide-in-from-bottom-1 duration-500"
+                            >
+                                <PersonalContextCard />
+                            </div>
+                        )}
 
                         <div
-                            style={{ animationDelay: `${STAGGER_MS * 2}ms`, animationFillMode: 'both' }}
+                            style={{
+                                animationDelay: `${isLabMode ? STAGGER_MS * 2 : STAGGER_MS}ms`,
+                                animationFillMode: 'both',
+                            }}
                             className="mt-7 animate-in fade-in-0 slide-in-from-bottom-1 duration-500"
                         >
                             <Button onClick={advance} className="w-full gap-2 transition-transform active:scale-[0.96]">

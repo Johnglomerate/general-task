@@ -4,11 +4,11 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { ArrowRight, ArrowUp } from 'lucide-react'
 import PersonalContextCard from '../onboarding/PersonalContextCard'
+import { SCENARIO_DRAFT } from '../lab/scenarioDemo'
 import CreationModal from '../shared/CreationModal'
 import { useGoalCreation } from '../shared/GoalCreationContext'
 import ReviewScreen from '../shared/ReviewScreen'
 import { TChatMessage, TScriptState, useScriptPlayer } from '../shared/ScriptPlayer'
-import { SCENARIO_DRAFT } from '../shared/scenario'
 import { COACH_SCRIPT } from './coachScript'
 
 /** The review CTA label, derived from the script's action step (no hardcoded duplicate). */

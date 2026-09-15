@@ -11,7 +11,7 @@ import { TDraftPlanItem, TGoalDraft } from './scenario'
 interface ReviewScreenProps {
     draft: TGoalDraft
     detectedNote?: string
-    /** Where the plan came from — e.g. "Drafted by AI from your goal · sized to ~6 hrs / week". */
+    /** Optional source note shown below the goal properties. */
     provenanceNote?: string
     /** Manual fallback only: show the explicit Consistency / Time-based toggle (AI paths carry the type). */
     showTypePicker?: boolean
