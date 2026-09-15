@@ -397,78 +397,6 @@ const landingCss = css`
         background: ${Colors.accent.pink};
     }
 
-    .testimonials {
-        padding: 96px 0;
-    }
-    .tcards {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: ${Spacing._24};
-    }
-    .tcard {
-        margin: 0;
-        background: ${Colors.background.white};
-        border: 1px solid ${CARD_STROKE};
-        border-radius: ${Border.radius.large};
-        padding: ${Spacing._32};
-        display: flex;
-        flex-direction: column;
-        gap: ${Spacing._24};
-    }
-    .tcard blockquote {
-        margin: 0;
-        font-size: 17px;
-        line-height: 1.5;
-    }
-    .tcard figcaption {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-    }
-    .tcard figcaption b {
-        display: block;
-        font-weight: 600;
-        font-size: 15px;
-    }
-    .tcard figcaption em {
-        font-style: normal;
-        font-size: 13px;
-        color: ${Colors.text.secondary};
-    }
-    .avatar {
-        flex: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-weight: 600;
-        font-size: 13px;
-        color: ${Colors.text.title};
-    }
-    .tnav {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        margin-top: 40px;
-    }
-    .tnav button {
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        border-radius: 50%;
-        border: 1px solid ${Colors.background.divider};
-        background: ${Colors.background.white};
-        cursor: pointer;
-        font-size: 16px;
-        display: grid;
-        place-items: center;
-        transition: transform 0.2s ${EASE};
-    }
-    .tnav button:hover {
-        transform: translateY(-1px);
-    }
-
     .features {
         padding: ${Spacing._64} 0;
     }
@@ -1416,9 +1344,6 @@ const landingCss = css`
         .frow__copy {
             max-width: 640px;
         }
-        .tcards {
-            grid-template-columns: 1fr;
-        }
     }
     @media (max-width: ${LANDING_BREAKPOINTS.medium}px) {
         .nav__links {
@@ -1463,9 +1388,6 @@ const landingCss = css`
         .ps__grid {
             grid-template-columns: 1fr;
             gap: 48px;
-        }
-        .testimonials {
-            padding: 64px 0;
         }
         .closing {
             padding: 96px 0;
