@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/GeneralTask/task-manager/backend/database"
@@ -117,5 +119,56 @@ func TestGoalsAPI(t *testing.T) {
 		count, err := database.GetGoalTaskLinkCollection(api.DB).CountDocuments(context.Background(), bson.M{"task_id": task.ID})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), count)
+	})
+
+	t.Run("DraftPathsCallsOpenAIWithUserGoal", func(t *testing.T) {
+		openAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "Bearer test-openai-key", r.Header.Get("Authorization"))
+			var requestBody map[string]interface{}
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&requestBody))
+			serializedBody := fmt.Sprintf("%v", requestBody)
+			assert.Contains(t, serializedBody, "Lose 20 pounds")
+			assert.Contains(t, serializedBody, "better energy")
+			assert.Contains(t, serializedBody, "This quarter")
+			assert.Contains(t, serializedBody, "~4 hrs / week")
+			assert.NotContains(t, strings.ToLower(serializedBody), "portfolio")
+
+			w.Header().Set("Content-Type", "application/json")
+			_, err := w.Write([]byte(`{
+				"output": [{
+					"content": [{
+						"type": "output_text",
+						"text": "{\"paths\":[{\"id\":\"steady\",\"type\":\"consistency\",\"label\":\"Steady habits\",\"shapeLabel\":\"3 actions / week\",\"rationale\":\"Small weekly actions fit the stated capacity.\",\"phases\":[{\"name\":\"Build rhythm\",\"cadenceLabel\":\"3 actions / week\",\"weeklyHours\":4,\"dateSpanLabel\":\"Weeks 1-12\",\"weeks\":12}],\"items\":[{\"id\":\"meal-plan\",\"kind\":\"cadence\",\"title\":\"Plan weekday meals\",\"frequencyLabel\":\"1x / week\",\"included\":true},{\"id\":\"walks\",\"kind\":\"cadence\",\"title\":\"Take brisk walks\",\"frequencyLabel\":\"3x / week\",\"included\":true},{\"id\":\"check-in\",\"kind\":\"milestone\",\"title\":\"Review progress\",\"frequencyLabel\":\"\",\"included\":true}]}]}"
+					}]
+				}]
+			}`))
+			assert.NoError(t, err)
+		}))
+		defer openAIServer.Close()
+		t.Setenv("OPENAI_API_KEY", "test-openai-key")
+		t.Setenv("OPENAI_RESPONSES_URL", openAIServer.URL)
+		t.Setenv("OPENAI_GOAL_DRAFT_MODEL", "test-model")
+
+		recorder := authedRequest(router, "POST", "/goals/draft/", authToken, []byte(`{
+			"title": "Lose 20 pounds",
+			"why": "I want better energy",
+			"timeframeLabel": "This quarter",
+			"capacityLabel": "~4 hrs / week"
+		}`))
+
+		assert.Equal(t, http.StatusOK, recorder.Code)
+		var response GoalDraftResponse
+		assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+		assert.Len(t, response.Paths, 1)
+		assert.Equal(t, "consistency", response.Paths[0].Type)
+		assert.Len(t, response.Paths[0].Items, 3)
+		assert.Equal(t, "Plan weekday meals", response.Paths[0].Items[0].Title)
+	})
+
+	t.Run("DraftPathsRequiresOpenAIKey", func(t *testing.T) {
+		t.Setenv("OPENAI_API_KEY", "")
+		recorder := authedRequest(router, "POST", "/goals/draft/", authToken, []byte(`{"title":"Run a 5K"}`))
+		assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)
 	})
 }

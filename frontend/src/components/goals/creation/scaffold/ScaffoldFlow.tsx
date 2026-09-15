@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { GTDialog, GTDialogBody, GTDialogFooter, GTDialogHeading, GTDialogSteps } from '@/components/ui/gt-dialog'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { ArrowRight, CalendarRange, Gauge } from 'lucide-react'
+import { ArrowRight, CalendarRange, Gauge, Sparkles } from 'lucide-react'
+import { draftGoalPaths as requestGoalDraftPaths } from '../../../../services/api/goals.hooks'
 import { useGoalCreation } from '../shared/GoalCreationContext'
 import PropertyPill, { CAPACITY_OPTIONS, TIMEFRAME_OPTIONS } from '../shared/PropertyPill'
 import ReviewScreen from '../shared/ReviewScreen'
@@ -14,7 +15,13 @@ type TStep = 1 | 2 | 3 | 4
 const DEFAULT_TIMEFRAME_LABEL = 'This quarter'
 const DEFAULT_CAPACITY_LABEL = '~4 hrs / week'
 
-const draftGoalPaths = async (_draft: TGoalDraft): Promise<TScenarioPath[]> => []
+const draftGoalPaths = async (draft: TGoalDraft): Promise<TScenarioPath[]> => {
+    try {
+        return await requestGoalDraftPaths(draft)
+    } catch (_err) {
+        return []
+    }
+}
 
 const buildScaffoldReviewDraft = (draft: TGoalDraft, paths: TScenarioPath[]): TGoalDraft => ({
     ...draft,
@@ -35,14 +42,15 @@ const StepHeading = ({ title, subtitle }: { title: string; subtitle: string }) =
 /**
  * Iteration 2 - The Scaffold. A four-step guided stepper (Outcome -> Why ->
  * Timeframe & capacity -> Plan) that lands on the same manual ReviewScreen used
- * for editing drafts. The async path call is intentionally empty until real
- * drafting exists.
+ * for editing drafts. Step 4 asks the backend for a goal-specific draft and
+ * falls back to a blank manual plan when drafting is unavailable.
  */
 const ScaffoldFlow = () => {
     const { isOnboarding, closeFlow, createGoal } = useGoalCreation()
 
     const [render, setRender] = useState<TStep>(1)
     const [exiting, setExiting] = useState(false)
+    const [isDrafting, setIsDrafting] = useState(false)
     const busyRef = useRef(false)
 
     const [outcome, setOutcome] = useState('')
@@ -76,6 +84,7 @@ const ScaffoldFlow = () => {
     )
 
     const advance = useCallback(() => {
+        if (render === 3) setIsDrafting(true)
         if (render < 4) goTo((render + 1) as TStep)
     }, [render, goTo])
 
@@ -86,11 +95,15 @@ const ScaffoldFlow = () => {
     useEffect(() => {
         if (render !== 4) {
             setDraftedPaths([])
+            setIsDrafting(false)
             return
         }
         let active = true
+        setIsDrafting(true)
         draftGoalPaths({ title: outcome, why, timeframeLabel, capacityLabel, items: [] }).then((paths) => {
-            if (active) setDraftedPaths(paths)
+            if (!active) return
+            setDraftedPaths(paths)
+            setIsDrafting(false)
         })
         return () => {
             active = false
@@ -126,10 +139,32 @@ const ScaffoldFlow = () => {
 
     const renderStep = () => {
         if (render === 4) {
+            const draft = reviewDraft()
+            if (isDrafting) {
+                return (
+                    <>
+                        <GTDialogBody className="gap-5">
+                            <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
+                                <Sparkles className="size-4 shrink-0 text-primary" />
+                                <span>Drafting plan...</span>
+                            </div>
+                        </GTDialogBody>
+                        <GTDialogFooter
+                            start={
+                                <Button variant="ghost" size="sm" onClick={back} className="text-muted-foreground">
+                                    Back
+                                </Button>
+                            }
+                        />
+                    </>
+                )
+            }
             return (
                 <ReviewScreen
-                    draft={reviewDraft()}
-                    showTypePicker
+                    key={draft.items.length > 0 ? 'drafted' : 'manual'}
+                    draft={draft}
+                    showTypePicker={!draft.goalType}
+                    provenanceNote={draft.items.length > 0 ? `Drafted from your goal · ${capacityLabel}` : undefined}
                     onConfirm={createGoal}
                     onBack={back}
                     layout="dialog"

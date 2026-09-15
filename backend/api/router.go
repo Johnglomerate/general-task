@@ -144,6 +144,7 @@ func GetRouter(handlers *API) *gin.Engine {
 
 	router.GET("/goals/", handlers.GoalsList)
 	router.POST("/goals/", handlers.GoalCreate)
+	router.POST("/goals/draft/", handlers.GoalDraft)
 	router.PATCH("/goals/:goal_id/", handlers.GoalModify)
 	router.POST("/goals/:goal_id/recent/", handlers.GoalRecentAdd)
 	router.GET("/goals/task_links/", handlers.GoalTaskLinksList)

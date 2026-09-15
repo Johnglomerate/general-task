@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { QueryFunctionContext } from 'react-query/types/core/types'
 import { TGoal } from '../../components/goals/goalTypes'
+import { TGoalDraft, TScenarioPath } from '../../components/goals/creation/shared/scenario'
 import apiClient from '../../utils/api'
 
 export type TGoalTaskLinks = Record<string, string>
@@ -17,6 +18,16 @@ export const useGetGoalTaskLinks = () => useQuery<TGoalTaskLinks, void>('goal-ta
 const getGoalTaskLinks = async ({ signal }: QueryFunctionContext) => {
     const res = await apiClient.get('/goals/task_links/', { signal })
     return res.data as TGoalTaskLinks
+}
+
+export const draftGoalPaths = async (draft: TGoalDraft): Promise<TScenarioPath[]> => {
+    const res = await apiClient.post('/goals/draft/', {
+        title: draft.title,
+        why: draft.why,
+        timeframeLabel: draft.timeframeLabel,
+        capacityLabel: draft.capacityLabel,
+    })
+    return (res.data?.paths ?? []) as TScenarioPath[]
 }
 
 export const useCreateGoal = () => {
