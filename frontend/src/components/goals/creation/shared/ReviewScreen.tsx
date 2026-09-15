@@ -54,6 +54,7 @@ const ReviewScreen = ({
     const [capacityLabel, setCapacityLabel] = useState(draft.capacityLabel)
     const [goalType, setGoalType] = useState<TGoalType>(draft.goalType ?? 'consistency')
     const [items, setItems] = useState<TDraftPlanItem[]>(draft.items)
+    const canConfirm = title.trim().length > 0
 
     const toggleItem = (id: string) =>
         setItems((prev) => prev.map((it) => (it.id === id ? { ...it, included: !it.included } : it)))
@@ -79,16 +80,18 @@ const ReviewScreen = ({
     // Keep the latest confirm payload in a ref so the ⌘Enter listener stays
     // stable. Rows left with an empty title are dropped, not created.
     const confirmRef = useRef<() => void>()
-    confirmRef.current = () =>
+    confirmRef.current = () => {
+        if (!canConfirm) return
         onConfirm({
             ...draft,
-            title,
+            title: title.trim(),
             timeframeLabel,
             capacityLabel,
             // Only the manual picker overrides the type — AI drafts carry it in.
             ...(showTypePicker ? { goalType } : {}),
             items: items.filter((it) => it.title.trim() !== ''),
         })
+    }
     const handleConfirm = () => confirmRef.current?.()
 
     // ⌘Enter (or Ctrl+Enter) anywhere in the modal confirms. This listener is
@@ -115,6 +118,7 @@ const ReviewScreen = ({
                 <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Goal title"
                     aria-label="Goal title"
                     className="w-full border-0 bg-transparent p-0 text-title-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none"
                 />
@@ -288,7 +292,12 @@ const ReviewScreen = ({
         return (
             <>
                 <GTDialogBody className="gap-5">{body}</GTDialogBody>
-                <GTDialogFooter start={backButton} onConfirm={handleConfirm} confirmLabel={confirmLabel} />
+                <GTDialogFooter
+                    start={backButton}
+                    onConfirm={handleConfirm}
+                    confirmDisabled={!canConfirm}
+                    confirmLabel={confirmLabel}
+                />
             </>
         )
     }
@@ -298,7 +307,11 @@ const ReviewScreen = ({
             <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">{body}</div>
             <footer className="flex shrink-0 items-center justify-between gap-2 border-t border-border/70 px-5 py-3">
                 <div>{backButton}</div>
-                <Button onClick={handleConfirm} className="gap-2 transition-transform active:scale-[0.96]">
+                <Button
+                    onClick={handleConfirm}
+                    disabled={!canConfirm}
+                    className="gap-2 transition-transform active:scale-[0.96]"
+                >
                     {confirmLabel}
                 </Button>
             </footer>

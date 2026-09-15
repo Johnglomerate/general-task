@@ -7,18 +7,15 @@ import { ArrowRight, CalendarRange, Gauge } from 'lucide-react'
 import { useGoalCreation } from '../shared/GoalCreationContext'
 import PropertyPill, { CAPACITY_OPTIONS, TIMEFRAME_OPTIONS } from '../shared/PropertyPill'
 import ReviewScreen from '../shared/ReviewScreen'
-import { TGoalDraft, TScenarioPath } from '../shared/scenario'
+import { TScenarioPath } from '../shared/scenario'
+import { buildScaffoldReviewDraft, draftGoalPaths } from './scaffoldDraft'
 
 type TStep = 1 | 2 | 3 | 4
 
 const OUTCOME_PREFILL = ''
 const WHY_PREFILL = ''
-const NEUTRAL_TIMEFRAME_LABEL = 'Set timeframe'
-const NEUTRAL_CAPACITY_LABEL = 'Set capacity'
-
-type TDraftGoalInput = Pick<TGoalDraft, 'title' | 'why' | 'timeframeLabel' | 'capacityLabel'>
-
-export const draftGoalPaths = async (_draft: TDraftGoalInput): Promise<TScenarioPath[]> => []
+const NEUTRAL_TIMEFRAME_LABEL = 'No timeframe set'
+const NEUTRAL_CAPACITY_LABEL = 'No capacity set'
 
 /** A short heading + supporting line shared by steps 1–3 (GTDialogHeading + the step's enter animation). */
 const StepHeading = ({ title, subtitle }: { title: string; subtitle: string }) => (
@@ -71,8 +68,9 @@ const ScaffoldFlow = () => {
     )
 
     const advance = useCallback(() => {
+        if (render === 1 && outcome.trim().length === 0) return
         if (render < 4) goTo((render + 1) as TStep)
-    }, [render, goTo])
+    }, [render, outcome, goTo])
 
     const back = useCallback(() => {
         if (render > 1) goTo((render - 1) as TStep)
@@ -123,15 +121,15 @@ const ScaffoldFlow = () => {
     const renderStep = () => {
         if (render === 4) {
             const draftedPath = draftPaths[0]
-            const draft: TGoalDraft = {
-                title: outcome,
-                why,
-                timeframeLabel,
-                capacityLabel,
-                items: draftedPath?.items ?? [],
-                phases: draftedPath?.phases,
-                goalType: draftedPath?.type,
-            }
+            const draft = buildScaffoldReviewDraft(
+                {
+                    title: outcome.trim(),
+                    why,
+                    timeframeLabel,
+                    capacityLabel,
+                },
+                draftPaths
+            )
             return (
                 <ReviewScreen
                     key={draftedPath?.id ?? 'manual'}
@@ -143,6 +141,8 @@ const ScaffoldFlow = () => {
                 />
             )
         }
+
+        const canAdvance = render !== 1 || outcome.trim().length > 0
 
         return (
             <>
@@ -229,6 +229,7 @@ const ScaffoldFlow = () => {
                         )
                     }
                     onConfirm={advance}
+                    confirmDisabled={!canAdvance}
                     confirmLabel={
                         <>
                             Continue

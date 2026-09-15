@@ -40,8 +40,8 @@ describe('buildGoalFromDraft', () => {
         const goal = buildGoalFromDraft({
             title: 'Lose weight',
             why: '',
-            timeframeLabel: 'Set timeframe',
-            capacityLabel: 'Set capacity',
+            timeframeLabel: 'No timeframe set',
+            capacityLabel: 'No capacity set',
             items: [],
         })
 
