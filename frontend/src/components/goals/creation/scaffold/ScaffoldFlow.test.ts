@@ -1,4 +1,4 @@
-import { buildScaffoldReviewDraft, draftGoalPaths } from './ScaffoldFlow'
+import { buildScaffoldReviewDraft, draftGoalPlan } from './ScaffoldFlow'
 import { TGoalDraft } from '../shared/scenario'
 import apiClient from '../../../../utils/api'
 
@@ -24,42 +24,34 @@ describe('ScaffoldFlow drafting', () => {
         jest.clearAllMocks()
     })
 
-    it('drafts paths from the user goal through the backend', async () => {
+    it('drafts a plan from the user goal through the backend', async () => {
         mockedApiClient.post.mockResolvedValueOnce({
             data: {
-                paths: [
-                    {
-                        id: 'steady',
-                        type: 'consistency',
-                        label: 'Steady habits',
-                        shapeLabel: '3 actions / week',
-                        rationale: 'Small weekly actions fit the stated capacity.',
-                        phases: [
-                            {
-                                name: 'Build rhythm',
-                                cadenceLabel: '3 actions / week',
-                                weeklyHours: 4,
-                                dateSpanLabel: 'Weeks 1-12',
-                                weeks: 12,
-                            },
-                        ],
-                        items: [
-                            {
-                                id: 'workout',
-                                kind: 'cadence',
-                                title: 'Strength training',
-                                frequencyLabel: '3x / week',
-                                included: true,
-                            },
-                        ],
-                    },
-                ],
+                plan: {
+                    type: 'consistency',
+                    phases: [
+                        {
+                            name: 'Build rhythm',
+                            cadenceLabel: '3 actions / week',
+                            weeklyHours: 4,
+                            dateSpanLabel: 'Weeks 1-12',
+                            weeks: 12,
+                        },
+                    ],
+                    items: [
+                        {
+                            id: 'workout',
+                            kind: 'cadence',
+                            title: 'Strength training',
+                            frequencyLabel: '3× / week',
+                            included: true,
+                        },
+                    ],
+                },
             },
         })
 
-        await expect(draftGoalPaths(unrelatedDraft())).resolves.toEqual([
-            expect.objectContaining({ id: 'steady', type: 'consistency' }),
-        ])
+        await expect(draftGoalPlan(unrelatedDraft())).resolves.toEqual(expect.objectContaining({ type: 'consistency' }))
         expect(mockedApiClient.post).toHaveBeenCalledWith('/goals/draft/', {
             title: 'Lose 20 pounds',
             why: '',
@@ -70,11 +62,11 @@ describe('ScaffoldFlow drafting', () => {
 
     it('falls back to a manual plan when drafting fails', async () => {
         mockedApiClient.post.mockRejectedValueOnce(new Error('network failed'))
-        await expect(draftGoalPaths(unrelatedDraft())).resolves.toEqual([])
+        await expect(draftGoalPlan(unrelatedDraft())).resolves.toBeNull()
     })
 
-    it('keeps unrelated goals on an empty manual plan when no draft paths return', () => {
-        const draft = buildScaffoldReviewDraft(unrelatedDraft(), [])
+    it('keeps unrelated goals on an empty manual plan when no draft plan returns', () => {
+        const draft = buildScaffoldReviewDraft(unrelatedDraft(), null)
         const serializedDraft = JSON.stringify(draft)
 
         expect(draft.items).toEqual([])

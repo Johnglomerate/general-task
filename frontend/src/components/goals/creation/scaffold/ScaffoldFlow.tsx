@@ -4,30 +4,30 @@ import { GTDialog, GTDialogBody, GTDialogFooter, GTDialogHeading, GTDialogSteps 
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { ArrowRight, CalendarRange, Gauge, Sparkles } from 'lucide-react'
-import { draftGoalPaths as requestGoalDraftPaths } from '../../../../services/api/goals.hooks'
+import { draftGoalPlan as requestGoalDraftPlan } from '../../../../services/api/goals.hooks'
 import { useGoalCreation } from '../shared/GoalCreationContext'
 import PropertyPill, { CAPACITY_OPTIONS, TIMEFRAME_OPTIONS } from '../shared/PropertyPill'
 import ReviewScreen from '../shared/ReviewScreen'
-import { TGoalDraft, TScenarioPath } from '../shared/scenario'
+import { TGoalDraft, TGoalDraftPlan } from '../shared/scenario'
 
 type TStep = 1 | 2 | 3 | 4
 
 const DEFAULT_TIMEFRAME_LABEL = 'This quarter'
 const DEFAULT_CAPACITY_LABEL = '~4 hrs / week'
 
-const draftGoalPaths = async (draft: TGoalDraft): Promise<TScenarioPath[]> => {
+const draftGoalPlan = async (draft: TGoalDraft): Promise<TGoalDraftPlan | null> => {
     try {
-        return await requestGoalDraftPaths(draft)
+        return await requestGoalDraftPlan(draft)
     } catch (_err) {
-        return []
+        return null
     }
 }
 
-const buildScaffoldReviewDraft = (draft: TGoalDraft, paths: TScenarioPath[]): TGoalDraft => ({
+const buildScaffoldReviewDraft = (draft: TGoalDraft, plan: TGoalDraftPlan | null): TGoalDraft => ({
     ...draft,
-    items: paths[0]?.items ?? [],
-    phases: paths[0]?.phases,
-    goalType: paths[0]?.type,
+    items: plan?.items ?? [],
+    phases: plan?.phases,
+    goalType: plan?.type,
 })
 
 const StepHeading = ({ title, subtitle }: { title: string; subtitle: string }) => (
@@ -57,7 +57,7 @@ const ScaffoldFlow = () => {
     const [why, setWhy] = useState('')
     const [timeframeLabel, setTimeframeLabel] = useState(DEFAULT_TIMEFRAME_LABEL)
     const [capacityLabel, setCapacityLabel] = useState(DEFAULT_CAPACITY_LABEL)
-    const [draftedPaths, setDraftedPaths] = useState<TScenarioPath[]>([])
+    const [draftedPlan, setDraftedPlan] = useState<TGoalDraftPlan | null>(null)
     const openPopovers = useRef(0)
 
     const inputRef = useRef<HTMLInputElement>(null)
@@ -65,8 +65,8 @@ const ScaffoldFlow = () => {
 
     const reviewDraft = useCallback(
         (): TGoalDraft =>
-            buildScaffoldReviewDraft({ title: outcome, why, timeframeLabel, capacityLabel, items: [] }, draftedPaths),
-        [capacityLabel, draftedPaths, outcome, timeframeLabel, why]
+            buildScaffoldReviewDraft({ title: outcome, why, timeframeLabel, capacityLabel, items: [] }, draftedPlan),
+        [capacityLabel, draftedPlan, outcome, timeframeLabel, why]
     )
 
     const goTo = useCallback(
@@ -94,15 +94,15 @@ const ScaffoldFlow = () => {
 
     useEffect(() => {
         if (render !== 4) {
-            setDraftedPaths([])
+            setDraftedPlan(null)
             setIsDrafting(false)
             return
         }
         let active = true
         setIsDrafting(true)
-        draftGoalPaths({ title: outcome, why, timeframeLabel, capacityLabel, items: [] }).then((paths) => {
+        draftGoalPlan({ title: outcome, why, timeframeLabel, capacityLabel, items: [] }).then((plan) => {
             if (!active) return
-            setDraftedPaths(paths)
+            setDraftedPlan(plan)
             setIsDrafting(false)
         })
         return () => {
@@ -301,4 +301,4 @@ const ScaffoldFlow = () => {
 }
 
 export default ScaffoldFlow
-export { ScaffoldFlow, buildScaffoldReviewDraft, draftGoalPaths }
+export { ScaffoldFlow, buildScaffoldReviewDraft, draftGoalPlan }

@@ -121,7 +121,7 @@ func TestGoalsAPI(t *testing.T) {
 		assert.Equal(t, int64(0), count)
 	})
 
-	t.Run("DraftPathsCallsOpenAIWithUserGoal", func(t *testing.T) {
+	t.Run("DraftPlanCallsOpenAIWithUserGoal", func(t *testing.T) {
 		openAIServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
 			assert.Equal(t, "Bearer test-openai-key", r.Header.Get("Authorization"))
@@ -139,7 +139,7 @@ func TestGoalsAPI(t *testing.T) {
 				"output": [{
 					"content": [{
 						"type": "output_text",
-						"text": "{\"paths\":[{\"id\":\"steady\",\"type\":\"consistency\",\"label\":\"Steady habits\",\"shapeLabel\":\"3 actions / week\",\"rationale\":\"Small weekly actions fit the stated capacity.\",\"phases\":[{\"name\":\"Build rhythm\",\"cadenceLabel\":\"3 actions / week\",\"weeklyHours\":4,\"dateSpanLabel\":\"Weeks 1-12\",\"weeks\":12}],\"items\":[{\"id\":\"meal-plan\",\"kind\":\"cadence\",\"title\":\"Plan weekday meals\",\"frequencyLabel\":\"1x / week\",\"included\":true},{\"id\":\"walks\",\"kind\":\"cadence\",\"title\":\"Take brisk walks\",\"frequencyLabel\":\"3x / week\",\"included\":true},{\"id\":\"check-in\",\"kind\":\"milestone\",\"title\":\"Review progress\",\"frequencyLabel\":\"\",\"included\":true}]}]}"
+						"text": "{\"plan\":{\"type\":\"consistency\",\"phases\":[{\"name\":\"Build rhythm\",\"cadenceLabel\":\"3 actions / week\",\"weeklyHours\":4,\"dateSpanLabel\":\"Weeks 1-12\",\"weeks\":12}],\"items\":[{\"id\":\"meal-plan\",\"kind\":\"cadence\",\"title\":\"Plan weekday meals\",\"frequencyLabel\":\"1× / week\",\"included\":true},{\"id\":\"walks\",\"kind\":\"cadence\",\"title\":\"Take brisk walks\",\"frequencyLabel\":\"3× / week\",\"included\":true},{\"id\":\"check-in\",\"kind\":\"milestone\",\"title\":\"Review progress\",\"frequencyLabel\":\"\",\"included\":true}]}}"
 					}]
 				}]
 			}`))
@@ -160,13 +160,15 @@ func TestGoalsAPI(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		var response GoalDraftResponse
 		assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
-		assert.Len(t, response.Paths, 1)
-		assert.Equal(t, "consistency", response.Paths[0].Type)
-		assert.Len(t, response.Paths[0].Items, 3)
-		assert.Equal(t, "Plan weekday meals", response.Paths[0].Items[0].Title)
+		if assert.NotNil(t, response.Plan) {
+			assert.Equal(t, "consistency", response.Plan.Type)
+			assert.Len(t, response.Plan.Items, 3)
+			assert.Equal(t, "Plan weekday meals", response.Plan.Items[0].Title)
+			assert.Equal(t, "1× / week", response.Plan.Items[0].FrequencyLabel)
+		}
 	})
 
-	t.Run("DraftPathsRequiresOpenAIKey", func(t *testing.T) {
+	t.Run("DraftPlanRequiresOpenAIKey", func(t *testing.T) {
 		t.Setenv("OPENAI_API_KEY", "")
 		recorder := authedRequest(router, "POST", "/goals/draft/", authToken, []byte(`{"title":"Run a 5K"}`))
 		assert.Equal(t, http.StatusServiceUnavailable, recorder.Code)

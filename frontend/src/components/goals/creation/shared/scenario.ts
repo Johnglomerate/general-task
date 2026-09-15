@@ -41,6 +41,8 @@ export interface TScenarioPath {
     items: TDraftPlanItem[]
 }
 
+export type TGoalDraftPlan = Pick<TScenarioPath, 'type' | 'phases' | 'items'>
+
 let counter = 0
 export const buildGoalFromDraft = (draft: TGoalDraft): TGoal => {
     const included = draft.items.filter((i) => i.included)
